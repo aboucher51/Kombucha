@@ -14,7 +14,7 @@ static func make() -> VBoxContainer:
 		var line := HBoxContainer.new()
 		line.add_theme_constant_override("separation", 10)
 		var label := Label.new()
-		label.text = String(bus_name)
+		label.text = L10n.tr_or_fallback("ui.bus_%s" % String(bus_name).to_lower(), String(bus_name))
 		label.custom_minimum_size = Vector2(70, 0)
 		line.add_child(label)
 		var slider := HSlider.new()

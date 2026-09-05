@@ -1,0 +1,14 @@
+# The pause menu is reachable without a mouse: open() grabs focus, ui_*
+# actions walk to Resume, and the focus ring makes the walk visible (an
+# HSlider has no focus stylebox in Godot, so the ring shows on the button).
+# A pad drives exactly these actions (Pads synthesises them), so this is
+# the pad path too.
+wait 10
+press pause
+assert_visible PausedLabel
+press ui_down
+press ui_down
+press ui_down
+shot focus-ring 440 220 400 280
+press ui_accept
+expect_fail assert_visible ResumeButton

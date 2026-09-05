@@ -5,7 +5,8 @@ extends Node
 ## consumer's private constants.
 ##
 ## Each action has SLOTS binding slots: primary (the default key) and
-## secondary (unbound by default). Overrides persist through SaveManager's
+## secondary (unbound by default, unless the catalog names a "pad" button,
+## which lands there so a controller works out of the box). Overrides persist through SaveManager's
 ## settings file — a keybind describes this MACHINE, like the volumes, not
 ## any run or save.
 ##
@@ -22,7 +23,8 @@ signal bindings_changed
 ## so a key can only mean one of them — see set_binding. Keys may repeat
 ## across groups. EXTEND THIS as the game grows actions.
 const ACTIONS := [
-	{"action": "pause", "key": KEY_ESCAPE, "label": "Pause", "group": "game"},
+	{"action": "pause", "key": KEY_ESCAPE, "pad": JOY_BUTTON_START,
+		"label": "Pause", "group": "game"},
 	{"action": "save_game", "key": KEY_F5, "label": "Quick save", "group": "game"},
 	{"action": "load_game", "key": KEY_F9, "label": "Quick load", "group": "game"},
 ]
@@ -141,7 +143,9 @@ func describe(action: String, slot: int) -> String:
 
 func describe_event(event: InputEvent) -> String:
 	if event is InputEventKey:
-		return OS.get_keycode_string((event as InputEventKey).physical_keycode)
+		var key_name := OS.get_keycode_string((event as InputEventKey).physical_keycode)
+		# a few OS names nobody's keyboard uses
+		return {"QuoteLeft": "`", "Escape": "Esc"}.get(key_name, key_name)
 	if event is InputEventMouseButton:
 		var index := (event as InputEventMouseButton).button_index
 		match index:
@@ -149,7 +153,17 @@ func describe_event(event: InputEvent) -> String:
 			MOUSE_BUTTON_RIGHT: return "Right click"
 			MOUSE_BUTTON_MIDDLE: return "Middle click"
 			_: return "Mouse %d" % index
+	if event is InputEventJoypadButton:
+		var button := (event as InputEventJoypadButton).button_index
+		if button >= 0 and button < PAD_NAMES.size():
+			return "Pad %s" % PAD_NAMES[button]
+		return "Pad button %d" % button
 	return ""
+
+
+## Index = JoyButton value; xbox-style names, the lingua franca of prompts.
+const PAD_NAMES := ["A", "B", "X", "Y", "Back", "Guide", "Start",
+	"L-stick", "R-stick", "LB", "RB", "D-up", "D-down", "D-left", "D-right"]
 
 
 ## "F5", "W" (OS key names) or "mouse:4" into an event — a console bind
@@ -159,7 +173,8 @@ func parse_binding_text(text: String) -> InputEvent:
 
 
 func _normalise(text: String) -> String:
-	if text.begins_with("mouse:") or text.begins_with("key:"):
+	if text.begins_with("mouse:") or text.begins_with("key:") \
+			or text.begins_with("joy:"):
 		return text
 	return "key:" + text
 
@@ -175,7 +190,11 @@ func _default_slots(entry: Dictionary) -> Array:
 	var primary := InputEventKey.new()
 	primary.physical_keycode = entry["key"]
 	var slots: Array = [primary]
-	slots.resize(SLOTS)  # secondary (and beyond) default unbound
+	slots.resize(SLOTS)  # secondary defaults unbound...
+	if entry.has("pad"):   # ...unless the catalog names a pad button
+		var pad := InputEventJoypadButton.new()
+		pad.button_index = entry["pad"]
+		slots[1] = pad
 	return slots
 
 
@@ -206,6 +225,8 @@ func _encode(event: InputEvent) -> String:
 		return "key:" + OS.get_keycode_string((event as InputEventKey).physical_keycode)
 	if event is InputEventMouseButton:
 		return "mouse:%d" % (event as InputEventMouseButton).button_index
+	if event is InputEventJoypadButton:
+		return "joy:%d" % (event as InputEventJoypadButton).button_index
 	return ""
 
 
@@ -223,5 +244,12 @@ func _decode(text: String) -> InputEvent:
 			return null
 		var event := InputEventMouseButton.new()
 		event.button_index = index as MouseButton
+		return event
+	if text.begins_with("joy:"):
+		var raw := text.trim_prefix("joy:")
+		if not raw.is_valid_int() or raw.to_int() < 0:
+			return null
+		var event := InputEventJoypadButton.new()
+		event.button_index = raw.to_int() as JoyButton
 		return event
 	return null

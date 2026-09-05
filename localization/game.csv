@@ -2,4 +2,7 @@ keys,en,xa
 ui.paused,Paused,[Ƥàùşèđ~~]
 ui.resume,Resume,[Řèşùɱè~~]
 ui.quit,Quit,[Ɋùìŧ~]
+ui.bus_master,Master,[Ϻàşŧèř~~]
+ui.bus_music,Music,[Ϻùşìç~]
+ui.bus_sfx,SFX,[ŞƑX~]
 ui.resume_hint,Resume the game,[Řèşùɱè ŧĥè ĝàɱè~~~~~]

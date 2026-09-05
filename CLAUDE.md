@@ -86,19 +86,61 @@ lazily.
 
 ### Persistence goes through SaveManager's redirectable paths
 
-`SaveManager.save_root` / `config_path` are variables so tests and the
-screenshot harness can point the whole save system at scratch storage and
-restore it afterwards. Route any new persistence through them — a suite run
-must never edit the player's real saves or settings.
+`SaveManager.save_root`, `config_path` and `mods_root` are variables so
+tests and the screenshot harness can point the whole save system (and
+mod loading) at scratch storage and restore it afterwards. Route any new
+persistence through them — a suite run must never edit the player's real
+saves, settings or mods.
+
+- **Saves are written by the `save_provider` group.** Any node answering
+  `save_key()`, `save_payload()` and `restore_payload(payload)` gets its
+  slice in the slot; SaveManager reaches it by group and `has_method`,
+  because an autoload must not name a scene class. An empty payload writes
+  no key. Two projects converged on this seam before it was shared.
+- **A save is stamped and migrated** (`SaveCompat`): schema, game version,
+  optional mod ids. A change to what a provider writes bumps `SCHEMA`,
+  adds a `_to_N` step and freezes a golden old-format fixture in a test
+  that must load forever. A save from the future is refused with a
+  reason, never guessed at; a save needing a missing mod is refused BY
+  NAME. `SaveManager.last_load_problem` carries the reason for a UI.
+- **JSON quietly breaks three things.** `JSON.stringify` sorts keys by
+  default and Dictionary equality is order-sensitive, so a saved
+  dictionary came back unequal to itself (pass `false`; SaveManager does).
+  JSON has no int type: `500` comes back `500.0`, so restored
+  dictionaries go through one normaliser and a test compares against
+  floats. A 64-bit `rng.state` stored as a number is silently truncated
+  to a double: store it as a string.
+- **Slots carry meta** (`saved_at`, `slot`, `version`, whatever the caller
+  adds) at the top level, so `slot_meta()` and `list_slots()` describe a
+  slot without parsing the payloads; numbered slots always list, anything
+  else on disk is appended, because a save the listing does not mention is
+  a save you cannot find again.
+- **Every settings write emits `EventBus.settings_changed`**; live systems
+  re-apply from that one seam, and listeners connect a METHOD, never a
+  lambda (below).
+
+### Reading JSON values: `str()` and `JsonValue.truthy()`
+
+`String()` refuses a bool and `bool()` refuses a String, and an absent JSON
+field arrives as `false`, the common case, so a constructor cast on a
+value that came out of JSON raises on ordinary data. Use `str()` for
+Variant-to-text and `JsonValue.truthy(value, fallback)` for "is this field
+set" (`typed_truthy` for a form field where the word "false" means false).
+`ContentDB.load_layered(file)` layers `user://mods/*/data/<file>` over
+`res://data/<file>` with `DataMerger` PATCH semantics in sorted order, and a
+missing file is the normal case. Text a PERSON wrote is markup until
+`BBCode.escape()`d, and `sanitise()` happens on decode, not on input: the
+sender's client is the attacker's client, so a LineEdit `max_length` is
+not a limit.
 
 ### Input is action-based, and Keybinds owns the catalog
 
 Read input with `Input.get_axis()` / `is_action_just_pressed()` — never
 compare `event.keycode` against a constant, which makes the control
 unrebindable. Rebindable actions are declared in ONE place: the `ACTIONS`
-table in `scripts/autoloads/keybinds.gd` (action, default key, label,
-conflict group). Add new actions there, not piecemeal beside their
-consumers.
+table in `scripts/autoloads/keybinds.gd` (action, default key, optional
+`pad` button, label, conflict group). Add new actions there, not piecemeal
+beside their consumers.
 
 Rules Keybinds enforces, each paid for elsewhere:
 
@@ -108,8 +150,42 @@ Rules Keybinds enforces, each paid for elsewhere:
 - **Pollers must check `Keybinds.capturing`** — `Input.get_vector()` and
   friends never see events a rebind-capture UI consumes, so pressing W to
   rebind it also pans the camera unless polling code checks the flag.
-- Bindings store as legible `key:F5` / `mouse:3` strings in settings.cfg,
-  so a support answer can say "put key:F5 back".
+- Bindings store as legible `key:F5` / `mouse:3` / `joy:6` strings in
+  settings.cfg, so a support answer can say "put key:F5 back".
+
+**Controllers: one router, `ui_*` everywhere, focus is the contract.** The
+`Pads` autoload is the ONE reader of raw joypad input: it strips Godot's
+built-in joypad events off `ui_*` at startup and re-synthesises them
+through `PadRouter` (deadzone, dominant axis, held-direction repeat), so
+focus navigation, every menu and the harness's `press` share one
+vocabulary, and a scenario written with `press ui_down` IS the pad path.
+Consequences: a menu that opens without grabbing focus is unreachable by
+pad (`UIFocus.first()` in `open()`); keyboard Escape is BOTH `ui_cancel`
+and `pause`, so a cancel path must skip events that also match pause;
+gating which pad may act is opt-in through the `pad_gate` group.
+
+### UI kit rules
+
+- **The focus ring is the theme's** (`UITheme.focus_ring()` on every
+  focusable class): keyboard and pad navigation are invisible without it.
+  An HSlider has no focus stylebox in Godot, so the ring shows on buttons.
+- **Panels arrive with `UITheme.pop_in()`**, deferred by instance id so a
+  control freed before the deferred call lands is not an error, and
+  pause-mode process so it runs while the tree is paused.
+- **`UiScaleRoot` drives its parent in place** (`attach()` /
+  `attach_if_outermost()`): no reparenting, so `$Path` in the screen's
+  script keeps working; attaching twice scales twice, which is what
+  `attach_if_outermost` refuses when the screen is embedded.
+- **Window scaling snaps to integers above design size** (`GameManager`
+  `_apply_scale_policy`, `snapped_factor`): pixel art stays 1:1 or 2:1
+  and the viewport expands (aspect `expand`, the Template default, which
+  seven of ten projects had switched to). Godot's own `STRETCH_INTEGER`
+  letterboxes instead, measured. Below design size keep the fractional
+  shrink or a Steam Deck crops.
+- **A translation key must not be a position.** `dialogue.<id>-<n>`
+  addressed a line by index, so inserting a line silently repointed every
+  translation below it, in every language. Anything a translator keys off
+  needs an identity that survives a reorder.
 
 ### Missing assets degrade, never error
 
@@ -148,6 +224,12 @@ Temporary debug goes in `scripts/main.gd` and is **always** reverted before
 finishing. Prefer a test over temporary debug entirely: a debug loop leaves
 nothing behind, and every assertion that caught a bug gets deleted the moment
 it passes — a test keeps catching it.
+
+### Third-party licences
+
+`LICENSES.md` is a running ledger. Anything third-party that enters the repo
+gets a row there **in the same commit that adds it**. Keep any licence file
+that ships with a pack where it landed; the ledger only summarises.
 
 ### Headless drivers: a self-freeing autoload behind a `--flag`
 
@@ -199,12 +281,6 @@ right; several were found by two projects independently.
 - **Engine tooltips are unreliable under WSLg** (focus and pointer-chatter
   dependent). `assert_tooltip` reads the tooltip text instead of waiting for
   the popup; a game that draws hints in its own overlay asserts on that.
-
-### Third-party licences
-
-`LICENSES.md` is a running ledger. Anything third-party that enters the repo
-gets a row there **in the same commit that adds it**. Keep any licence file
-that ships with a pack where it landed; the ledger only summarises.
 
 ### Verifying a change
 
@@ -435,3 +511,11 @@ judgment call gets made that the code alone would not explain.
   (`test_zero_is_mute_not_negative_infinity`).
 - A missing UI sound, translation, or asset is silence/fallback, never an
   error (`test_ui_event_with_no_sound_is_silence`).
+- A catalog entry that names a `pad` button lands it in the SECONDARY slot;
+  without one the secondary stays unbound
+  (`test_a_catalog_pad_button_lands_in_the_secondary_slot`,
+  `test_secondary_slot_defaults_unbound_without_a_pad_entry`).
+- A save from a newer schema is refused with a reason, never migrated
+  downward (`test_a_save_from_the_future_is_refused_with_a_reason`).
+- A saved dictionary equals itself coming back, keys in insertion order
+  (`test_a_saved_dictionary_equals_itself_key_order_included`).
