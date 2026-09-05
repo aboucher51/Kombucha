@@ -1,6 +1,6 @@
 # Plan: the Template kit pass
 
-Status: drafted 2026-09-05, not started. Companion to
+Status: landed 2026-09-05 on Template branch `plans/2026-09-05` (tiers A-E, five commits, each green) and the fixture refreshed. The `--kit` report mode and sibling adoption remain. Companion to
 `2026-09-05-absorb-sibling-tooling.md` (tooling) and the record of the kit
 findings that plan defers. Source: the sibling survey of 2026-09-05
 (`docs/research/2026-09-05-sibling-project-lessons.md` and the code-shape

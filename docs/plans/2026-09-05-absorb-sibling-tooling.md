@@ -1,6 +1,6 @@
 # Plan: absorb the sibling projects' tooling improvements into Microbiome
 
-Status: approved 2026-09-05, not started. Companion to
+Status: landed 2026-09-05 on branch `plans/2026-09-05` (tiers 1-5; see the roadmap). The sibling migration in the last section is the remaining work. Companion to
 `2026-09-05-fast-visual-loop.md` (the parked speed plan); tier 1 here
 overlaps its runner fixes, so whichever runs first strikes them for both.
 
