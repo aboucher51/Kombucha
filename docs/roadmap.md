@@ -6,6 +6,15 @@ lesson, then by how mechanical the change is. Each item names its source
 so the reasoning can be re-read. Strike items through as they land and
 are backported.
 
+## Parked plan
+
+`docs/plans/2026-09-05-fast-visual-loop.md`: the speed-first plan for the
+scenario loop (benchmark matrix, unthrottle with a fixed engine clock,
+scenario sharding, Xvfb as the CI fallback) and the headless verdict:
+windowless rendering is not possible in stock Godot, display-less is, and
+it is slower. Revisit before starting tier 1 or 2 below, since it folds
+several of their items in.
+
 ## 0. Ownership (landed 2026-09-05)
 
 - ~~**One source, copied outward.** `tools/tooling-manifest.txt`,
