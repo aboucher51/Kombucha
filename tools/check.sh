@@ -133,7 +133,7 @@ fi
 # a stale copy quietly misses the fixes every other project already has.
 # Only commits that touched an owned path count, so unrelated Microbiome
 # work does not nag.
-TOOLING_SRC="${GODOT_TOOLING:-/mnt/c/Users/Alex/godot-projects/Microbiome}"
+TOOLING_SRC="${GODOT_TOOLING:-/home/alex/godot-projects/Microbiome}"
 if [[ -f tools/TOOLING_VERSION && -f tools/tooling-manifest.txt \
 		&& -d "$TOOLING_SRC/.git" && "$ROOT" != "$TOOLING_SRC" ]]; then
 	SYNCED="$(head -1 tools/TOOLING_VERSION)"

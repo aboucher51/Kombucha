@@ -1,8 +1,10 @@
 # Plan: moving a project to the Linux filesystem (Monmon first)
 
-Status: trial run on Monmon 2026-09-05, measured, NOT cut over. The trial
-copy is at `~/godot-projects/Monmon`; the original on `/mnt/c` is
-untouched and still the source of truth until the cut-over step below.
+Status: 2026-09-05 evening, every project copied to `~/godot-projects`
+(working trees with their uncommitted changes, status counts verified
+equal), the global skills and Microbiome's defaults re-pointed. The
+`/mnt/c` copies still exist and are NOT deleted; the Linux copies are now
+the ones to work in. Drive mapping is still to do on the Windows side.
 
 ## Why
 
