@@ -12,6 +12,7 @@ tools/new-project.sh
 tools/sync-tooling.sh
 tools/tooling-manifest.txt
 tools/seeds/
+tools/make_pseudo_locale.py
 scripts/dev/screenshot_harness.gd
 scripts/dev/debug_console.gd
 scripts/dev/bug_report.gd

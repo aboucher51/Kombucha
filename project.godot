@@ -52,7 +52,7 @@ pause={
 
 [internationalization]
 
-locale/translations=PackedStringArray("res://localization/game.en.translation")
+locale/translations=PackedStringArray("res://localization/game.en.translation", "res://localization/game.xa.translation")
 
 [rendering]
 

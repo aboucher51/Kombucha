@@ -117,7 +117,16 @@ Absent art or translation strings must fall back gracefully. A missing PNG
 or untranslated key is a normal state, not an exception. For strings that
 may be untranslated, use `L10n.tr_or_fallback(key, fallback)`
 (`scripts/util/l10n.gd`); translations live in `localization/game.csv` —
-re-import after editing it. The same rule shapes BugReport
+re-import after editing it. **The localization test is the contract:**
+`tests/test_localization.gd` scans `scripts/` for every `ui.*` key and fails
+when the CSV lacks a row, so a new string is a key plus a row in the same
+commit, never a bare literal. The `xa` column is the pseudo-locale
+(`tools/make_pseudo_locale.py`, re-run after adding strings): every string
+comes out accented, bracketed and ~35% longer, so plain English in
+`scenarios/pseudo_locale.txt`'s shot is a HARDCODED string the scanner
+could not see, and a layout that only fits English breaks visibly. A
+language dropdown must filter `xa` out; the console's `locale xa` reaches
+it. The same rule shapes BugReport
 (`scripts/dev/bug_report.gd`): a report about a broken game must not itself
 refuse to build because the game is broken, so every missing piece becomes a
 line in report.txt instead of a failure.

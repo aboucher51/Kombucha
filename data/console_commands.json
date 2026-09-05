@@ -183,5 +183,16 @@
 				"required": true
 			}
 		]
+	},
+	{
+		"id": "locale",
+		"handler": "locale",
+		"usage": "locale [code]",
+		"args": [
+			{
+				"name": "code",
+				"kind": "string"
+			}
+		]
 	}
 ]

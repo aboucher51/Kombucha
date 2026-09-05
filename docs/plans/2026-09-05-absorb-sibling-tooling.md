@@ -157,6 +157,10 @@ doc. Two match runners / control rows: survey only.
 
 ## After it lands: migrate the siblings
 
+Finding to carry to Monmon: `JSON.get_error_line()` is 0-based on 4.7, so
+its `json_lines.gd` (and `lint.sh` output) reports syntax errors one line
+early; Microbiome's copy adds 1 and has a test pinning it.
+
 Per project: `/sync-godot-tooling --check`; move in-file console handlers to
 `dev_hooks.gd` + `console_commands.project.json`, `_sandbox()` additions to
 `sandbox()`, extra check steps to `check.local.sh`; sync; full check; commit

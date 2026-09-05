@@ -6,10 +6,10 @@ uid="uid://bw75dlwmwxurk"
 
 [deps]
 
-files=["res://localization/game.en.translation"]
+files=["res://localization/game.en.translation", "res://localization/game.xa.translation"]
 
 source_file="res://localization/game.csv"
-dest_files=["res://localization/game.en.translation"]
+dest_files=["res://localization/game.en.translation", "res://localization/game.xa.translation"]
 
 [params]
 

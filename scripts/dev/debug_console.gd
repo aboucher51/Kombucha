@@ -180,6 +180,15 @@ func _dispatch(command: Dictionary, args: Dictionary) -> String:
 		"quit":
 			get_tree().quit()
 			return "Quitting."
+		"locale":
+			var code := str(args.get("code", ""))
+			if code.is_empty():
+				return "%s (loaded: %s)" % [TranslationServer.get_locale(),
+					", ".join(TranslationServer.get_loaded_locales())]
+			if not TranslationServer.get_loaded_locales().has(code) and code != "en":
+				return "ERROR: no translation loaded for '%s'" % code
+			TranslationServer.set_locale(code)
+			return "Locale %s (restart to rebuild UI built at boot)." % code
 		"state":
 			return _handle_state()
 		"assert":

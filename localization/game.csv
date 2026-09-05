@@ -1,4 +1,5 @@
-keys,en
-ui.paused,Paused
-ui.resume,Resume
-ui.quit,Quit
+keys,en,xa
+ui.paused,Paused,[Ƥàùşèđ~~]
+ui.resume,Resume,[Řèşùɱè~~]
+ui.quit,Quit,[Ɋùìŧ~]
+ui.resume_hint,Resume the game,[Řèşùɱè ŧĥè ĝàɱè~~~~~]

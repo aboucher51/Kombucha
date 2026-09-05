@@ -66,6 +66,8 @@ var _fixed_seed := -1
 ## The running scenario's file stem, so shots are named after it: two
 ## scenarios that both `shot boot` used to overwrite each other.
 var _scenario_stem := ""
+## The locale the game booted with, restored between scenarios.
+var _boot_locale := "en"
 
 
 func _ready() -> void:
@@ -78,6 +80,7 @@ func _ready() -> void:
 	# stealing the keyboard from whatever the developer is doing.
 	DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_NO_FOCUS, true)
 
+	_boot_locale = TranslationServer.get_locale()
 	# Before the first await, so it lands ahead of the main scene's _ready —
 	# autoloads are readied before the main scene, which is the only reason
 	# this ordering is available.
@@ -147,6 +150,9 @@ func _sandbox() -> void:
 	Keybinds.reset_to_defaults()
 	for bus_name in AudioManager.BUSES:
 		AudioManager.set_bus_volume(bus_name, 1.0)
+	# The locale is global and survives a scene reload; a scenario that
+	# switched to the pseudo-locale would leave every later shot accented.
+	TranslationServer.set_locale(_boot_locale)
 	# The REAL cursor is global state too: parked over a control it feeds
 	# hover and tooltips into every scenario after the one that moved it.
 	Input.warp_mouse(Vector2(2, 2))
