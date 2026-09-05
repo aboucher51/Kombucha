@@ -6,7 +6,13 @@ lesson, then by how mechanical the change is. Each item names its source
 so the reasoning can be re-read. Strike items through as they land and
 are backported.
 
-## Parked plan
+## Parked plans
+
+`docs/plans/2026-09-05-absorb-sibling-tooling.md`: the approved order for
+pulling the siblings' tooling improvements in (five tiers: runner guards,
+sharded tests, harness commands, rules and driver skeleton, loop-serving
+utilities), what is recorded for a later Template kit pass, and the sibling
+migration order afterwards. Supersedes tiers 1-5 below once started.
 
 `docs/plans/2026-09-05-fast-visual-loop.md`: the speed-first plan for the
 scenario loop (benchmark matrix, unthrottle with a fixed engine clock,
