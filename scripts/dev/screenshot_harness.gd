@@ -144,6 +144,18 @@ func _sandbox() -> void:
 	SaveManager.config_path = "user://sandbox_settings.cfg"
 	SaveManager.current_slot = SaveManager.DEFAULT_SLOT
 	_wipe_dir(SANDBOX_SAVE_ROOT)
+	# Kit seams that exist once the Template kit pass is in (duck-typed, so
+	# a project on older kit is not broken by a tooling sync): mods read
+	# from scratch so a scenario never depends on the machine's mods, and
+	# the pad router's repeat clocks and using_pad flag start clean.
+	if "mods_root" in SaveManager:
+		SaveManager.mods_root = "user://sandbox_mods"
+	var pads := get_node_or_null("/root/Pads")
+	if pads != null:
+		if "router" in pads and pads.router != null and pads.router.has_method("reset"):
+			pads.router.reset()
+		if "using_pad" in pads:
+			pads.using_pad = false
 	# A scenario that rebinds a key edits the (redirected) settings file AND
 	# the live InputMap — the next scenario must start from the default
 	# keyboard. Bus volumes are the same shape of global state.
@@ -162,6 +174,8 @@ func _sandbox() -> void:
 ## Put the machine back exactly as it was found, however the run went.
 func _restore() -> void:
 	_hook("restore")
+	if "mods_root" in SaveManager and "DEFAULT_MODS_ROOT" in SaveManager:
+		SaveManager.mods_root = SaveManager.DEFAULT_MODS_ROOT
 	SaveManager.save_root = SaveManager.DEFAULT_SAVE_ROOT
 	SaveManager.config_path = SaveManager.DEFAULT_CONFIG_PATH
 	SaveManager.current_slot = SaveManager.DEFAULT_SLOT
