@@ -1,0 +1,15 @@
+[
+	{
+		"id": "note",
+		"handler": "note",
+		"usage": "note <text>",
+		"args": [
+			{"name": "text", "kind": "rest"}
+		]
+	},
+	{
+		"id": "notes",
+		"handler": "notes",
+		"usage": "notes"
+	}
+]

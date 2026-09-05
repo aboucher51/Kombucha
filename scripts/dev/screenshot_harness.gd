@@ -29,9 +29,12 @@ extends Node
 ##     expect_fail <command>   fail unless the wrapped command fails
 ##     # comment               ignored, as are blank lines
 ##
-## Everything else goes to _project_command() — the per-project extension
-## seam. When adding UI, add an input-free seam alongside it (a method the
-## harness can call), or the feature is unscreenshotable and untestable.
+## Everything else goes to the project's dev hooks (scripts/dev/dev_hooks.gd,
+## `scenario_command`) and then to the debug console. This file is OWNED BY
+## MICROBIOME and overwritten by /sync-godot-tooling — project commands and
+## project sandbox resets live in dev_hooks.gd, never here. When adding UI,
+## add an input-free seam alongside it (a method the harness can call), or
+## the feature is unscreenshotable and untestable.
 ## `click` synthesises REAL input — prefer it when what you need to prove is
 ## that the player's path works, not that a handler does. Give run-time-built
 ## controls a stable `name`: an auto-named `@Button@3` cannot be clicked.
@@ -93,12 +96,14 @@ func _ready() -> void:
 	get_tree().quit(1 if not failed.is_empty() else 0)
 
 
-## The state every scenario starts from. EXTEND THIS whenever the project
-## grows global state (autoload fields, static vars, files written through to
-## disk) — anything global survives the scene reload between scenarios, and a
-## scenario that leaves it changed poisons every scenario after it. The
-## symptom is always misleading: a scenario that passes alone and fails in
-## the batch, or vice versa.
+## The state every scenario starts from. This resets what every project has
+## (the Template autoloads); the project's OWN global state (autoload fields,
+## static vars, files written through to disk) is reset in dev_hooks.gd's
+## `sandbox()`, which runs right after this. Extend that whenever the project
+## grows global state — anything global survives the scene reload between
+## scenarios, and a scenario that leaves it changed poisons every scenario
+## after it. The symptom is always misleading: a scenario that passes alone
+## and fails in the batch, or vice versa.
 func _sandbox() -> void:
 	# Global and NOT reset by a scene reload; a scenario that pauses and does
 	# not unpause would hang every scenario after it.
@@ -117,10 +122,12 @@ func _sandbox() -> void:
 	Keybinds.reset_to_defaults()
 	for bus_name in AudioManager.BUSES:
 		AudioManager.set_bus_volume(bus_name, 1.0)
+	_hook("sandbox")
 
 
 ## Put the machine back exactly as it was found, however the run went.
 func _restore() -> void:
+	_hook("restore")
 	SaveManager.save_root = SaveManager.DEFAULT_SAVE_ROOT
 	SaveManager.config_path = SaveManager.DEFAULT_CONFIG_PATH
 	SaveManager.current_slot = SaveManager.DEFAULT_SLOT
@@ -211,8 +218,21 @@ func _execute(line: String) -> String:
 ## harness fails on exactly that shape, so a command that merely answers
 ## "false" passes silently: an assertion-like handler must return an error,
 ## never an answer.
-func _project_command(_parts: PackedStringArray, line: String) -> String:
+func _project_command(parts: PackedStringArray, line: String) -> String:
+	var hooks: Object = DebugConsole.hooks
+	if hooks != null and hooks.has_method("scenario_command"):
+		var reply: Variant = await hooks.scenario_command(parts, line)
+		if reply != null:
+			return str(reply)
 	return DebugConsole.execute(line)
+
+
+## Calls an optional dev-hooks method by name; a project without hooks, or
+## without that hook, is the normal case and costs nothing.
+func _hook(method: String) -> void:
+	var hooks: Object = DebugConsole.hooks
+	if hooks != null and hooks.has_method(method):
+		hooks.call(method)
 
 
 func _shot(parts: PackedStringArray) -> String:

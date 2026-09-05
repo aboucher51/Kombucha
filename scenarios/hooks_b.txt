@@ -1,0 +1,6 @@
+# Dev hooks, half two: runs after hooks_a.txt in the batch (glob order).
+# The note it left must be gone, or `sandbox()` in dev_hooks.gd is not
+# being called between scenarios.
+wait 5
+expect_fail assert_note remember me
+notes

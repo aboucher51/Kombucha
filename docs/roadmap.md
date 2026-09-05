@@ -6,6 +6,17 @@ lesson, then by how mechanical the change is. Each item names its source
 so the reasoning can be re-read. Strike items through as they land and
 are backported.
 
+## 0. Ownership (landed 2026-09-05)
+
+- ~~**One source, copied outward.** `tools/tooling-manifest.txt`,
+  `tools/sync-tooling.sh`, `tools/TOOLING_VERSION`, the
+  `/sync-godot-tooling` skill, and the three extension seams
+  (`dev_hooks.gd`, `console_commands.project.json`, `check.local.sh`) so a
+  sync never clobbers project code.~~
+- **Migrate the sibling projects.** Blocked on tiers 1 and 2: syncing today
+  would delete their guards and harness commands. Absorb those here first,
+  then sync each project, moving its in-file customisations into the seams.
+
 ## 1. Runner and check script fixes (small, several projects hit each)
 
 - **Parse-failure guard in `tools/test.sh`.** A test file that fails to

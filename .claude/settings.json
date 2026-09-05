@@ -10,7 +10,10 @@
       "Bash(git status*)",
       "Bash(git diff*)",
       "Bash(git log*)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(tools/sync-tooling.sh*)",
+      "Bash(tools/check.local.sh*)",
+      "Bash(/mnt/c/Users/Alex/godot-projects/Microbiome/tools/sync-tooling.sh*)"
     ]
   }
 }

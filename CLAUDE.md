@@ -17,6 +17,14 @@ Rules that follow from that:
   untested tooling; extend the fixture in the same commit.
 - **`tools/check.sh` green is the bar for every commit**, the same as in a
   game project.
+- **The tooling is owned here and copied outward.** `tools/tooling-manifest.txt`
+  lists the paths every project carries as a copy; `tools/sync-tooling.sh`
+  (the `/sync-godot-tooling` skill) refreshes them and stamps
+  `tools/TOOLING_VERSION`. A project never edits an owned file: it extends
+  through `scripts/dev/dev_hooks.gd`, `data/console_commands.project.json`
+  and `tools/check.local.sh`, which a sync never touches. Seeds for those
+  live in `tools/seeds/`. Without this split, nine projects each carried a
+  diverged harness and the same bug was fixed four times.
 - **Lessons flow two ways.** Findings go in `docs/research/`; rules earn a
   place below as *the rule plus what breaks without it*; both are
   backported to `Template` with the `/update-template` skill so new
@@ -166,6 +174,11 @@ tools/export.sh         # Linux + Windows builds, then smoke-tests the binary
 ```
 
 Use check.sh before saying something works. It names whatever failed.
+Project-specific checks (sims, gates, linters) go in `tools/check.local.sh`,
+which check.sh runs between the boot and the scenarios with `QUICK` set;
+check.sh itself is synced over. When a project's copy of the tooling is
+behind, check.sh says so in a `note:` line — that is the cue to run
+`/sync-godot-tooling`.
 `tools/export.sh` fetches export templates on first run (~1 GB download,
 cached) and applies the same exit-124 convention to the exported binary; CI
 runs it on version tags (`.github/workflows/export.yml`).
@@ -175,8 +188,13 @@ runs it on version tags (`.github/workflows/export.yml`).
 F12 toggles it; `DebugConsole.execute(line) -> String` is the input-free
 seam — scenarios pass unknown commands straight to it, so scenario lines
 and console lines are ONE vocabulary. **A new command needs both halves**:
-its surface (name, aliases, usage, args) in `data/console_commands.json`
-and a handler in the closed `match` in `scripts/dev/debug_console.gd`.
+its surface (name, aliases, usage, args) in
+`data/console_commands.project.json` and a handler in
+`scripts/dev/dev_hooks.gd`'s `console_dispatch()`. The console itself
+(`scripts/dev/debug_console.gd`, `data/console_commands.json`) is a synced
+copy: a handler added to its closed `match` is overwritten by the next
+sync, which is why one project's 600 lines of in-file commands cannot be
+synced today.
 Failures must be returned as `"ERROR: ..."` — the harness fails a scenario
 on exactly that shape, so an assertion-like handler that answers `"false"`
 instead passes silently.
@@ -230,8 +248,9 @@ h]`, `wait <frames>`, `sleep <seconds>` (wall-clock, deliberately ignoring
 `Engine.time_scale`), `click <NodeName>` (synthesises real input — prefer it
 when what you need to prove is that the *player's* path works, not that a
 handler does), `assert_visible`, `assert_onscreen`, `expect_fail`, and `#`
-comments. Project-specific commands go in `_project_command()` — return `""`
-on success, `"ERROR: ..."` on failure. **The harness only fails on
+comments. Project-specific commands go in `scripts/dev/dev_hooks.gd`'s
+`scenario_command()` — return `""` on success, `"ERROR: ..."` on failure,
+`null` to hand the line to the console. **The harness only fails on
 error-shaped replies**, so an assertion command must return an error, never a
 `"false"` answer that passes silently.
 
@@ -249,10 +268,12 @@ Rules that keep the harness useful:
   viewed and hides exactly the detail in question.
 - Scenarios batch into one process and the harness reloads the scene between
   them — but **anything global survives that reload**. When introducing new
-  global state (autoload fields, static vars, write-through files), add it to
-  `_sandbox()` in the harness, or a scenario that changes it poisons every
-  scenario after it. The symptom is always misleading: a scenario that passes
-  alone and fails in the batch, or vice versa.
+  global state (autoload fields, static vars, write-through files), reset it
+  in `sandbox()` in `scripts/dev/dev_hooks.gd` (the harness's own
+  `_sandbox()` is synced over and only knows the Template autoloads), or a
+  scenario that changes it poisons every scenario after it. The symptom is
+  always misleading: a scenario that passes alone and fails in the batch,
+  or vice versa.
 
 ## Interpretation notes (decided + tested)
 

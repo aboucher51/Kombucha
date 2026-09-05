@@ -6,6 +6,10 @@
 #
 # Exits non-zero if anything fails, and prints a summary naming what did.
 # Scenarios need a display (WSLg); --quick is the headless-only subset.
+#
+# OWNED BY MICROBIOME (tools/tooling-manifest.txt) and overwritten by
+# /sync-godot-tooling. Project-specific checks go in tools/check.local.sh,
+# which runs between the boot and the scenarios and is never synced over.
 set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT" || exit 2
@@ -44,6 +48,15 @@ BUDGET_KB=${CHECK_RSS_BUDGET_KB:-400000}
 [[ $RSS_KB -gt 0 && $RSS_KB -lt $BUDGET_KB ]]
 pass_or_fail "boot memory $(( RSS_KB / 1024 )) MB (budget $(( BUDGET_KB / 1024 )) MB)" $?
 
+# The project's own checks (sims, balance gates, linters). It prints lines
+# in the same shape and its exit code is the verdict; QUICK tells it whether
+# a display is available.
+if [[ -x tools/check.local.sh ]]; then
+	echo "── local ──"
+	QUICK=$QUICK tools/check.local.sh
+	pass_or_fail "local checks (tools/check.local.sh)" $?
+fi
+
 if [[ $QUICK -eq 0 ]]; then
 	shopt -s nullglob
 	SCENARIOS=(scenarios/*.txt)
@@ -60,6 +73,23 @@ if [[ $QUICK -eq 0 ]]; then
 			printf '%s\n' "$OUT" | tail -20
 			pass_or_fail "scenarios" $STATUS
 		fi
+	fi
+fi
+
+# A nudge, never a failure: the tooling here is a copy of Microbiome's, and
+# a stale copy quietly misses the fixes every other project already has.
+# Only commits that touched an owned path count, so unrelated Microbiome
+# work does not nag.
+TOOLING_SRC="${GODOT_TOOLING:-/mnt/c/Users/Alex/godot-projects/Microbiome}"
+if [[ -f tools/TOOLING_VERSION && -f tools/tooling-manifest.txt \
+		&& -d "$TOOLING_SRC/.git" && "$ROOT" != "$TOOLING_SRC" ]]; then
+	SYNCED="$(head -1 tools/TOOLING_VERSION)"
+	mapfile -t OWNED < <(grep -vE '^\s*(#|$)' tools/tooling-manifest.txt)
+	BEHIND="$(git -C "$TOOLING_SRC" rev-list --count "$SYNCED"..HEAD -- "${OWNED[@]}" 2>/dev/null || echo "?")"
+	if [[ "$BEHIND" == "?" ]]; then
+		echo "note: tools/TOOLING_VERSION names a commit Microbiome does not have"
+	elif [[ "$BEHIND" -gt 0 ]]; then
+		echo "note: tooling is $BEHIND Microbiome commit(s) behind — run /sync-godot-tooling"
 	fi
 fi
 

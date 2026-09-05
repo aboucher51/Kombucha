@@ -16,9 +16,22 @@ extends Node
 ## the harness fails a scenario on exactly that shape, so an assertion-like
 ## handler must return an error, never a "false" answer that passes
 ## silently.
+##
+## The console (like the harness) is OWNED BY MICROBIOME and overwritten by
+## /sync-godot-tooling. Project commands do not go in this file: their
+## surface goes in data/console_commands.project.json and their behaviour in
+## scripts/dev/dev_hooks.gd (`console_dispatch(handler, args)`), which this
+## file loads lazily and consults for any handler the closed match below
+## does not know. See tools/seeds/dev_hooks.gd for the contract.
 
 const COMMANDS_PATH := "res://data/console_commands.json"
+const PROJECT_COMMANDS_PATH := "res://data/console_commands.project.json"
+const HOOKS_PATH := "res://scripts/dev/dev_hooks.gd"
 const SCROLLBACK := 200
+
+## The project's dev hooks (scripts/dev/dev_hooks.gd), or null when the
+## project has none. Shared with the screenshot harness.
+var hooks: Object = null
 
 var _commands: Array = []
 var _layer: CanvasLayer = null
@@ -31,12 +44,38 @@ var _lines: Array[String] = []
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	var text := FileAccess.get_file_as_string(COMMANDS_PATH)
+	_commands = _load_commands(COMMANDS_PATH, true)
+	_commands.append_array(_load_commands(PROJECT_COMMANDS_PATH, false))
+	hooks = _load_hooks()
+
+
+## `required` files must parse; the project file may simply be absent.
+func _load_commands(path: String, required: bool) -> Array:
+	if not required and not FileAccess.file_exists(path):
+		return []
+	var text := FileAccess.get_file_as_string(path)
 	var data: Variant = JSON.parse_string(text) if not text.is_empty() else null
 	if data is Array:
-		_commands = data
-	else:
-		push_error("DebugConsole: cannot parse %s" % COMMANDS_PATH)
+		return data
+	push_error("DebugConsole: cannot parse %s" % path)
+	return []
+
+
+## Loaded by path, not class_name, and after the autoloads are up: a hooks
+## script names game classes, and naming it from an autoload's script body
+## would pull those into the load that runs before autoloads finish.
+func _load_hooks() -> Object:
+	if not ResourceLoader.exists(HOOKS_PATH):
+		return null
+	var script: Script = load(HOOKS_PATH)
+	if script == null:
+		push_error("DebugConsole: %s failed to load" % HOOKS_PATH)
+		return null
+	var instance: Object = script.new()
+	if instance is Node:
+		(instance as Node).name = "DevHooks"
+		add_child(instance)
+	return instance
 
 
 func _input_event_toggle(event: InputEvent) -> bool:
@@ -79,10 +118,11 @@ func execute(line: String) -> String:
 
 
 ## The handler registry — a closed match, so a typo in the JSON warns
-## instead of reaching something arbitrary. ADD PROJECT HANDLERS HERE, with
-## their surface in data/console_commands.json.
+## instead of reaching something arbitrary. Project handlers live in
+## dev_hooks.gd, NOT here: this file is overwritten on every tooling sync.
 func _dispatch(command: Dictionary, args: Dictionary) -> String:
-	match command.get("handler", ""):
+	var handler: String = command.get("handler", "")
+	match handler:
 		"help":
 			return _handle_help(args)
 		"clear":
@@ -141,7 +181,11 @@ func _dispatch(command: Dictionary, args: Dictionary) -> String:
 			get_tree().quit()
 			return "Quitting."
 		_:
-			return "ERROR: command '%s' names unknown handler '%s'" % [command["id"], command.get("handler", "")]
+			if hooks != null and hooks.has_method("console_dispatch"):
+				var reply: Variant = hooks.console_dispatch(handler, args)
+				if reply != null:
+					return str(reply)
+			return "ERROR: command '%s' names unknown handler '%s'" % [command["id"], handler]
 
 
 func _handle_help(args: Dictionary) -> String:

@@ -1,0 +1,10 @@
+# Dev hooks, half one: a console command from the PROJECT json reaches the
+# project's console_dispatch, and a scenario command reaches
+# scenario_command. Leaves a note behind on purpose — hooks_b.txt proves
+# the sandbox hook clears it between scenarios.
+wait 5
+note remember me
+notes
+assert_note remember me
+expect_fail assert_note never written
+expect_fail assert_note
