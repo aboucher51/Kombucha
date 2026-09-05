@@ -140,6 +140,57 @@ finishing. Prefer a test over temporary debug entirely: a debug loop leaves
 nothing behind, and every assertion that caught a bug gets deleted the moment
 it passes — a test keeps catching it.
 
+### Headless drivers: a self-freeing autoload behind a `--flag`
+
+A dev mode that runs from the command line (a sim, a balance gate, a linter,
+a bench) is an **autoload that frees itself when its flag is absent**, never
+a `-s` tool script: `-s` scripts run WITHOUT autoloads, so any class that
+names one fails to compile there with a misleading "identifier not found",
+and a class cycle that only resolves once the autoloads register cannot
+compile at all. `tools/seeds/dev_driver.gd` is the skeleton
+(`Cmdline.has_flag`, `queue_free()`, `call_deferred`, `quit(status)`);
+`scripts/dev/selftest_driver.gd` is the fixture's copy. The exit code is the
+verdict, so `check.sh` can gate on it — and **a gate must be proven able to
+fail**: restore the bug it guards against once, watch it go red, then trust
+it. One project's balance gate was verified by restoring an exploitable heal
+and confirming red; another's AI "still beats random" check regressed to a
+coin flip twice from a sign error nothing else noticed.
+
+### Godot pitfalls the harness has caught
+
+Each of these was found by a screenshot or a scenario after the code looked
+right; several were found by two projects independently.
+
+- **Anchor before the tree, or anchor-and-offset.** `set_anchors_preset()`
+  on a Control already in the tree preserves its current rect by writing
+  compensating offsets, so a fresh 0-size Control "anchored full-rect" in
+  its own `_ready()` stays 0×0 and everything inside piles into the
+  top-left. Use `set_anchors_and_offsets_preset()`, or set anchors before
+  `add_child()`. And `Control.position` on an anchored control is
+  parent-relative: place with `offset_*`. (Two projects, independently.)
+- **A child's `_ready()` runs before its parent's, and groups are not filled
+  yet.** A pause menu asked in `_ready()` whether a match was running,
+  always got no, and its Save button had never once appeared in a running
+  game; nothing asserted it. Ask in `open()`, when the answer is knowable.
+- **Signals from an autoload need a method, not a lambda.** Godot drops a
+  connection whose bound object was freed, but a lambda is bound to
+  nothing; it merely captures `self`. A scene node's lambda connected to an
+  autoload signal outlives the scene and fails on the next emit with
+  "Lambda capture at index 0 was freed". Same for any lambda capturing a
+  thing that can die first (a tween callback capturing a sprite): bind an
+  id and look it up.
+- **A code-built UI tree must theme itself.** A Control under a bare
+  CanvasLayer inherits no theme, renders Godot's translucent defaults, and
+  the game bleeds through its panels; it looks like a layout bug and is one
+  missing `theme = UITheme.get_theme()` in the subtree's own `_ready()`.
+- **`Image.load()` on a `res://` path fails the suite.** It logs "loaded
+  resource as image file, this will not work on export", which counts as an
+  engine error. Decode from bytes: `FileAccess.get_file_as_bytes` plus
+  `Image.load_png_from_buffer`.
+- **Engine tooltips are unreliable under WSLg** (focus and pointer-chatter
+  dependent). `assert_tooltip` reads the tooltip text instead of waiting for
+  the popup; a game that draws hints in its own overlay asserts on that.
+
 ### Third-party licences
 
 `LICENSES.md` is a running ledger. Anything third-party that enters the repo
@@ -253,6 +304,13 @@ func test_scene_builds_and_handlers_run() -> void:
 
 This complements the screenshot harness: the harness proves the player's
 path renders; this proves the wiring survives a refactor, cheaply, in CI.
+
+**Frame-rate independence recipe** (for any pure simulation): run the same
+seeded scenario twice at two `dt`s (1/30 and 1/120), record the sim-time at
+which each event first became true rather than the end state (an end-state
+comparison passes trivially once both runs finish), compare timestamps with
+a tolerance you can derive (one slow tick per stage boundary) and discrete
+counters exactly. Anything that drifts is accumulating delta somewhere.
 
 ### Seeing the game (screenshot harness)
 

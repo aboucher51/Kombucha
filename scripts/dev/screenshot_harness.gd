@@ -69,7 +69,7 @@ var _scenario_stem := ""
 
 
 func _ready() -> void:
-	var scenario_paths := _user_args("--scenario")
+	var scenario_paths := Cmdline.values("--scenario")
 	if scenario_paths.is_empty():
 		queue_free()
 		return
@@ -81,7 +81,7 @@ func _ready() -> void:
 	# Before the first await, so it lands ahead of the main scene's _ready —
 	# autoloads are readied before the main scene, which is the only reason
 	# this ordering is available.
-	var seed_arg := _user_arg("--seed")
+	var seed_arg := Cmdline.value("--seed")
 	if not seed_arg.is_empty():
 		_fixed_seed = int(seed_arg)
 		seed(_fixed_seed)
@@ -593,18 +593,3 @@ func _wipe_dir(dir_path: String) -> void:
 			dir.remove(file_name)
 		file_name = dir.get_next()
 	dir.list_dir_end()
-
-
-## Every `--<name> <value>` in the post-`--` arguments, in order.
-func _user_args(name: String) -> Array[String]:
-	var values: Array[String] = []
-	var args := OS.get_cmdline_user_args()
-	for index in args.size():
-		if args[index] == name and index + 1 < args.size():
-			values.append(args[index + 1])
-	return values
-
-
-func _user_arg(name: String) -> String:
-	var values := _user_args(name)
-	return values[0] if not values.is_empty() else ""

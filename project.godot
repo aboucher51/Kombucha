@@ -20,6 +20,7 @@ AudioManager="*res://scripts/autoloads/audio_manager.gd"
 GameManager="*res://scripts/autoloads/game_manager.gd"
 DebugConsole="*res://scripts/dev/debug_console.gd"
 ScreenshotHarness="*res://scripts/dev/screenshot_harness.gd"
+SelftestDriver="*res://scripts/dev/selftest_driver.gd"
 
 [display]
 

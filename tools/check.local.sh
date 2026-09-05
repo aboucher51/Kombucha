@@ -22,6 +22,19 @@ else
 	printf '  FAIL  console_commands.project.json is not a JSON list\n'; MISSING=1
 fi
 
+# The headless driver pattern (tools/seeds/dev_driver.gd), both verdicts:
+# the exit code is the gate, and a gate must be proven able to fail.
+if timeout 30 "${GODOT:-godot4}" --headless --path . -- --selftest >/dev/null 2>&1; then
+	printf '  ok    selftest driver exits 0\n'
+else
+	printf '  FAIL  selftest driver did not exit 0\n'; MISSING=1
+fi
+if timeout 30 "${GODOT:-godot4}" --headless --path . -- --selftest --selftest-fail >/dev/null 2>&1; then
+	printf '  FAIL  selftest driver cannot go red\n'; MISSING=1
+else
+	printf '  ok    selftest driver goes red on demand\n'
+fi
+
 # The runner's own guards, proven against a scratch copy (see selftest.sh).
 tools/selftest.sh || MISSING=1
 exit $MISSING
