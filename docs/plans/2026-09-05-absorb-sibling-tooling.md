@@ -129,8 +129,8 @@ fix the dependency, never reorder shards.
 
 ## Recorded, not ported: the kit findings
 
-Write `docs/research/2026-09-05-kit-findings.md` for the later Template
-pass, from the second survey. Headline items, each found in two projects
+Planned separately in `2026-09-05-template-kit-pass.md`, which is also the
+record of the findings. Headline items, each found in two projects
 independently unless noted: `JSON.stringify(data, "\t", false)` in
 SaveManager (sorted keys make a saved dictionary unequal to itself; Template
 is wrong today); the `save_provider` group seam filling Template's empty

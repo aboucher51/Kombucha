@@ -14,6 +14,11 @@ sharded tests, harness commands, rules and driver skeleton, loop-serving
 utilities), what is recorded for a later Template kit pass, and the sibling
 migration order afterwards. Supersedes tiers 1-5 below once started.
 
+`docs/plans/2026-09-05-template-kit-pass.md`: the game-kit fixes the survey
+found (SaveManager sorted keys, save-provider seam, stretch aspect,
+controller support, UI scale root rework, focus ring, data rules). Lands in
+the Template, not here; Microbiome's fixture is refreshed after each tier.
+
 `docs/plans/2026-09-05-fast-visual-loop.md`: the speed-first plan for the
 scenario loop (benchmark matrix, unthrottle with a fixed engine clock,
 scenario sharding, Xvfb as the CI fallback) and the headless verdict:
