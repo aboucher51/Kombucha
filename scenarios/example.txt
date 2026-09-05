@@ -1,0 +1,8 @@
+# Smoke scenario: boot the main scene, check the title is on screen, shoot it.
+# Write a NEW scenario for whatever you are working on rather than editing
+# this one — scenarios are cheap and batching them is the point.
+wait 10
+assert_visible TitleLabel
+assert_onscreen TitleLabel
+shot boot
+expect_fail click NoSuchButton

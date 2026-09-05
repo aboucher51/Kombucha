@@ -1,0 +1,11 @@
+# Pause menu: open with the pause action, check it, resume via its button.
+wait 10
+expect_fail assert_visible ResumeButton
+press pause
+assert_visible PausedLabel
+assert_visible MasterSlider
+assert_onscreen Panel
+shot pause-open
+click ResumeButton
+expect_fail assert_visible ResumeButton
+shot resumed

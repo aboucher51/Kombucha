@@ -1,0 +1,40 @@
+# Godot editor data — never commit
+.godot/
+
+# Local session memory, appended by the global PostCompact hook — not history
+claude-log.md
+
+# Screenshot harness output (and the .import sidecars the editor generates
+# for PNGs that land inside res://)
+shots/*
+!shots/.gitkeep
+
+# Export artifacts
+*.apk
+*.aab
+*.ipa
+*.exe
+*.x86_64
+*.x86_32
+*.arm32
+*.arm64
+*.pck
+*.zip
+export/
+builds/
+
+# C# / Mono build output (if a project adds C#)
+.mono/
+bin/
+obj/
+*.csproj.user
+*.sln.user
+*.user
+
+# IDE and OS files
+.vs/
+.vscode/settings.json
+.idea/
+*.swp
+.DS_Store
+Thumbs.db

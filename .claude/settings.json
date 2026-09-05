@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(tools/check.sh*)",
+      "Bash(tools/test.sh*)",
+      "Bash(tools/shoot.sh*)",
+      "Bash(godot4 --headless --path . --import)",
+      "Bash(timeout * godot4 --headless --path .*)",
+      "Bash(echo \"EXIT=$?\")",
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git add *)"
+    ]
+  }
+}

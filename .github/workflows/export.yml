@@ -1,0 +1,39 @@
+# Builds both release presets on a version tag and attaches them to the
+# run as artifacts. Deliberately dumb: no signing, no store uploads — the
+# deliverable is "a stranger can download and run the build".
+#
+# tools/export.sh does all the real work (template fetch, export, headless
+# smoke test of the built binary), so CI and a developer's machine cannot
+# drift apart.
+name: export
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Godot 4.7
+        run: |
+          curl -fL --retry 3 -o /tmp/godot.zip \
+            https://github.com/godotengine/godot/releases/download/4.7-stable/Godot_v4.7-stable_linux.x86_64.zip
+          unzip -q /tmp/godot.zip -d /tmp
+          sudo install /tmp/Godot_v4.7-stable_linux.x86_64 /usr/local/bin/godot4
+
+      - name: Export and smoke-test
+        run: tools/export.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux
+          path: builds/linux/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: builds/windows/

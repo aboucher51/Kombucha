@@ -1,0 +1,11 @@
+# Console commands run as scenario lines — same vocabulary, one seam.
+wait 5
+volume Music 80
+binds
+save scenario_probe
+saves
+load scenario_probe
+delete_save scenario_probe
+expect_fail load scenario_probe
+expect_fail frobnicate
+shot console-done

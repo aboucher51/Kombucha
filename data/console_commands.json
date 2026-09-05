@@ -1,0 +1,104 @@
+[
+	{
+		"id": "help",
+		"handler": "help",
+		"aliases": ["?"],
+		"usage": "help [command]",
+		"args": [
+			{"name": "command", "kind": "string"}
+		]
+	},
+	{
+		"id": "clear",
+		"handler": "clear",
+		"usage": "clear"
+	},
+	{
+		"id": "save",
+		"handler": "save",
+		"usage": "save [slot]",
+		"args": [
+			{"name": "slot", "kind": "string"}
+		]
+	},
+	{
+		"id": "load",
+		"handler": "load",
+		"usage": "load [slot]",
+		"args": [
+			{"name": "slot", "kind": "string"}
+		]
+	},
+	{
+		"id": "saves",
+		"handler": "saves",
+		"usage": "saves"
+	},
+	{
+		"id": "delete_save",
+		"handler": "delete_save",
+		"usage": "delete_save <slot>",
+		"args": [
+			{"name": "slot", "kind": "string", "required": true}
+		]
+	},
+	{
+		"id": "volume",
+		"handler": "volume",
+		"usage": "volume <bus> <0-100>",
+		"args": [
+			{"name": "bus", "kind": "enum", "values": ["Master", "Music", "SFX"], "required": true},
+			{"name": "percent", "kind": "int", "min": 0, "max": 100, "required": true}
+		]
+	},
+	{
+		"id": "bind",
+		"handler": "bind",
+		"usage": "bind <action> <key-or-mouse:N> [slot]",
+		"args": [
+			{"name": "action", "kind": "string", "required": true},
+			{"name": "key", "kind": "string", "required": true},
+			{"name": "slot", "kind": "int", "default": 0, "min": 0, "max": 1}
+		]
+	},
+	{
+		"id": "unbind",
+		"handler": "unbind",
+		"usage": "unbind <action> [slot]",
+		"args": [
+			{"name": "action", "kind": "string", "required": true},
+			{"name": "slot", "kind": "int", "default": 0, "min": 0, "max": 1}
+		]
+	},
+	{
+		"id": "binds",
+		"handler": "binds",
+		"usage": "binds"
+	},
+	{
+		"id": "seed",
+		"handler": "seed",
+		"usage": "seed <n>",
+		"args": [
+			{"name": "n", "kind": "int", "required": true}
+		]
+	},
+	{
+		"id": "restart",
+		"handler": "restart",
+		"usage": "restart"
+	},
+	{
+		"id": "report",
+		"handler": "report",
+		"usage": "report [note]",
+		"args": [
+			{"name": "note", "kind": "rest"}
+		]
+	},
+	{
+		"id": "quit",
+		"handler": "quit",
+		"usage": "quit"
+	}
+]
