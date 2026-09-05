@@ -4,7 +4,7 @@ What the surveys in `docs/research/` asked for, what landed on
 2026-09-05, and what is left. Plans live in `docs/plans/`; each says its
 own status at the top.
 
-## Landed 2026-09-05 (branch `plans/2026-09-05`, Microbiome and Template)
+## Landed 2026-09-05 (branch `plans/2026-09-05`, Kombucha and Template)
 
 - **Ownership**: manifest, `sync-tooling.sh`, `TOOLING_VERSION`, the
   `/sync-godot-tooling` skill, and the three extension seams

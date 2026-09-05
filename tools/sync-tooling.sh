@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
-# Copies the tooling Microbiome owns (tools/tooling-manifest.txt) into a
+# Copies the tooling Kombucha owns (tools/tooling-manifest.txt) into a
 # project, seeds the project's extension files if absent, stamps the
-# Microbiome commit it came from, and runs the project's quick check.
+# Kombucha commit it came from, and runs the project's quick check.
 #
 #   tools/sync-tooling.sh <project-dir>            sync, then check --quick
 #   tools/sync-tooling.sh <project-dir> --check    report drift only, no writes
 #   tools/sync-tooling.sh <project-dir> --no-check sync without running check
 #
-# Run from Microbiome (this script's own repo), or from anywhere via the
+# Run from Kombucha (this script's own repo), or from anywhere via the
 # /sync-godot-tooling skill. Drift in an owned file means the project edited
-# tooling in place: back the change up to Microbiome first (or move it into
+# tooling in place: back the change up to Kombucha first (or move it into
 # dev_hooks.gd / check.local.sh), because the sync overwrites it.
 set -uo pipefail
 GODOT="${GODOT:-godot4}"
@@ -30,7 +30,7 @@ mapfile -t OWNED < <(grep -vE '^\s*(#|$)' "$SRC/tools/tooling-manifest.txt")
 
 # A dirty source would stamp a commit the copied files do not match.
 if [[ "$MODE" != "--check" ]] && [[ -n "$(git -C "$SRC" status --porcelain -- "${OWNED[@]}")" ]]; then
-	echo "sync-tooling: Microbiome has uncommitted changes to owned files — commit them first" >&2
+	echo "sync-tooling: Kombucha has uncommitted changes to owned files — commit them first" >&2
 	exit 2
 fi
 
@@ -48,7 +48,7 @@ for entry in "${OWNED[@]}"; do
 		echo "  new    $entry"; drift=1
 	fi
 done
-[[ $drift -eq 0 ]] && echo "  same   every owned path matches Microbiome"
+[[ $drift -eq 0 ]] && echo "  same   every owned path matches Kombucha"
 
 if [[ "$MODE" == "--check" ]]; then
 	exit $drift

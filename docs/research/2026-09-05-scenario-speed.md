@@ -44,7 +44,7 @@ either.
 
 | Project | On `/mnt/c` (WSL bridge) | On the Linux filesystem |
 |---|---|---|
-| Microbiome fixture (small) | 1.8–1.9 s | not measured |
+| Kombucha fixture (small) | 1.8–1.9 s | not measured |
 | FrogGame (428 MB) | 10.7–10.9 s | 0.7–0.8 s |
 
 Every process pays it: each test shard, the boot check, each scenario

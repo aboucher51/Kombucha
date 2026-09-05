@@ -1,8 +1,8 @@
-# Paths OWNED by Microbiome. tools/sync-tooling.sh copies each of these
+# Paths OWNED by Kombucha. tools/sync-tooling.sh copies each of these
 # into a project (directories are mirrored, with deletions); a project must
 # not edit them — its extensions go in dev_hooks.gd, check.local.sh and
 # console_commands.project.json, which are never listed here.
-# check.sh counts Microbiome commits touching these paths to say how far
+# check.sh counts Kombucha commits touching these paths to say how far
 # behind a project's copy is.
 tools/test.sh
 tools/check.sh

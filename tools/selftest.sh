@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # The tooling's own gate: proves tools/test.sh catches what it claims to,
-# against a scratch copy of this project. Microbiome-only (the fixture's,
+# against a scratch copy of this project. Kombucha-only (the fixture's,
 # not owned): a game project has nothing to prove here.
 #
 #   tools/selftest.sh      exit 0 when every guard fires and the shards agree

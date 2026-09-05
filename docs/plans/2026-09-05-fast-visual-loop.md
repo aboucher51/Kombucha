@@ -55,7 +55,7 @@ and resolution.
 
 ## Phase 1: benchmark matrix (nothing committed until these are recorded)
 
-All runs from Microbiome unless noted; each config run **twice**; record
+All runs from Kombucha unless noted; each config run **twice**; record
 wall time (`/usr/bin/time -f 'wall=%e'`), Godot's startup adapter line,
 `md5sum shots/*.png`, exit code, engine-error count. Log to the scratchpad,
 one file per row. Determinism = identical md5 set between the two runs.
@@ -80,7 +80,7 @@ Two things to know before reading the numbers:
 | W1-W3 | pacing, isolated | the wait-heavy scratch scenario under B1, B2 and B3 flags | the unthrottle gain by itself: `wait 600` is 10 s at 60 Hz; W3 also shows `sleep 2` becoming 120 fast game frames under fixed-fps |
 | B4 | resolution | B3 with `--resolution 640x360` | pixel cost; only worth it if B3 is still slow |
 | B5 | CPU render cost | B3 with `LIBGL_ALWAYS_SOFTWARE=1` | what CI (llvmpipe) will cost relative to the GPU; adapter line must say llvmpipe |
-| B6 | boot cost | `/usr/bin/time timeout 30 godot4 --headless --path <p> --quit` for Microbiome and FrogGame, on `/mnt/c` and after `cp -r` to `~/tmp/`; also with `--audio-driver Dummy` | whether filesystem location is the dominant cost for real projects, and whether PulseAudio init is worth skipping |
+| B6 | boot cost | `/usr/bin/time timeout 30 godot4 --headless --path <p> --quit` for Kombucha and FrogGame, on `/mnt/c` and after `cp -r` to `~/tmp/`; also with `--audio-driver Dummy` | whether filesystem location is the dominant cost for real projects, and whether PulseAudio init is worth skipping |
 | B6b | boot cost, Windows binary | only after a Windows 4.7 **console** build is installed (none found here): `Godot_v4.7-stable_win64_console.exe --path "$(wslpath -w $PWD)" --quit-after 2` | the interop lever; also whether `timeout` kills it (it only kills the WSL stub; see step 3) |
 | B7 | real workload | FrogGame: `tools/shoot.sh` as-is vs the B3 flags passed through (edit nothing; invoke godot4 directly with its scenarios) | the numbers that matter: 36 scenarios, today 85 s |
 | B8 | parallelism | two shoot processes at once, half the fixture scenarios each, each with its own `XDG_DATA_HOME` (as `FrogGame/tools/test.sh` shards do) and its own shots directory | whether the sandbox collides and what the wall-time gain is. Note shot names already collide today: numbering restarts at 01 per scenario, so two scenarios that both `shot boot` overwrite each other; in parallel that becomes a race |

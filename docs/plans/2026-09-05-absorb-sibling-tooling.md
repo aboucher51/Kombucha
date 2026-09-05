@@ -1,4 +1,4 @@
-# Plan: absorb the sibling projects' tooling improvements into Microbiome
+# Plan: absorb the sibling projects' tooling improvements into Kombucha
 
 Status: landed 2026-09-05 on branch `plans/2026-09-05` (tiers 1-5; see the roadmap). The sibling migration in the last section is the remaining work. Companion to
 `2026-09-05-fast-visual-loop.md` (the parked speed plan); tier 1 here
@@ -7,7 +7,7 @@ overlaps its runner fixes, so whichever runs first strikes them for both.
 ## Context
 
 Nine game projects were scaffolded from the Template and each improved the
-tooling in place. Microbiome now owns that tooling (manifest + sync skill),
+tooling in place. Kombucha now owns that tooling (manifest + sync skill),
 but its copy is the *oldest*: it lacks fixes that up to four projects made
 independently, and syncing any sibling today would delete their work. This
 plan pulls in every generic tooling improvement so the siblings can then be
@@ -159,12 +159,12 @@ doc. Two match runners / control rows: survey only.
 
 Finding to carry to Monmon: `JSON.get_error_line()` is 0-based on 4.7, so
 its `json_lines.gd` (and `lint.sh` output) reports syntax errors one line
-early; Microbiome's copy adds 1 and has a test pinning it.
+early; Kombucha's copy adds 1 and has a test pinning it.
 
 Per project: `/sync-godot-tooling --check`; move in-file console handlers to
 `dev_hooks.gd` + `console_commands.project.json`, `_sandbox()` additions to
 `sandbox()`, extra check steps to `check.local.sh`; sync; full check; commit
-naming the Microbiome commit. Order: Template, Digit, Tandem, Zoofle (no
+naming the Kombucha commit. Order: Template, Digit, Tandem, Zoofle (no
 harness changes), then Orbit, procedural-factory, BossFights, Monmon,
 FrogGame, NavalWar (most in-file customisation last).
 

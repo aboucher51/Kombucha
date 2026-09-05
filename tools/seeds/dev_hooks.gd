@@ -1,6 +1,6 @@
 extends Node
 ## Project dev hooks — the ONE file where a project extends the shared debug
-## console and screenshot harness. Those two scripts are owned by Microbiome
+## console and screenshot harness. Those two scripts are owned by Kombucha
 ## and overwritten by /sync-godot-tooling; this file is yours and never
 ## touched by a sync. Every method below is optional: delete what you do
 ## not need, the tooling checks `has_method()` before calling.

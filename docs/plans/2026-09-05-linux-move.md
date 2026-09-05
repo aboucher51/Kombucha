@@ -2,7 +2,7 @@
 
 Status: 2026-09-05 evening, every project copied to `~/godot-projects`
 (working trees with their uncommitted changes, status counts verified
-equal), the global skills and Microbiome's defaults re-pointed. The
+equal), the global skills and Kombucha's defaults re-pointed. The
 `/mnt/c` copies still exist and are NOT deleted; the Linux copies are now
 the ones to work in. Drive mapping is still to do on the Windows side.
 
@@ -80,5 +80,5 @@ current tooling would shard the tests on top of this.
 Monmon (trial done), then the projects with the most engine processes per
 check: NavalWar (86 test files, 61 scenarios), FrogGame (52 / 36), Orbit,
 BossFights, procedural-factory, Zoofle, Tandem, Digit. The Template and
-Microbiome last, with `GODOT_TEMPLATE` and `GODOT_TOOLING` set in the shell
+Kombucha last, with `GODOT_TEMPLATE` and `GODOT_TOOLING` set in the shell
 profile before the scaffold and sync skills are used again.

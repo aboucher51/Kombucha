@@ -129,20 +129,20 @@ if [[ $QUICK -eq 0 ]]; then
 	fi
 fi
 
-# A nudge, never a failure: the tooling here is a copy of Microbiome's, and
+# A nudge, never a failure: the tooling here is a copy of Kombucha's, and
 # a stale copy quietly misses the fixes every other project already has.
-# Only commits that touched an owned path count, so unrelated Microbiome
+# Only commits that touched an owned path count, so unrelated Kombucha
 # work does not nag.
-TOOLING_SRC="${GODOT_TOOLING:-/home/alex/godot-projects/Microbiome}"
+TOOLING_SRC="${GODOT_TOOLING:-/home/alex/godot-projects/Kombucha}"
 if [[ -f tools/TOOLING_VERSION && -f tools/tooling-manifest.txt \
 		&& -d "$TOOLING_SRC/.git" && "$ROOT" != "$TOOLING_SRC" ]]; then
 	SYNCED="$(head -1 tools/TOOLING_VERSION)"
 	mapfile -t OWNED < <(grep -vE '^\s*(#|$)' tools/tooling-manifest.txt)
 	BEHIND="$(git -C "$TOOLING_SRC" rev-list --count "$SYNCED"..HEAD -- "${OWNED[@]}" 2>/dev/null || echo "?")"
 	if [[ "$BEHIND" == "?" ]]; then
-		echo "note: tools/TOOLING_VERSION names a commit Microbiome does not have"
+		echo "note: tools/TOOLING_VERSION names a commit Kombucha does not have"
 	elif [[ "$BEHIND" -gt 0 ]]; then
-		echo "note: tooling is $BEHIND Microbiome commit(s) behind — run /sync-godot-tooling"
+		echo "note: tooling is $BEHIND Kombucha commit(s) behind — run /sync-godot-tooling"
 	fi
 fi
 

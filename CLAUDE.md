@@ -2,7 +2,7 @@
 
 ## What this repo is
 
-Microbiome is the workshop for the Godot-to-Claude workflow itself: the
+Kombucha is the workshop for the Godot-to-Claude workflow itself: the
 test runner, check script, screenshot harness, debug console, sandbox rules
 and the conventions in this file. It is **not a game**. The scene,
 autoloads, tests and scenarios here are a fixture that exists so the

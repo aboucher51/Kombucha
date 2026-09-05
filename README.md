@@ -1,4 +1,4 @@
-# Microbiome
+# Kombucha
 
 The home of the Godot-to-Claude workflow: the loop by which Claude Code
 edits a Godot project, proves the change headlessly, looks at it through
@@ -30,7 +30,7 @@ human at the keyboard.
 ## How other projects get it
 
 Every project carries a copy of the paths in `tools/tooling-manifest.txt`,
-stamped with the Microbiome commit in `tools/TOOLING_VERSION`. The global
+stamped with the Kombucha commit in `tools/TOOLING_VERSION`. The global
 `/sync-godot-tooling` skill (which runs `tools/sync-tooling.sh`) refreshes
 the copy, and each project's `check.sh` says when it is behind. Projects
 extend the tooling only through `scripts/dev/dev_hooks.gd`,
