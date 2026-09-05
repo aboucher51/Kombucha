@@ -1,0 +1,9 @@
+# assert_onscreen: Controls, Node3D through the live camera, and refusals.
+wait 5
+assert_onscreen TitleLabel
+assert_onscreen Cube
+expect_fail assert_onscreen Behind
+expect_fail assert_onscreen Twin
+expect_fail assert_onscreen Nowhere
+expect_fail assert_onscreen Camera3D
+shot cube

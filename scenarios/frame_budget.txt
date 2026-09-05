@@ -1,0 +1,6 @@
+# Frame-time tripwire on the fixture scene. The budget is generous on
+# purpose: what it catches is the same scene on the same machine becoming
+# several times more expensive. The number is printed even on pass.
+wait 5
+frame_budget 100 30
+expect_fail frame_budget 0.0001 8

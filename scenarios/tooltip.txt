@@ -1,0 +1,11 @@
+# hover moves the real mouse and checks the GUI agrees; assert_tooltip reads
+# the tooltip text without waiting for the engine's popup.
+wait 5
+press pause
+hover ResumeButton
+assert_tooltip ResumeButton Resume the game
+expect_fail assert_tooltip ResumeButton Nope
+expect_fail assert_tooltip QuitButton Quit
+expect_fail hover Nowhere
+click ResumeButton
+expect_fail assert_visible ResumeButton

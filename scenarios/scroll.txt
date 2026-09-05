@@ -1,0 +1,10 @@
+# A row below the fold is visible but not clickable until scrolled into
+# view: click lands where the rect is, outside the viewport.
+wait 5
+click Row30
+expect_fail assert last_row Row30
+scroll_to Row30
+click Row30
+assert last_row Row30
+shot scrolled 16 584 200 120
+expect_fail scroll_to TitleLabel

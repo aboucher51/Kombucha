@@ -1,0 +1,12 @@
+# settle waits for the group to go idle and FAILS when it does not;
+# ticks waits physics frames.
+wait 5
+busy 30
+assert busy yes
+settle 2
+assert busy no
+ticks 3
+busy 100000
+expect_fail settle 0.2
+busy 0
+assert busy no

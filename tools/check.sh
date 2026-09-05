@@ -113,6 +113,17 @@ if [[ $QUICK -eq 0 ]]; then
 			printf '  ok    %d scenario(s)\n' "${#SCENARIOS[@]}"
 			printf '%s\n' "$OUT" | grep -E '^scenario ok:' | sed 's/^scenario ok: /        /'
 			printf '%s\n' "$OUT" | grep -m1 '^harness: renderer' | sed 's/^harness: /        /'
+			# The frame-time budget rides inside the scenario run; going over
+			# fails that scenario like any other assertion. Surfacing the
+			# number here too is what makes the TREND legible.
+			echo "── frames ──"
+			FRAMES="$(printf '%s\n' "$OUT" | grep -m1 'frames:' || true)"
+			if [[ -n "$FRAMES" ]]; then
+				printf '  ok    %s\n' "${FRAMES#*frames: }"
+				printf '  note  a regression tripwire on this renderer, not a device target\n'
+			else
+				printf '  --    no frame measurement in this run\n'
+			fi
 		else
 			printf '%s\n' "$OUT" | tail -20
 			pass_or_fail "scenarios" $STATUS

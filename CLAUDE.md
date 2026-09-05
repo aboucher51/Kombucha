@@ -269,17 +269,62 @@ one. Needs a display (WSLg, `DISPLAY=:0`) — **not** `--headless`, which has
 no renderer and captures blank frames. PNGs land in `shots/` (gitignored).
 
 Built-in commands (`scripts/dev/screenshot_harness.gd`): `shot <name> [x y w
-h]`, `wait <frames>`, `sleep <seconds>` (wall-clock, deliberately ignoring
-`Engine.time_scale`), `click <NodeName>` (synthesises real input — prefer it
-when what you need to prove is that the *player's* path works, not that a
-handler does), `assert_visible`, `assert_onscreen`, `expect_fail`, and `#`
-comments. Project-specific commands go in `scripts/dev/dev_hooks.gd`'s
-`scenario_command()` — return `""` on success, `"ERROR: ..."` on failure,
-`null` to hand the line to the console. **The harness only fails on
-error-shaped replies**, so an assertion command must return an error, never a
-`"false"` answer that passes silently.
+h]`, `wait <frames>`, `ticks <n>` (physics frames: game time), `sleep
+<seconds>` (wall-clock, deliberately ignoring `Engine.time_scale`), `settle
+[s] [group]` (wait until nothing in the group answers `is_busy()`, ERROR
+after `s`), `click <NodeName>` (synthesises real input — prefer it when what
+you need to prove is that the *player's* path works, not that a handler
+does), `click_at <x> <y>` (viewport coordinates, for Node2D boards),
+`scroll_to <NodeName>`, `hover <NodeName>`, `press <action>`,
+`assert_visible`, `assert_onscreen` (Control, or Node3D through the live
+camera), `assert_tooltip <NodeName> <text>`, `frame_budget <ms> [frames]`,
+`expect_fail`, and `#` comments. Project-specific commands go in
+`scripts/dev/dev_hooks.gd`'s `scenario_command()` — return `""` on success,
+`"ERROR: ..."` on failure, `null` to hand the line to the console. **The
+harness only fails on error-shaped replies**, so an assertion command must
+return an error, never a `"false"` answer that passes silently.
+
+**State readback before pixels.** The console's `state` and `assert <key>
+<value>` reach any node in the `state` group that implements
+`state_text()` and `assert_key(key, value)` (answer `""`, `"ERROR: ..."`, or
+exactly `"ERROR: unknown key '<key>'"` so the next provider is asked; a
+`prefix:` key exposes an open namespace). A JSON line is cheaper than a
+screenshot and assertable; every board game reinvented this seam under its
+own prefix before it was shared. **A scenario must assert state after
+actions**: a click that cancels back to a menu without an error, followed
+by more clicks that also do nothing, is a scenario of silent cancels that
+passes.
 
 Rules that keep the harness useful:
+
+- **Waits are three verbs, on purpose.** `wait` is frames, `ticks` is
+  physics frames (game time), `sleep` is wall-clock. Under a slow renderer
+  physics falls behind wall time, so a wall-clock sleep under-waits
+  exact-timed choreography (one project's ferry failed only in the batch);
+  a timer-driven thing wants `sleep`. `settle` beats both when the thing
+  you are waiting for can say it is busy.
+- **A name shared by two nodes is an ERROR, not a coin toss.** Every lookup
+  refuses an ambiguous name; assert on a uniquely named node instead. One
+  project's `assert_onscreen Cliffs` used to answer about whichever area
+  loaded first.
+- **Synthetic clicks go through `push_input` in canvas coordinates**, never
+  `Input.parse_input_event`, which treats the position as window pixels:
+  under any stretch other than the design resolution every click lands
+  somewhere else (found at Steam Deck resolution, where every scenario
+  click missed). `click`, `click_at` and `hover` all use it.
+- **A row below the fold is visible but not clickable**: `click` lands where
+  the rect is, outside the viewport. `scroll_to` it first. A menu whose only
+  seam is a clickable button is not fully scriptable once it scrolls; every
+  menu action also needs a non-click seam.
+- **`frame_budget` is a regression tripwire, not a device target.** It
+  turns vsync off for the measurement (with vsync on every scene reads
+  16.7 ms and the gate can never fail) and prints the number on pass, so
+  the trend is visible before the gate goes red. Under WSLg the renderer
+  is llvmpipe, software; what it catches is the same scene on the same
+  machine becoming several times more expensive.
+- **The real cursor is global state.** `_sandbox()` parks it at (2, 2);
+  left over a control it feeds hover and tooltips into every later
+  scenario.
 
 - **When adding UI, add the input-free seam alongside it.** Any interaction
   reachable only through an InputEvent cannot be screenshotted, scripted, or
