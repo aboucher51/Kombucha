@@ -19,3 +19,4 @@ data/console_commands.json
 .gutconfig.json
 addons/gut/
 .github/workflows/export.yml
+.github/workflows/ci.yml

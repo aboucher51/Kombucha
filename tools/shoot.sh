@@ -12,12 +12,14 @@
 #   SHOOT_TIMEOUT=<n>           seconds before giving up (default scales
 #                               with the batch: 30 + 10 per scenario)
 #   SHOOT_KEEP=1                keep existing shots instead of clearing
+#   GODOT=/path/to/binary       the engine to run (see check.sh)
 #
 # Needs a display — under WSL that means WSLg (DISPLAY=:0). Headless cannot
 # be used: --headless has no renderer, so the viewport texture would come
 # back blank.
 set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+GODOT="${GODOT:-godot4}"
 
 SCENARIOS=("$@")
 if [[ ${#SCENARIOS[@]} -eq 0 ]]; then
@@ -53,7 +55,7 @@ for scenario in "${SCENARIOS[@]}"; do HARNESS_ARGS+=(--scenario "$scenario"); do
 # The log is only ever grepped, never slurped into a variable — an engine
 # stuck in an error loop can write hundreds of MB inside the timeout.
 LOG="$(mktemp)"
-timeout "$TIMEOUT" godot4 "${GODOT_ARGS[@]}" -- "${HARNESS_ARGS[@]}" >"$LOG" 2>&1
+timeout "$TIMEOUT" "$GODOT" "${GODOT_ARGS[@]}" -- "${HARNESS_ARGS[@]}" >"$LOG" 2>&1
 STATUS=$?
 
 LOG_LIMIT="${SHOOT_LOG_LIMIT:-$((2 * 1024 * 1024))}"
@@ -77,10 +79,10 @@ fi
 # The harness only knows about failures its commands report back, so an
 # engine-level error (a bad type, a null call) would otherwise let a run
 # pass while the game was visibly broken behind the screenshots.
-ENGINE_ERRORS=$(grep -cE "SCRIPT ERROR|Parse Error" "$LOG")
+ENGINE_ERRORS=$(grep -cE "SCRIPT ERROR|Parse Error|shader" "$LOG")
 if [[ $ENGINE_ERRORS -gt 0 ]]; then
 	echo "shoot: $ENGINE_ERRORS engine error(s) — a green scenario does not mean a clean run" >&2
-	grep -E "SCRIPT ERROR|Parse Error" "$LOG" | sort -u | head -5 >&2
+	grep -E "SCRIPT ERROR|Parse Error|shader" "$LOG" | sort -u | head -5 >&2
 	[[ $STATUS -eq 0 ]] && STATUS=1
 fi
 [[ -z "${KEEP_LOG:-}" ]] && rm -f "$LOG"

@@ -1,0 +1,50 @@
+# The regression net, always on: every push and PR runs everything that
+# needs no display — the GUT suite, a clean-boot check with a memory budget
+# (skipped where GNU time is absent), and the project's own local checks.
+# Scenarios (screenshots) stay local until a virtual display lands here.
+#
+# tools/check.sh does all the real work, so CI and a developer's machine
+# cannot drift apart. The one CI-only step is --import: a fresh checkout has
+# no .godot/, and the first engine run would spend its timeout importing.
+name: ci
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache Godot binary
+        id: godot-cache
+        uses: actions/cache@v4
+        with:
+          path: /tmp/godot-bin
+          key: godot-4.7-stable-linux
+
+      - name: Download Godot 4.7
+        if: steps.godot-cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p /tmp/godot-bin
+          curl -fL --retry 3 -o /tmp/godot.zip \
+            https://github.com/godotengine/godot/releases/download/4.7-stable/Godot_v4.7-stable_linux.x86_64.zip
+          unzip -q /tmp/godot.zip -d /tmp
+          mv /tmp/Godot_v4.7-stable_linux.x86_64 /tmp/godot-bin/godot4
+
+      - name: Install Godot
+        run: sudo install /tmp/godot-bin/godot4 /usr/local/bin/godot4
+
+      - name: Import resources
+        run: godot4 --headless --path . --import || true
+
+      - name: Check (headless battery)
+        run: tools/check.sh --ci

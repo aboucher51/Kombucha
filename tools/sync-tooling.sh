@@ -12,6 +12,7 @@
 # tooling in place: back the change up to Microbiome first (or move it into
 # dev_hooks.gd / check.local.sh), because the sync overwrites it.
 set -uo pipefail
+GODOT="${GODOT:-godot4}"
 SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DEST="${1:-}"
 MODE="${2:-}"
@@ -85,5 +86,5 @@ if [[ "$MODE" == "--no-check" ]]; then
 	exit 0
 fi
 cd "$DEST" || exit 2
-godot4 --headless --path . --import >/dev/null 2>&1 || true
+"$GODOT" --headless --path . --import >/dev/null 2>&1 || true
 tools/check.sh --quick

@@ -47,6 +47,9 @@ const DEFAULT_SETTLE_FRAMES := 8
 var _shot_index := 0
 var _failures := 0
 var _fixed_seed := -1
+## The running scenario's file stem, so shots are named after it: two
+## scenarios that both `shot boot` used to overwrite each other.
+var _scenario_stem := ""
 
 
 func _ready() -> void:
@@ -73,6 +76,12 @@ func _ready() -> void:
 	await get_tree().process_frame
 
 	_sandbox()
+
+	# Which rasterizer made the pixels: a GPU and a software renderer do not
+	# produce identical images, and a log that says which one ran is what
+	# makes a screenshot comparable to the last one.
+	print("harness: renderer %s / %s" % [RenderingServer.get_video_adapter_name(),
+		RenderingServer.get_current_rendering_driver_name()])
 
 	# Every scenario in ONE process: booting Godot costs seconds, a scenario
 	# well under one. Anything that leaks across the reload between scenarios
@@ -155,6 +164,8 @@ func _run(path: String) -> void:
 		_fail(path, 0, "cannot open scenario file")
 		return
 	print("── scenario: %s ──" % path)
+	_scenario_stem = path.get_file().get_basename()
+	var started := Time.get_ticks_msec()
 	var line_number := 0
 	while not file.eof_reached():
 		var line := file.get_line().strip_edges()
@@ -164,8 +175,10 @@ func _run(path: String) -> void:
 		var reply := await _execute(line)
 		if _is_error(reply):
 			_fail(path, line_number, "%s -> %s" % [line, reply])
+	# The seconds are the point: with dozens of scenarios in one process,
+	# the expensive ones must be visible without a profiler.
 	if _failures == 0:
-		print("scenario ok: %s" % path)
+		print("scenario ok: %s (%.1fs)" % [path, float(Time.get_ticks_msec() - started) / 1000.0])
 
 
 func _execute(line: String) -> String:
@@ -241,7 +254,9 @@ func _shot(parts: PackedStringArray) -> String:
 	# Let pending layout/tweens settle so the capture isn't mid-animation.
 	for i in DEFAULT_SETTLE_FRAMES:
 		await get_tree().process_frame
-	var image := get_viewport().get_texture().get_image()
+	var image := capture(get_viewport())
+	if image == null:
+		return "ERROR: no rendered frame — this display driver has no rasterizer (--headless?)"
 	if parts.size() >= 6:
 		var rect := Rect2i(int(parts[2]), int(parts[3]), int(parts[4]), int(parts[5]))
 		rect = rect.intersection(Rect2i(Vector2i.ZERO, image.get_size()))
@@ -250,12 +265,26 @@ func _shot(parts: PackedStringArray) -> String:
 		image = image.get_region(rect)
 	DirAccess.make_dir_recursive_absolute(SHOT_DIR)
 	_shot_index += 1
-	var file_path := "%s/%02d-%s.png" % [SHOT_DIR, _shot_index, parts[1]]
+	var file_path := "%s/%s-%02d-%s.png" % [SHOT_DIR, _scenario_stem, _shot_index, parts[1]]
 	var err := image.save_png(file_path)
 	if err != OK:
 		return "ERROR: save_png failed (%d)" % err
 	print("shot: %s" % file_path)
 	return ""
+
+
+## The viewport's last rendered frame, or null when there is no rasterizer
+## to have drawn one. Static so a headless GUT run can pin the null case.
+## Under --headless the display server is "headless" and the dummy
+## rasterizer has no image: asking the texture for one logs an engine error
+## and returns null, so the answer is decided before asking.
+static func capture(viewport: Viewport) -> Image:
+	if DisplayServer.get_name() == "headless":
+		return null
+	var texture := viewport.get_texture()
+	if texture == null:
+		return null
+	return texture.get_image()
 
 
 ## Synthesises a real press+release at the centre of the named Control, so
