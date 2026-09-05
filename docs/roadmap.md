@@ -35,6 +35,10 @@ own status at the top.
 
 ## Next
 
+0. **Move projects to the Linux filesystem**
+   (`docs/plans/2026-09-05-linux-move.md`): Monmon trialled, boot 15.0 s
+   to 0.8 s, full check 395 s to 217 s, identical results. Cut-over and the
+   remaining projects are the user's call.
 1. **Migrate the siblings** (`docs/plans/2026-09-05-absorb-sibling-tooling.md`,
    last section): per project, `/sync-godot-tooling --check`, move in-file
    customisations into the seams, sync, full check. Order: Digit, Tandem,
