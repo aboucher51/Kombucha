@@ -1,55 +1,57 @@
-# Godot project template
+# Microbiome
 
-A Godot 4.7 (GL Compatibility, GDScript) scaffold with testing, a screenshot
-harness, and Claude Code conventions wired in from day one.
+The home of the Godot-to-Claude workflow: the loop by which Claude Code
+edits a Godot project, proves the change headlessly, looks at it through
+scripted screenshots, and reads the result back. The loop is iterated here
+and backported to the `Template` repo, from which every real game project
+is scaffolded.
 
-## Starting a new project
+This is not a game. The main scene, autoloads, tests and scenarios in this
+repo are a **fixture**: the smallest working project the tooling needs in
+order to exercise itself. Keep it small. Anything that only a game would
+want goes in a game.
+
+## The loop
 
 ```bash
-tools/new-project.sh ../MyGame "My Game"
+tools/test.sh               # GUT suite, headless
+tools/check.sh --quick      # tests + headless boot with a memory budget
+tools/check.sh              # ...plus every scenario through the harness
+tools/shoot.sh              # screenshot scenarios only (needs a display)
+tools/export.sh             # Linux + Windows builds, smoke-tested
 ```
 
-This copies the template (minus `.godot/` and `shots/*.png`), sets the
-project name in `project.godot`, initialises a git repo, and runs the import
-plus the full check so you start green. Or do it by hand: copy the directory,
-edit `config/name` in `project.godot`, delete this section of the README.
+`CLAUDE.md` is the contract: every rule in it names what breaks without
+it, and every tool above is what lets Claude say "this works" without a
+human at the keyboard.
 
-## What's inside
+## Working here
 
-- **`CLAUDE.md`** — working conventions for Claude Code, including the
-  GodotPrompter skill-first rule. Add project-specific conventions to it as
-  they earn their place.
-- **`tools/check.sh`** — tests + headless boot (with a memory budget) + all
-  scenarios, in one command. `--quick` skips scenarios (no display needed).
-- **`tools/test.sh`** — GUT suite (vendored in `addons/gut`, tests in
-  `tests/`), headless.
-- **`tools/shoot.sh`** — screenshot harness. Plain-text scenarios in
-  `scenarios/` drive the game and capture PNGs into `shots/`; see
-  `scenarios/example.txt` and the harness section of `CLAUDE.md`.
-- **`tools/export.sh`** — Linux + Windows release builds (PCK embedded),
-  auto-fetches export templates on first run, smoke-tests the built binary.
-  CI runs it on `v*` tags (`.github/workflows/export.yml`).
-- **Autoloads** — `EventBus`, `SaveManager` (redirectable paths so tests
-  never touch real saves), `Keybinds` (conflict-group rebinding, `key:F5`
-  storage), `AudioManager` (SFX pool with pitch variance, unscaled-time
-  music crossfade, semantic `ui_event()` sound map, debounced persistence),
-  `GameManager` (pause, scene changes, autosave on quit), and a
-  **debug console** on F12 (`data/console_commands.json` + closed-match
-  handlers; scenarios share its vocabulary).
-- **UI kit** (`scripts/ui/`) — `UITheme` (whole look from nine palette
-  constants, built in code), `PauseMenu` + `VolumeSliders` (working on
-  Escape from boot), `UiScaleRoot` (window-scaled chrome with sharp text).
-- **Utilities** (`scripts/util/`) — `DataMerger` (deep-merge/patch for
-  layered data), `FunctionRegistry` (string-id → Callable hooks), `L10n`
-  (namespaced translation keys + fallback), `BugReport` (zip of save +
-  settings + log tail, degrade-never-error).
-- **Placeholder audio** — `tools/generate_placeholder_audio.py` synthesized
-  the UI sound set in `assets/audio/`; replace files, keep event names.
-- **`/update-template` skill** (`.claude/skills/`) — from any scaffolded
-  project, backports an improvement into this template: generalizes it,
-  runs the template's checks, commits here.
-- **`.claude/settings.json`** — pre-approved permissions for the tools above,
-  so a fresh project doesn't re-prompt.
-- **`LICENSES.md`** — third-party ledger; every third-party addition gets a
-  row in the same commit. **`claude-log.md`** — gitignored session memory,
-  appended by the global PostCompact hook.
+1. Read `docs/roadmap.md` for what is next and why.
+2. Change the tooling, then prove it against the fixture with
+   `tools/check.sh`. A tooling change that the fixture cannot exercise
+   needs the fixture extended in the same commit.
+3. Record what was learned in `CLAUDE.md` (rule plus failure mode) or
+   `docs/research/` (findings).
+4. Backport with the `/update-template` skill so new projects inherit it.
+   The Template remains the source for `tools/new-project.sh`; do not
+   scaffold games from this repo.
+
+## Layout
+
+- `tools/` — the runner scripts above, plus `new-project.sh` (the
+  scaffolder, iterated here, used from Template).
+- `scripts/dev/` — the screenshot harness, debug console and bug report.
+  `data/console_commands.json` is the console's command table.
+- `tests/`, `.gutconfig.json`, `addons/gut` — GUT 9.7.1 and the fixture's
+  suite.
+- `scenarios/` — plain-text harness scripts, one command per line.
+- `scripts/autoloads/`, `scripts/ui/`, `scripts/util/`, `scenes/` — the
+  fixture game.
+- `docs/research/` — surveys of prior art, the sibling projects' test
+  tooling, and PlayGodot. `docs/roadmap.md` — the iteration order they
+  produced.
+- `.claude/` — pre-approved permissions for the tools, and the
+  `update-template` skill.
+- `LICENSES.md` — third-party ledger. `claude-log.md` — gitignored
+  session memory appended by the global PostCompact hook.

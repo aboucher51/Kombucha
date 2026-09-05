@@ -1,5 +1,27 @@
 # CLAUDE.md
 
+## What this repo is
+
+Microbiome is the workshop for the Godot-to-Claude workflow itself: the
+test runner, check script, screenshot harness, debug console, sandbox rules
+and the conventions in this file. It is **not a game**. The scene,
+autoloads, tests and scenarios here are a fixture that exists so the
+tooling can be exercised; keep them minimal and do not grow game features.
+
+Rules that follow from that:
+
+- **A change here is a workflow change.** Judge it by what it lets Claude
+  prove or see in a real project, not by what it does for the fixture.
+- **The fixture must exercise every tool.** A harness command, check step
+  or runner flag with nothing in `tests/` or `scenarios/` using it is
+  untested tooling; extend the fixture in the same commit.
+- **`tools/check.sh` green is the bar for every commit**, the same as in a
+  game project.
+- **Lessons flow two ways.** Findings go in `docs/research/`; rules earn a
+  place below as *the rule plus what breaks without it*; both are
+  backported to `Template` with the `/update-template` skill so new
+  projects inherit them. Read `docs/roadmap.md` for the current order.
+
 ## GodotPrompter
 
 This project uses the GodotPrompter workflow plugin. Before implementing any
@@ -12,11 +34,10 @@ one matches.
 
 ## Project conventions
 
-Godot 4.7, GL Compatibility renderer, GDScript with static typing. This
-project began from the `Template` scaffold; the conventions below transferred
-from projects where each one had already cost a debugging pass when violated.
-As this project grows its own load-bearing conventions, record them here the
-same way — state the rule *and* what breaks without it.
+Godot 4.7, GL Compatibility renderer, GDScript with static typing. The
+conventions below are the Template's; each transferred from a project where
+it had already cost a debugging pass when violated. They are maintained here
+first and backported. State every rule *and* what breaks without it.
 
 ### Layout
 
