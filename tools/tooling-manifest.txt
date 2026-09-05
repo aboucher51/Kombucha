@@ -16,6 +16,8 @@ tools/make_pseudo_locale.py
 scripts/dev/screenshot_harness.gd
 scripts/dev/debug_console.gd
 scripts/dev/bug_report.gd
+scripts/util/cmdline.gd
+scripts/util/json_lines.gd
 data/console_commands.json
 .gutconfig.json
 addons/gut/
