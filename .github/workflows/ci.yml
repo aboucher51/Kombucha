@@ -1,7 +1,8 @@
-# The regression net, always on: every push and PR runs everything that
-# needs no display — the GUT suite, a clean-boot check with a memory budget
-# (skipped where GNU time is absent), and the project's own local checks.
-# Scenarios (screenshots) stay local until a virtual display lands here.
+# The regression net, always on: every push and PR runs the whole of
+# tools/check.sh — the GUT suite, a clean-boot check with a memory budget,
+# the project's own local checks, and the screenshot scenarios on a virtual
+# display (Xvfb + Mesa llvmpipe, the same setup Godot's own CI renders
+# with). The shots are kept as an artifact so a red scenario can be seen.
 #
 # tools/check.sh does all the real work, so CI and a developer's machine
 # cannot drift apart. The one CI-only step is --import: a fresh checkout has
@@ -43,8 +44,24 @@ jobs:
       - name: Install Godot
         run: sudo install /tmp/godot-bin/godot4 /usr/local/bin/godot4
 
+      - name: Install a virtual display and software GL
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends xvfb libgl1-mesa-dri \
+            mesa-vulkan-drivers libxcursor1 libxinerama1 libxi6 libxrandr2 \
+            libxkbcommon0 time
+
       - name: Import resources
         run: godot4 --headless --path . --import || true
 
-      - name: Check (headless battery)
+      - name: Check
         run: tools/check.sh --ci
+
+      - name: Keep the shots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: shots
+          path: shots/*.png
+          if-no-files-found: ignore
+          retention-days: 7

@@ -3,7 +3,9 @@
 #
 #   tools/check.sh              tests + a plain boot + local checks + scenarios
 #   tools/check.sh --quick      everything that needs no display
-#   tools/check.sh --ci         --quick, and CHECK_CI=1 for check.local.sh
+#   tools/check.sh --ci         everything, with scenarios on a virtual
+#                               display (SHOOT_DISPLAY=xvfb) and CHECK_CI=1
+#                               for check.local.sh
 #
 # Exits non-zero if anything fails, and prints a summary naming what did.
 # Scenarios need a display (WSLg); --quick is the headless-only subset.
@@ -24,23 +26,19 @@ CI_MODE=0
 for arg in "$@"; do
 	case "$arg" in
 		--quick) QUICK=1 ;;
-		--ci) QUICK=1; CI_MODE=1 ;;
+		--ci) CI_MODE=1; export SHOOT_DISPLAY=xvfb ;;
 		*) echo "usage: tools/check.sh [--quick|--ci]" >&2; exit 2 ;;
 	esac
 done
 export CHECK_CI=$CI_MODE
 
-# ONE AT A TIME. The harness redirects saves and settings to a FIXED sandbox
-# path, so two concurrent runs write the same save slot and the save
-# scenarios fail against each other — a failure that looks exactly like a
-# real regression and is not one (two backgrounded runs overlapping is how
-# it was found). Per-process user data will retire this lock.
-LOCK="${TMPDIR:-/tmp}/check-$(basename "$ROOT").lock"
-if ! mkdir "$LOCK" 2>/dev/null; then
-	printf 'check: another run holds %s — wait for it, or remove it if stale\n' "$LOCK" >&2
-	exit 2
+# Where the project lives is the single biggest cost of the whole loop:
+# through WSL's /mnt/c bridge a real project boots in ~11 s per process,
+# from the Linux filesystem in under a second (measured on a 428 MB game:
+# 10.8 s vs 0.8 s). Every test shard, boot check and scenario shard pays it.
+if [[ "$ROOT" == /mnt/* ]]; then
+	echo "note: this checkout is on /mnt — a clone under the Linux filesystem boots ~10x faster (or point GODOT at a Windows binary)"
 fi
-trap 'rmdir "$LOCK" 2>/dev/null' EXIT
 
 FAILED=()
 pass_or_fail() { # name, status

@@ -17,7 +17,9 @@ want goes in a game.
 tools/test.sh               # GUT suite, headless
 tools/check.sh --quick      # tests + headless boot with a memory budget
 tools/check.sh              # ...plus every scenario through the harness
-tools/shoot.sh              # screenshot scenarios only (needs a display)
+tools/check.sh --ci         # the same on a virtual display (Xvfb), for CI
+tools/shoot.sh              # screenshot scenarios only, dealt across
+                            # SHOOT_JOBS processes; finds or starts a display
 tools/export.sh             # Linux + Windows builds, smoke-tested
 ```
 

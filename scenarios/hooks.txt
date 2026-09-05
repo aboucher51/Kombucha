@@ -1,0 +1,11 @@
+# Dev hooks: a console command from the PROJECT json reaches the project's
+# console_dispatch, and a scenario command reaches scenario_command. That
+# the sandbox hook clears the note between scenarios is pinned by
+# tests/test_screenshot_harness.gd — scenarios are dealt across processes
+# and reordered by cost, so no scenario may depend on another having run.
+wait 5
+note remember me
+notes
+assert_note remember me
+expect_fail assert_note never written
+expect_fail assert_note

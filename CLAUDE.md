@@ -403,7 +403,18 @@ Rules that keep the harness useful:
 - To judge text sharpness or fine detail, capture a **1:1 crop**
   (`shot <name> <x> <y> <w> <h>`) — a full-window shot is downscaled when
   viewed and hides exactly the detail in question.
-- Scenarios batch into one process and the harness reloads the scene between
+- **Scenarios are dealt across processes and reordered by cost**
+  (`SHOOT_JOBS`, longest-first from `.godot/shoot-timings`), each process
+  with its own `XDG_DATA_HOME`, so no scenario may depend on another having
+  run first and two `shoot.sh` runs cannot collide. Measured: two shards
+  164 s against 204 s for a 36-scenario suite.
+- **Where the project lives is the biggest cost.** Through WSL's `/mnt/c`
+  bridge a real project boots in ~11 s per process, from the Linux
+  filesystem in under a second; `check.sh` says so when it notices. Pacing
+  flags are not a lever here: under WSLg the game already runs unthrottled
+  (~400 fps), and `--fixed-fps` makes heavy scenes SLOWER on a software
+  renderer because game time falls behind wall time (measured, rejected).
+- Scenarios run in a batch and the harness reloads the scene between
   them — but **anything global survives that reload**. When introducing new
   global state (autoload fields, static vars, write-through files), reset it
   in `sandbox()` in `scripts/dev/dev_hooks.gd` (the harness's own

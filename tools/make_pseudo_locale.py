@@ -56,7 +56,7 @@ def main() -> int:
             row.append("")
         row[xa] = pseudo(row[1])
     with open(path, "w", newline="", encoding="utf-8") as f:
-        csv.writer(f).writerows(rows)
+        csv.writer(f, lineterminator="\n").writerows(rows)
     print("pseudo-locale: %d strings" % (len(rows) - 1))
     return 0
 

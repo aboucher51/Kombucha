@@ -1,7 +1,14 @@
 # Plan: the fastest accurate screenshot loop (and the headless verdict)
 
-Status: drafted 2026-09-05, parked for a later session. Nothing here has
-been run or implemented yet.
+Status: run and landed 2026-09-05 with two changes of course; the numbers
+and decisions are in `docs/research/2026-09-05-scenario-speed.md`.
+Unthrottling and `--fixed-fps` were measured and REJECTED (WSLg is already
+unthrottled; fixed-fps slows heavy scenes on a software renderer). Landed:
+per-process `XDG_DATA_HOME`, `SHOOT_JOBS` shards with per-scenario
+timings, the renderer line, the null-capture guard, scenario-stem shot
+names, the `/mnt` boot-cost note, Xvfb fallback + `check.sh --ci` + CI
+scenarios (the Xvfb path is exercised by CI, not locally). Not done: the
+Windows-binary interop path (no binary installed), the long-lived process.
 
 ## Context
 
