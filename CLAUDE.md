@@ -202,13 +202,38 @@ instead passes silently.
 ### Tests
 
 ```bash
-tools/test.sh               # all
+tools/test.sh               # all, across parallel shards
 tools/test.sh test_smoke    # one script
+TEST_JOBS=1 tools/test.sh   # one process — the readable log
 ```
 
 GUT 9.7.1, vendored in `addons/gut`, tests in `tests/`, config in
 `.gutconfig.json`. Everything in `tests/` is pure logic and runs headless —
 anything needing a rendered frame belongs in a scenario instead.
+
+**The suite runs in shards** (4 by default): a Godot test run is CPU-bound
+and single-threaded while the suite is a pile of independent scripts. Each
+shard gets its own `XDG_DATA_HOME` (every shard writes `user://`, and two
+sharing it fight over the same files); a shard's config says `dirs: []`
+(GUT ADDS `-gtest` entries to whatever the config names); an empty shard is
+compacted away (GUT exits 1 on a config with no tests). Balance comes from
+the LAST run's JUnit timings in `.godot/test-timings`, dealt longest-first.
+**Sharding exposes cross-test leaks, which is a feature**: a script that
+only passed because an earlier one had left something set now fails; fix
+the dependency, never reorder the shards. When a sharded failure makes no
+sense, run `TEST_JOBS=1` and compare.
+
+**A test script that fails to parse is silently dropped and GUT exits 0.**
+Four projects each discovered this behind an all-green check; the only tell
+was the total test count falling. `test.sh` now greps every log for the
+load failure and counts the scripts that ran against the files on disk, and
+`tools/selftest.sh` proves both guards fire against a scratch copy with a
+broken test file. A falling count is a file not loading, not fewer tests
+passing.
+
+**A slow test is usually a sleeping one.** Anything that waits out a real
+timer belongs behind a seam a test can shorten; profile with the per-script
+times in `.godot/test-timings`.
 
 A test that exercises a deliberate refusal path (where the logged error *is*
 the behaviour under test) must tell GUT the error is expected:

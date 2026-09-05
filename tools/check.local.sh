@@ -21,4 +21,7 @@ if python3 -c 'import json,sys; sys.exit(0 if isinstance(json.load(open("data/co
 else
 	printf '  FAIL  console_commands.project.json is not a JSON list\n'; MISSING=1
 fi
+
+# The runner's own guards, proven against a scratch copy (see selftest.sh).
+tools/selftest.sh || MISSING=1
 exit $MISSING
