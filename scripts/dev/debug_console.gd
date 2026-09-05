@@ -180,12 +180,62 @@ func _dispatch(command: Dictionary, args: Dictionary) -> String:
 		"quit":
 			get_tree().quit()
 			return "Quitting."
+		"locale":
+			var code := str(args.get("code", ""))
+			if code.is_empty():
+				return "%s (loaded: %s)" % [TranslationServer.get_locale(),
+					", ".join(TranslationServer.get_loaded_locales())]
+			if not TranslationServer.get_loaded_locales().has(code) and code != "en":
+				return "ERROR: no translation loaded for '%s'" % code
+			TranslationServer.set_locale(code)
+			return "Locale %s (restart to rebuild UI built at boot)." % code
+		"state":
+			return _handle_state()
+		"assert":
+			return _handle_assert(str(args["key"]), str(args["value"]))
 		_:
 			if hooks != null and hooks.has_method("console_dispatch"):
 				var reply: Variant = hooks.console_dispatch(handler, args)
 				if reply != null:
 					return str(reply)
 			return "ERROR: command '%s' names unknown handler '%s'" % [command["id"], handler]
+
+
+## State readback before pixels. Any node in the "state" group that
+## implements state_text() -> String and assert_key(key, value) -> String
+## is a provider; the console owns only the lookup and the error contract.
+## assert_key answers "" on match, "ERROR: ..." on mismatch, and exactly
+## "ERROR: unknown key '<key>'" for a key it does not own, so several
+## providers can be consulted in turn. A `prefix:` key is the way to expose
+## an open namespace (flag:<name>) without touching the console.
+func _state_providers(method: String) -> Array[Node]:
+	var providers: Array[Node] = []
+	for node in get_tree().get_nodes_in_group("state"):
+		if node.has_method(method):
+			providers.append(node)
+	return providers
+
+
+func _handle_state() -> String:
+	var providers := _state_providers("state_text")
+	if providers.is_empty():
+		return "ERROR: nothing in the 'state' group answers state_text()"
+	var lines: Array[String] = []
+	for node in providers:
+		lines.append(str(node.state_text()))
+	return "\n".join(lines)
+
+
+func _handle_assert(key: String, value: String) -> String:
+	var providers := _state_providers("assert_key")
+	if providers.is_empty():
+		return "ERROR: nothing in the 'state' group answers assert_key()"
+	var unknown := "ERROR: unknown key '%s'" % key
+	for node in providers:
+		var reply := str(node.assert_key(key, value))
+		if reply != unknown:
+			return reply
+	return "ERROR: no state provider knows key '%s'" % key
 
 
 func _handle_help(args: Dictionary) -> String:

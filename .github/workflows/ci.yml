@@ -1,0 +1,67 @@
+# The regression net, always on: every push and PR runs the whole of
+# tools/check.sh — the GUT suite, a clean-boot check with a memory budget,
+# the project's own local checks, and the screenshot scenarios on a virtual
+# display (Xvfb + Mesa llvmpipe, the same setup Godot's own CI renders
+# with). The shots are kept as an artifact so a red scenario can be seen.
+#
+# tools/check.sh does all the real work, so CI and a developer's machine
+# cannot drift apart. The one CI-only step is --import: a fresh checkout has
+# no .godot/, and the first engine run would spend its timeout importing.
+name: ci
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache Godot binary
+        id: godot-cache
+        uses: actions/cache@v4
+        with:
+          path: /tmp/godot-bin
+          key: godot-4.7-stable-linux
+
+      - name: Download Godot 4.7
+        if: steps.godot-cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p /tmp/godot-bin
+          curl -fL --retry 3 -o /tmp/godot.zip \
+            https://github.com/godotengine/godot/releases/download/4.7-stable/Godot_v4.7-stable_linux.x86_64.zip
+          unzip -q /tmp/godot.zip -d /tmp
+          mv /tmp/Godot_v4.7-stable_linux.x86_64 /tmp/godot-bin/godot4
+
+      - name: Install Godot
+        run: sudo install /tmp/godot-bin/godot4 /usr/local/bin/godot4
+
+      - name: Install a virtual display and software GL
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends xvfb libgl1-mesa-dri \
+            mesa-vulkan-drivers libxcursor1 libxinerama1 libxi6 libxrandr2 \
+            libxkbcommon0 time
+
+      - name: Import resources
+        run: godot4 --headless --path . --import || true
+
+      - name: Check
+        run: tools/check.sh --ci
+
+      - name: Keep the shots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: shots
+          path: shots/*.png
+          if-no-files-found: ignore
+          retention-days: 7

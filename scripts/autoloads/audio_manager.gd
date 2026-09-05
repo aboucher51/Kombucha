@@ -26,6 +26,10 @@ var _current_music: AudioStream = null
 var _fade_time := 0.0
 var _fade_duration := 0.0
 var _save_timer: SceneTreeTimer = null
+## Seconds a volume change waits before it is written. A variable, not a
+## constant, so a test can shorten it — sleeping half a second per case to
+## watch a debounce is most of what that suite cost.
+var save_debounce := 0.5
 
 
 func _ready() -> void:
@@ -157,8 +161,21 @@ func apply_saved_volumes() -> void:
 func _schedule_save() -> void:
 	if _save_timer != null:
 		return
-	_save_timer = get_tree().create_timer(0.5, true, false, true)
-	_save_timer.timeout.connect(func() -> void:
-		_save_timer = null
-		for bus_name in BUSES:
-			SaveManager.set_setting(SETTINGS_SECTION, bus_name, get_bus_volume(bus_name)))
+	_save_timer = get_tree().create_timer(save_debounce, true, false, true)
+	_save_timer.timeout.connect(_write_volumes)
+
+
+## Write any pending volume change NOW. The debounce coalesces a drag into
+## one write; it must not swallow the change of somebody who quits within
+## half a second of moving the slider.
+func flush_volumes() -> void:
+	if _save_timer == null:
+		return
+	_save_timer = null
+	_write_volumes()
+
+
+func _write_volumes() -> void:
+	_save_timer = null
+	for bus_name in BUSES:
+		SaveManager.set_setting(SETTINGS_SECTION, bus_name, get_bus_volume(bus_name))

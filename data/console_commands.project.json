@@ -4,12 +4,29 @@
 		"handler": "note",
 		"usage": "note <text>",
 		"args": [
-			{"name": "text", "kind": "rest"}
+			{
+				"name": "text",
+				"kind": "rest"
+			}
 		]
 	},
 	{
 		"id": "notes",
 		"handler": "notes",
 		"usage": "notes"
+	},
+	{
+		"id": "busy",
+		"handler": "busy",
+		"usage": "busy <frames>",
+		"args": [
+			{
+				"name": "frames",
+				"kind": "int",
+				"min": 0,
+				"max": 9999999,
+				"required": true
+			}
+		]
 	}
 ]

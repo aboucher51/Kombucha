@@ -6,7 +6,8 @@ config_version=5
 
 [application]
 
-config/name="Microbiome"
+config/name="Kombucha"
+config/version="0.1.0"
 run/main_scene="res://scenes/main.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://icon.svg"
@@ -16,17 +17,19 @@ config/icon="res://icon.svg"
 EventBus="*res://scripts/autoloads/event_bus.gd"
 SaveManager="*res://scripts/autoloads/save_manager.gd"
 Keybinds="*res://scripts/autoloads/keybinds.gd"
+Pads="*res://scripts/autoloads/pads.gd"
 AudioManager="*res://scripts/autoloads/audio_manager.gd"
 GameManager="*res://scripts/autoloads/game_manager.gd"
 DebugConsole="*res://scripts/dev/debug_console.gd"
 ScreenshotHarness="*res://scripts/dev/screenshot_harness.gd"
+SelftestDriver="*res://scripts/dev/selftest_driver.gd"
 
 [display]
 
 window/size/viewport_width=1280
 window/size/viewport_height=720
 window/stretch/mode="canvas_items"
-window/stretch/aspect="keep"
+window/stretch/aspect="expand"
 
 [editor_plugins]
 
@@ -51,7 +54,7 @@ pause={
 
 [internationalization]
 
-locale/translations=PackedStringArray("res://localization/game.en.translation")
+locale/translations=PackedStringArray("res://localization/game.en.translation", "res://localization/game.xa.translation")
 
 [rendering]
 

@@ -1,0 +1,13 @@
+# The pseudo-locale stress test: every translated string comes out accented,
+# bracketed and ~35% longer, so plain English in this shot is a HARDCODED
+# string the l10n contract test could not see, and a layout that only fits
+# English breaks visibly. The pause menu is built at boot, so restart.
+locale xa
+restart
+wait 10
+press pause
+assert_visible PausedLabel
+assert_onscreen Panel
+assert_tooltip ResumeButton [
+shot pseudo-locale
+expect_fail locale zz

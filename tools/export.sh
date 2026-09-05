@@ -12,6 +12,7 @@
 # smoke run means the build survived the full duration — the same convention
 # as the editor smoke test in CLAUDE.md.
 set -uo pipefail
+GODOT="${GODOT:-godot4}"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT" || exit 2
 
@@ -55,7 +56,7 @@ ensure_templates() {
 ensure_templates || exit 1
 
 echo "── import (translations, class registry) ──"
-godot4 --headless --path . --import > /dev/null 2>&1
+"$GODOT" --headless --path . --import > /dev/null 2>&1
 
 FAILED=()
 export_preset() { # preset name, output path
@@ -63,7 +64,7 @@ export_preset() { # preset name, output path
 	mkdir -p "$(dirname "$2")"
 	local log
 	log="$(mktemp)"
-	if godot4 --headless --path . --export-release "$1" "$2" > "$log" 2>&1 && [[ -f "$2" ]]; then
+	if "$GODOT" --headless --path . --export-release "$1" "$2" > "$log" 2>&1 && [[ -f "$2" ]]; then
 		echo "  ok    $2 ($(du -h "$2" | cut -f1))"
 	else
 		echo "  FAIL  $1"

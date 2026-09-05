@@ -21,13 +21,27 @@ extends Node
 ##                             use a crop to judge text sharpness; a downscaled
 ##                             full-window view hides exactly that detail)
 ##     wait <frames>           let the game run (animations, tweens, spawns)
-##     sleep <seconds>         wall-clock wait, for anything on a Timer
+##     ticks <n>               n PHYSICS frames: game time, for choreography
+##                             and anything under Engine.time_scale
+##     sleep <seconds>         wall-clock wait, for anything on an OS timer
+##     settle [s] [group]      wait until no node in the group (default
+##                             "settle") answers is_busy() true; ERROR after s
 ##     click <NodeName>        synthesise a real mouse click on a named Control
+##     click_at <x> <y>        the same at viewport coordinates (Node2D boards)
+##     scroll_to <NodeName>    scroll a ScrollContainer row into view first
+##     hover <NodeName>        move the real mouse over it and verify it took
 ##     press <action>          synthesise an input action press+release
 ##     assert_visible <NodeName>   fail unless the named Control is visible
 ##     assert_onscreen <NodeName>  fail if it escapes the visible viewport
+##                             (Control, or Node3D through the live camera)
+##     assert_tooltip <NodeName> <text>  fail unless its tooltip contains text
+##     frame_budget <ms> [n]   fail if the average frame over n exceeds ms
 ##     expect_fail <command>   fail unless the wrapped command fails
 ##     # comment               ignored, as are blank lines
+##
+## A name shared by two nodes is an ERROR, not a coin toss: every lookup
+## refuses an ambiguous name rather than answering about whichever loaded
+## first (that was a test decided by load order, once).
 ##
 ## Everything else goes to the project's dev hooks (scripts/dev/dev_hooks.gd,
 ## `scenario_command`) and then to the debug console. This file is OWNED BY
@@ -45,12 +59,19 @@ const SANDBOX_SAVE_ROOT := "user://sandbox_saves"
 const DEFAULT_SETTLE_FRAMES := 8
 
 var _shot_index := 0
+## Set by _find_named / _find_control when they return null: the reason.
+var _lookup_error := ""
 var _failures := 0
 var _fixed_seed := -1
+## The running scenario's file stem, so shots are named after it: two
+## scenarios that both `shot boot` used to overwrite each other.
+var _scenario_stem := ""
+## The locale the game booted with, restored between scenarios.
+var _boot_locale := "en"
 
 
 func _ready() -> void:
-	var scenario_paths := _user_args("--scenario")
+	var scenario_paths := Cmdline.values("--scenario")
 	if scenario_paths.is_empty():
 		queue_free()
 		return
@@ -59,10 +80,11 @@ func _ready() -> void:
 	# stealing the keyboard from whatever the developer is doing.
 	DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_NO_FOCUS, true)
 
+	_boot_locale = TranslationServer.get_locale()
 	# Before the first await, so it lands ahead of the main scene's _ready —
 	# autoloads are readied before the main scene, which is the only reason
 	# this ordering is available.
-	var seed_arg := _user_arg("--seed")
+	var seed_arg := Cmdline.value("--seed")
 	if not seed_arg.is_empty():
 		_fixed_seed = int(seed_arg)
 		seed(_fixed_seed)
@@ -73,6 +95,12 @@ func _ready() -> void:
 	await get_tree().process_frame
 
 	_sandbox()
+
+	# Which rasterizer made the pixels: a GPU and a software renderer do not
+	# produce identical images, and a log that says which one ran is what
+	# makes a screenshot comparable to the last one.
+	print("harness: renderer %s / %s" % [RenderingServer.get_video_adapter_name(),
+		RenderingServer.get_current_rendering_driver_name()])
 
 	# Every scenario in ONE process: booting Godot costs seconds, a scenario
 	# well under one. Anything that leaks across the reload between scenarios
@@ -116,18 +144,38 @@ func _sandbox() -> void:
 	SaveManager.config_path = "user://sandbox_settings.cfg"
 	SaveManager.current_slot = SaveManager.DEFAULT_SLOT
 	_wipe_dir(SANDBOX_SAVE_ROOT)
+	# Kit seams that exist once the Template kit pass is in (duck-typed, so
+	# a project on older kit is not broken by a tooling sync): mods read
+	# from scratch so a scenario never depends on the machine's mods, and
+	# the pad router's repeat clocks and using_pad flag start clean.
+	if "mods_root" in SaveManager:
+		SaveManager.mods_root = "user://sandbox_mods"
+	var pads := get_node_or_null("/root/Pads")
+	if pads != null:
+		if "router" in pads and pads.router != null and pads.router.has_method("reset"):
+			pads.router.reset()
+		if "using_pad" in pads:
+			pads.using_pad = false
 	# A scenario that rebinds a key edits the (redirected) settings file AND
 	# the live InputMap — the next scenario must start from the default
 	# keyboard. Bus volumes are the same shape of global state.
 	Keybinds.reset_to_defaults()
 	for bus_name in AudioManager.BUSES:
 		AudioManager.set_bus_volume(bus_name, 1.0)
+	# The locale is global and survives a scene reload; a scenario that
+	# switched to the pseudo-locale would leave every later shot accented.
+	TranslationServer.set_locale(_boot_locale)
+	# The REAL cursor is global state too: parked over a control it feeds
+	# hover and tooltips into every scenario after the one that moved it.
+	Input.warp_mouse(Vector2(2, 2))
 	_hook("sandbox")
 
 
 ## Put the machine back exactly as it was found, however the run went.
 func _restore() -> void:
 	_hook("restore")
+	if "mods_root" in SaveManager and "DEFAULT_MODS_ROOT" in SaveManager:
+		SaveManager.mods_root = SaveManager.DEFAULT_MODS_ROOT
 	SaveManager.save_root = SaveManager.DEFAULT_SAVE_ROOT
 	SaveManager.config_path = SaveManager.DEFAULT_CONFIG_PATH
 	SaveManager.current_slot = SaveManager.DEFAULT_SLOT
@@ -155,6 +203,8 @@ func _run(path: String) -> void:
 		_fail(path, 0, "cannot open scenario file")
 		return
 	print("── scenario: %s ──" % path)
+	_scenario_stem = path.get_file().get_basename()
+	var started := Time.get_ticks_msec()
 	var line_number := 0
 	while not file.eof_reached():
 		var line := file.get_line().strip_edges()
@@ -164,8 +214,10 @@ func _run(path: String) -> void:
 		var reply := await _execute(line)
 		if _is_error(reply):
 			_fail(path, line_number, "%s -> %s" % [line, reply])
+	# The seconds are the point: with dozens of scenarios in one process,
+	# the expensive ones must be visible without a profiler.
 	if _failures == 0:
-		print("scenario ok: %s" % path)
+		print("scenario ok: %s (%.1fs)" % [path, float(Time.get_ticks_msec() - started) / 1000.0])
 
 
 func _execute(line: String) -> String:
@@ -183,11 +235,29 @@ func _execute(line: String) -> String:
 			if parts.size() < 2:
 				return "ERROR: usage: sleep <seconds>"
 			# Wall-clock on purpose: "sleep two seconds" means two real
-			# seconds, whatever Engine.time_scale is doing.
+			# seconds, whatever Engine.time_scale is doing. Choreography
+			# wants `ticks`: under a slow renderer physics falls behind
+			# wall time and a wall-clock sleep under-waits it.
 			await get_tree().create_timer(float(parts[1]), true, false, true).timeout
 			return ""
+		"ticks":
+			if parts.size() < 2:
+				return "ERROR: usage: ticks <n>"
+			for i in maxi(1, int(parts[1])):
+				await get_tree().physics_frame
+			return ""
+		"settle":
+			return await _settle(parts)
 		"click":
 			return await _click(parts)
+		"click_at":
+			if parts.size() < 3:
+				return "ERROR: usage: click_at <x> <y>"
+			return await _click_point(Vector2(float(parts[1]), float(parts[2])))
+		"scroll_to":
+			return await _scroll_to(parts)
+		"hover":
+			return await _hover(parts)
 		"press":
 			return await _press(parts)
 		"assert_visible":
@@ -195,12 +265,16 @@ func _execute(line: String) -> String:
 				return "ERROR: usage: assert_visible <NodeName>"
 			var target := _find_control(parts[1])
 			if target == null:
-				return "ERROR: no Control named '%s'" % parts[1]
+				return _lookup_error
 			if not target.is_visible_in_tree():
 				return "ERROR: '%s' is not visible" % parts[1]
 			return ""
 		"assert_onscreen":
 			return _assert_onscreen(parts)
+		"assert_tooltip":
+			return _assert_tooltip(parts)
+		"frame_budget":
+			return await _frame_budget(parts)
 		"expect_fail":
 			if parts.size() < 2:
 				return "ERROR: usage: expect_fail <command>"
@@ -241,7 +315,9 @@ func _shot(parts: PackedStringArray) -> String:
 	# Let pending layout/tweens settle so the capture isn't mid-animation.
 	for i in DEFAULT_SETTLE_FRAMES:
 		await get_tree().process_frame
-	var image := get_viewport().get_texture().get_image()
+	var image := capture(get_viewport())
+	if image == null:
+		return "ERROR: no rendered frame — this display driver has no rasterizer (--headless?)"
 	if parts.size() >= 6:
 		var rect := Rect2i(int(parts[2]), int(parts[3]), int(parts[4]), int(parts[5]))
 		rect = rect.intersection(Rect2i(Vector2i.ZERO, image.get_size()))
@@ -250,12 +326,26 @@ func _shot(parts: PackedStringArray) -> String:
 		image = image.get_region(rect)
 	DirAccess.make_dir_recursive_absolute(SHOT_DIR)
 	_shot_index += 1
-	var file_path := "%s/%02d-%s.png" % [SHOT_DIR, _shot_index, parts[1]]
+	var file_path := "%s/%s-%02d-%s.png" % [SHOT_DIR, _scenario_stem, _shot_index, parts[1]]
 	var err := image.save_png(file_path)
 	if err != OK:
 		return "ERROR: save_png failed (%d)" % err
 	print("shot: %s" % file_path)
 	return ""
+
+
+## The viewport's last rendered frame, or null when there is no rasterizer
+## to have drawn one. Static so a headless GUT run can pin the null case.
+## Under --headless the display server is "headless" and the dummy
+## rasterizer has no image: asking the texture for one logs an engine error
+## and returns null, so the answer is decided before asking.
+static func capture(viewport: Viewport) -> Image:
+	if DisplayServer.get_name() == "headless":
+		return null
+	var texture := viewport.get_texture()
+	if texture == null:
+		return null
+	return texture.get_image()
 
 
 ## Synthesises a real press+release at the centre of the named Control, so
@@ -265,20 +355,154 @@ func _click(parts: PackedStringArray) -> String:
 		return "ERROR: usage: click <NodeName>"
 	var target := _find_control(parts[1])
 	if target == null:
-		return "ERROR: no Control named '%s'" % parts[1]
+		return _lookup_error
 	if not target.is_visible_in_tree():
 		return "ERROR: '%s' is not visible" % parts[1]
-	var at := target.get_global_rect().get_center()
+	return await _click_point(target.get_global_transform_with_canvas() * (target.size / 2.0))
+
+
+## A click at viewport (canvas) coordinates. push_input with local coords,
+## NOT Input.parse_input_event: the latter treats the position as WINDOW
+## pixels, so under any stretch other than the design resolution every
+## synthetic click lands somewhere else (found at Steam Deck resolution,
+## where every scenario click missed).
+func _click_point(at: Vector2) -> String:
+	Input.warp_mouse(at)
 	for pressed in [true, false]:
 		var event := InputEventMouseButton.new()
 		event.button_index = MOUSE_BUTTON_LEFT
 		event.pressed = pressed
 		event.position = at
 		event.global_position = at
-		Input.parse_input_event(event)
+		get_viewport().push_input(event, true)
 		await get_tree().process_frame
 	for i in DEFAULT_SETTLE_FRAMES:
 		await get_tree().process_frame
+	return ""
+
+
+## A row below the fold of a long list is visible but NOT clickable: the
+## click lands where the rect is, outside the viewport. Scroll it into
+## view first (a list's own follow_focus does this for keyboard users).
+func _scroll_to(parts: PackedStringArray) -> String:
+	if parts.size() < 2:
+		return "ERROR: usage: scroll_to <NodeName>"
+	var target := _find_control(parts[1])
+	if target == null:
+		return _lookup_error
+	var holder: Node = target
+	while holder != null and holder is not ScrollContainer:
+		holder = holder.get_parent()
+	if holder == null:
+		return "ERROR: '%s' is not inside a ScrollContainer" % parts[1]
+	(holder as ScrollContainer).ensure_control_visible(target)
+	for i in 4:
+		await get_tree().process_frame
+	return ""
+
+
+## Wait until nothing in the group reports is_busy(), or fail after the
+## limit. Deterministic where a `sleep` after a move was a guess — and an
+## error on expiry, because a hung animation that quietly degrades into a
+## four-second sleep is exactly the bug a scenario exists to catch.
+func _settle(parts: PackedStringArray) -> String:
+	var limit := float(parts[1]) if parts.size() > 1 else 4.0
+	var group := parts[2] if parts.size() > 2 else "settle"
+	var deadline := Time.get_ticks_msec() + int(limit * 1000.0)
+	while true:
+		var busy: Array[String] = []
+		for node in get_tree().get_nodes_in_group(group):
+			if node.has_method("is_busy") and node.is_busy():
+				busy.append(str(node.name))
+		if busy.is_empty():
+			await get_tree().process_frame
+			return ""
+		if Time.get_ticks_msec() >= deadline:
+			return "ERROR: still busy after %.1fs: %s" % [limit, ", ".join(busy)]
+		await get_tree().process_frame
+	return ""
+
+
+## Moves the REAL mouse over the Control (warp plus a motion event through
+## the same canvas path as clicks) and verifies the GUI agrees about what is
+## under it — two distinct failures: nothing registered, or the wrong thing.
+func _hover(parts: PackedStringArray) -> String:
+	if parts.size() < 2:
+		return "ERROR: usage: hover <NodeName>"
+	var target := _find_control(parts[1])
+	if target == null:
+		return _lookup_error
+	if not target.is_visible_in_tree():
+		return "ERROR: '%s' is not visible" % parts[1]
+	var at := target.get_global_transform_with_canvas() * (target.size / 2.0)
+	Input.warp_mouse(at)
+	var motion := InputEventMouseMotion.new()
+	motion.position = at
+	motion.global_position = at
+	get_viewport().push_input(motion, true)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var hovered := get_viewport().gui_get_hovered_control()
+	if hovered == null:
+		return "ERROR: hover did not register at %s (over %s)" % [at, parts[1]]
+	if hovered != target and not target.is_ancestor_of(hovered):
+		return "ERROR: hover landed on '%s', wanted '%s' at %s" % [hovered.name, parts[1], at]
+	return ""
+
+
+## Reads the tooltip the Control would show, without waiting for the
+## engine's popup: deterministic, no dwell, and it answers headless. A game
+## that draws hints in its own overlay asserts on that overlay instead.
+func _assert_tooltip(parts: PackedStringArray) -> String:
+	if parts.size() < 3:
+		return "ERROR: usage: assert_tooltip <NodeName> <text>"
+	var target := _find_control(parts[1])
+	if target == null:
+		return _lookup_error
+	var wanted := " ".join(parts.slice(2))
+	var text := target.get_tooltip(target.size / 2.0)
+	if text.is_empty():
+		return "ERROR: '%s' carries no tooltip" % parts[1]
+	if not text.contains(wanted):
+		return "ERROR: '%s' tooltip says '%s', wanted '%s'" % [parts[1], text, wanted]
+	return ""
+
+
+## Average frame time over a window, with vsync and the FPS cap OFF for the
+## measurement (with vsync on every scene measures 16.7 ms and the gate can
+## never fail). Read it as a REGRESSION tripwire on this machine's renderer,
+## not a device target: the number is printed even on pass, because a gate
+## you only see when it goes red says nothing about the change that used
+## half the remaining headroom.
+func _frame_budget(parts: PackedStringArray) -> String:
+	if parts.size() < 2:
+		return "ERROR: usage: frame_budget <ms> [frames]"
+	var budget := float(parts[1])
+	var frames := maxi(8, int(parts[2]) if parts.size() > 2 else 60)
+	var previous_fps := Engine.max_fps
+	var previous_vsync := DisplayServer.window_get_vsync_mode()
+	Engine.max_fps = 0
+	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
+	# Warm up: the first frames after a scene is built pay for shader
+	# compilation and texture upload, a one-off the budget is not about.
+	for i in 10:
+		await get_tree().process_frame
+	var worst := 0.0
+	var total := 0.0
+	for i in frames:
+		var began := Time.get_ticks_usec()
+		await get_tree().process_frame
+		var elapsed := (Time.get_ticks_usec() - began) / 1000.0
+		total += elapsed
+		worst = maxf(worst, elapsed)
+	Engine.max_fps = previous_fps
+	DisplayServer.window_set_vsync_mode(previous_vsync)
+	var average := total / frames
+	var report := "%.1f ms average, %.1f ms worst over %d frames (%s)" % [
+		average, worst, frames, RenderingServer.get_video_adapter_name()]
+	if average > budget:
+		return "ERROR: frame budget %.1f ms exceeded — %s" % [budget, report]
+	print("  frames: %s, budget %.1f ms" % [report, budget])
 	return ""
 
 
@@ -303,20 +527,69 @@ func _press(parts: PackedStringArray) -> String:
 func _assert_onscreen(parts: PackedStringArray) -> String:
 	if parts.size() < 2:
 		return "ERROR: usage: assert_onscreen <NodeName>"
-	var target := _find_control(parts[1])
-	if target == null:
-		return "ERROR: no Control named '%s'" % parts[1]
+	var found := _find_named(parts[1])
+	if found == null:
+		return _lookup_error
 	var view := Rect2(Vector2.ZERO, get_viewport().get_visible_rect().size)
-	var rect := target.get_global_rect()
-	if not view.encloses(rect):
-		return "ERROR: '%s' at %s escapes the view %s" % [parts[1], rect, view]
+	var control := found as Control
+	if control != null:
+		var rect := control.get_global_rect()
+		if not view.encloses(rect):
+			return "ERROR: '%s' at %s escapes the view %s" % [parts[1], rect, view]
+		return ""
+	var spatial := found as Node3D
+	if spatial == null:
+		return "ERROR: '%s' is neither a Control nor a Node3D" % parts[1]
+	var camera := get_viewport().get_camera_3d()
+	if camera == null:
+		return "ERROR: no 3D camera to check '%s' against" % parts[1]
+	# A mesh's ORIGIN is not where its geometry is: an area-sized mesh has
+	# its origin at a corner, so asking about the origin answers a question
+	# nobody asked. The middle of its bounds is the honest one.
+	var visual := found as VisualInstance3D
+	var point := spatial.global_position if visual == null \
+		else visual.global_transform * visual.get_aabb().get_center()
+	if camera.is_position_behind(point):
+		return "ERROR: '%s' at %s is behind the camera" % [parts[1], point]
+	var screen := camera.unproject_position(point)
+	if not view.has_point(screen):
+		return "ERROR: '%s' at %s lands at %s, outside the view %s" % [parts[1],
+			point, screen, view]
 	return ""
 
 
+## Every node with this name, not just the first — so an ambiguous name is
+## reported as ambiguous rather than answered about arbitrarily.
+func _find_all(from: Node, node_name: String) -> Array[Node]:
+	var found: Array[Node] = []
+	if str(from.name) == node_name:
+		found.append(from)
+	for child in from.get_children():
+		found.append_array(_find_all(child, node_name))
+	return found
+
+
+## The one node with this name, or null with _lookup_error set.
+func _find_named(node_name: String) -> Node:
+	var matches := _find_all(get_tree().root, node_name)
+	if matches.is_empty():
+		_lookup_error = "ERROR: no node named '%s'" % node_name
+		return null
+	if matches.size() > 1:
+		_lookup_error = "ERROR: '%s' is ambiguous — %d nodes have that name" % [
+			node_name, matches.size()]
+		return null
+	return matches[0]
+
+
 func _find_control(node_name: String) -> Control:
-	var root := get_tree().root
-	var found := root.find_child(node_name, true, false)
-	return found as Control
+	var found := _find_named(node_name)
+	if found == null:
+		return null
+	var control := found as Control
+	if control == null:
+		_lookup_error = "ERROR: '%s' is not a Control" % node_name
+	return control
 
 
 func _is_error(reply: String) -> bool:
@@ -340,18 +613,3 @@ func _wipe_dir(dir_path: String) -> void:
 			dir.remove(file_name)
 		file_name = dir.get_next()
 	dir.list_dir_end()
-
-
-## Every `--<name> <value>` in the post-`--` arguments, in order.
-func _user_args(name: String) -> Array[String]:
-	var values: Array[String] = []
-	var args := OS.get_cmdline_user_args()
-	for index in args.size():
-		if args[index] == name and index + 1 < args.size():
-			values.append(args[index + 1])
-	return values
-
-
-func _user_arg(name: String) -> String:
-	var values := _user_args(name)
-	return values[0] if not values.is_empty() else ""

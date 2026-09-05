@@ -5,7 +5,7 @@ description: Backport an improvement from the current project into the shared Go
 
 # Backporting an improvement to the Template
 
-The shared template lives at `/mnt/c/Users/Alex/godot-projects/Template`
+The shared template lives at `/home/alex/godot-projects/Template`
 (override with the `GODOT_TEMPLATE` environment variable if set). Every new
 project is scaffolded from it, so an improvement backported once is
 inherited by every future project.

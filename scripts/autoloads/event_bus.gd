@@ -13,3 +13,9 @@ extends Node
 
 @warning_ignore("unused_signal")
 signal score_changed(new_score: int)
+
+## A machine setting was written (SaveManager.set_setting). Live systems
+## re-apply on it; listeners connect a METHOD, never a lambda (an autoload
+## signal outlives the scene that connected the lambda).
+@warning_ignore("unused_signal")
+signal settings_changed(section: String, key: String)

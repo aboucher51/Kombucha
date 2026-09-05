@@ -1,4 +1,4 @@
-# Microbiome
+# Kombucha
 
 The home of the Godot-to-Claude workflow: the loop by which Claude Code
 edits a Godot project, proves the change headlessly, looks at it through
@@ -17,7 +17,9 @@ want goes in a game.
 tools/test.sh               # GUT suite, headless
 tools/check.sh --quick      # tests + headless boot with a memory budget
 tools/check.sh              # ...plus every scenario through the harness
-tools/shoot.sh              # screenshot scenarios only (needs a display)
+tools/check.sh --ci         # the same on a virtual display (Xvfb), for CI
+tools/shoot.sh              # screenshot scenarios only, dealt across
+                            # SHOOT_JOBS processes; finds or starts a display
 tools/export.sh             # Linux + Windows builds, smoke-tested
 ```
 
@@ -28,7 +30,7 @@ human at the keyboard.
 ## How other projects get it
 
 Every project carries a copy of the paths in `tools/tooling-manifest.txt`,
-stamped with the Microbiome commit in `tools/TOOLING_VERSION`. The global
+stamped with the Kombucha commit in `tools/TOOLING_VERSION`. The global
 `/sync-godot-tooling` skill (which runs `tools/sync-tooling.sh`) refreshes
 the copy, and each project's `check.sh` says when it is behind. Projects
 extend the tooling only through `scripts/dev/dev_hooks.gd`,

@@ -1,6 +1,6 @@
 extends Node
 ## Project dev hooks — the ONE file where a project extends the shared debug
-## console and screenshot harness. Those two scripts are owned by Microbiome
+## console and screenshot harness. Those two scripts are owned by Kombucha
 ## and overwritten by /sync-godot-tooling; this file is yours and never
 ## touched by a sync. Every method below is optional: delete what you do
 ## not need, the tooling checks `has_method()` before calling.
@@ -14,6 +14,16 @@ extends Node
 ## autoload fields, static vars, files written through to disk. Runs after
 ## the shared sandbox (saves, settings, keybinds, volumes, time_scale). Any
 ## global left set here poisons every scenario after the one that set it.
+##
+## The shared sandbox wipes SAVES but not SETTINGS: the redirected settings
+## file survives the whole batch, so anything a console command can write
+## there must be re-defaulted HERE, after the redirect (never before, or
+## you write the player's real file). Shapes that have leaked in real
+## projects: a renderer setting, a zoom level, campaign progress, the
+## editor's last-opened mod, a match config held in statics, an AI policy
+## held in a static, a "watching" flag on ambient NPCs, a weather state.
+## Ambient real-time systems (spawners, roamers, watchers) need a console
+## OFF switch a scenario can call first, and this hook turns them back on.
 func sandbox() -> void:
 	pass
 

@@ -18,3 +18,9 @@ static func key(type: String, id: String, field: String = "title") -> String:
 static func tr_or_fallback(translation_key: String, fallback_text: String) -> String:
 	var result := TranslationServer.translate(translation_key)
 	return result if result != translation_key else fallback_text
+
+
+## Content text: the derived key for a JSON def's field, with the def's own
+## text as the fallback, so an untranslated entry reads as authored.
+static func data_text(type: String, id: String, field: String, fallback_text: String) -> String:
+	return tr_or_fallback(key(type, id, field), fallback_text)

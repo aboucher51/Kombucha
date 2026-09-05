@@ -1,0 +1,13 @@
+# State readback before pixels: the console's `state` / `assert` seam over
+# the fixture's provider, and click_at proving the canvas-coordinate click
+# path lands where it says.
+wait 5
+state
+assert title Template project
+expect_fail assert title Nope
+expect_fail assert nope 1
+expect_fail assert
+click_at 5 5
+assert last_click 5,5
+click_at 600 300
+assert last_click 600,300

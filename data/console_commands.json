@@ -2,10 +2,15 @@
 	{
 		"id": "help",
 		"handler": "help",
-		"aliases": ["?"],
+		"aliases": [
+			"?"
+		],
 		"usage": "help [command]",
 		"args": [
-			{"name": "command", "kind": "string"}
+			{
+				"name": "command",
+				"kind": "string"
+			}
 		]
 	},
 	{
@@ -18,7 +23,10 @@
 		"handler": "save",
 		"usage": "save [slot]",
 		"args": [
-			{"name": "slot", "kind": "string"}
+			{
+				"name": "slot",
+				"kind": "string"
+			}
 		]
 	},
 	{
@@ -26,7 +34,10 @@
 		"handler": "load",
 		"usage": "load [slot]",
 		"args": [
-			{"name": "slot", "kind": "string"}
+			{
+				"name": "slot",
+				"kind": "string"
+			}
 		]
 	},
 	{
@@ -39,7 +50,11 @@
 		"handler": "delete_save",
 		"usage": "delete_save <slot>",
 		"args": [
-			{"name": "slot", "kind": "string", "required": true}
+			{
+				"name": "slot",
+				"kind": "string",
+				"required": true
+			}
 		]
 	},
 	{
@@ -47,8 +62,23 @@
 		"handler": "volume",
 		"usage": "volume <bus> <0-100>",
 		"args": [
-			{"name": "bus", "kind": "enum", "values": ["Master", "Music", "SFX"], "required": true},
-			{"name": "percent", "kind": "int", "min": 0, "max": 100, "required": true}
+			{
+				"name": "bus",
+				"kind": "enum",
+				"values": [
+					"Master",
+					"Music",
+					"SFX"
+				],
+				"required": true
+			},
+			{
+				"name": "percent",
+				"kind": "int",
+				"min": 0,
+				"max": 100,
+				"required": true
+			}
 		]
 	},
 	{
@@ -56,9 +86,23 @@
 		"handler": "bind",
 		"usage": "bind <action> <key-or-mouse:N> [slot]",
 		"args": [
-			{"name": "action", "kind": "string", "required": true},
-			{"name": "key", "kind": "string", "required": true},
-			{"name": "slot", "kind": "int", "default": 0, "min": 0, "max": 1}
+			{
+				"name": "action",
+				"kind": "string",
+				"required": true
+			},
+			{
+				"name": "key",
+				"kind": "string",
+				"required": true
+			},
+			{
+				"name": "slot",
+				"kind": "int",
+				"default": 0,
+				"min": 0,
+				"max": 1
+			}
 		]
 	},
 	{
@@ -66,8 +110,18 @@
 		"handler": "unbind",
 		"usage": "unbind <action> [slot]",
 		"args": [
-			{"name": "action", "kind": "string", "required": true},
-			{"name": "slot", "kind": "int", "default": 0, "min": 0, "max": 1}
+			{
+				"name": "action",
+				"kind": "string",
+				"required": true
+			},
+			{
+				"name": "slot",
+				"kind": "int",
+				"default": 0,
+				"min": 0,
+				"max": 1
+			}
 		]
 	},
 	{
@@ -80,7 +134,11 @@
 		"handler": "seed",
 		"usage": "seed <n>",
 		"args": [
-			{"name": "n", "kind": "int", "required": true}
+			{
+				"name": "n",
+				"kind": "int",
+				"required": true
+			}
 		]
 	},
 	{
@@ -93,12 +151,48 @@
 		"handler": "report",
 		"usage": "report [note]",
 		"args": [
-			{"name": "note", "kind": "rest"}
+			{
+				"name": "note",
+				"kind": "rest"
+			}
 		]
 	},
 	{
 		"id": "quit",
 		"handler": "quit",
 		"usage": "quit"
+	},
+	{
+		"id": "state",
+		"handler": "state",
+		"usage": "state"
+	},
+	{
+		"id": "assert",
+		"handler": "assert",
+		"usage": "assert <key> <value>",
+		"args": [
+			{
+				"name": "key",
+				"kind": "string",
+				"required": true
+			},
+			{
+				"name": "value",
+				"kind": "rest",
+				"required": true
+			}
+		]
+	},
+	{
+		"id": "locale",
+		"handler": "locale",
+		"usage": "locale [code]",
+		"args": [
+			{
+				"name": "code",
+				"kind": "string"
+			}
+		]
 	}
 ]

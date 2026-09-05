@@ -1,6 +1,6 @@
 # Plan: the Template kit pass
 
-Status: drafted 2026-09-05, not started. Companion to
+Status: landed 2026-09-05 on Template branch `plans/2026-09-05` (tiers A-E, five commits, each green) and the fixture refreshed. The `--kit` report mode and sibling adoption remain. Companion to
 `2026-09-05-absorb-sibling-tooling.md` (tooling) and the record of the kit
 findings that plan defers. Source: the sibling survey of 2026-09-05
 (`docs/research/2026-09-05-sibling-project-lessons.md` and the code-shape
@@ -9,7 +9,7 @@ reads cited inline as project:file).
 ## Context
 
 **Kit** is the code that ships inside a game: the autoloads, `scripts/util`,
-`scripts/ui`, the boot scene and `project.godot`. It is not in Microbiome's
+`scripts/ui`, the boot scene and `project.godot`. It is not in Kombucha's
 tooling manifest and never will be: every game customises these files in
 place and has no extension seam for them, so a wholesale sync would destroy
 work. Kit improvements therefore travel the older way: they land in the
@@ -18,12 +18,12 @@ work. Kit improvements therefore travel the older way: they land in the
 The survey found kit fixes that two or more projects made independently,
 which means the Template is shipping known bugs to every new project. This
 plan lands them in the Template, ordered by damage prevented per line, and
-refreshes Microbiome's fixture from the Template afterwards so the tooling
+refreshes Kombucha's fixture from the Template afterwards so the tooling
 keeps being proven against current kit.
 
 Where the work happens: in the Template repo, on its own check, one commit
-per tier. Microbiome's fixture is refreshed at the end of each tier
-(`rsync` of the kit directories, then Microbiome's full check), because two
+per tier. Kombucha's fixture is refreshed at the end of each tier
+(`rsync` of the kit directories, then Kombucha's full check), because two
 items below add redirectable state that the harness sandbox must know
 about, and that is a tooling change.
 
@@ -82,7 +82,7 @@ about, and that is a tooling change.
   sorted order, `mods_root` a redirectable static like `save_root`. The
   lightest of the four mod-layering designs. **Tooling coupling:** the
   harness's core `_sandbox()` must redirect `mods_root` to scratch, so this
-  item ships with a Microbiome commit.
+  item ships with a Kombucha commit.
 
 ## Tier C: UI kit
 
@@ -146,7 +146,7 @@ lacks. All from NavalWar; no `project.godot` input-map change is needed.
   need no new harness commands. Scenario: navigate and resume the pause
   menu with `press ui_down`, `press ui_accept` only.
 - **Harness sandbox** must reset `Pads.router` and `using_pad` (NavalWar's
-  `_sandbox` does). Tooling coupling: ships with a Microbiome commit.
+  `_sandbox` does). Tooling coupling: ships with a Kombucha commit.
 
 ## Tier E: rules for the Template's CLAUDE.md (rule plus what breaks)
 
@@ -214,11 +214,11 @@ target, and the report should say so.
 ## Order and coupling
 
 A, then B, C, D, E. Each tier is one Template commit with green
-`tools/check.sh`, then a fixture refresh in Microbiome (`rsync` of
+`tools/check.sh`, then a fixture refresh in Kombucha (`rsync` of
 `scripts/autoloads scripts/util scripts/ui scenes localization` plus the
-`project.godot` keys, then Microbiome's full check). Two tiers (B's
+`project.godot` keys, then Kombucha's full check). Two tiers (B's
 `ContentDB.mods_root`, D's `Pads`) need the harness sandbox extended in
-Microbiome first, synced to the Template, and only then the kit change, or
+Kombucha first, synced to the Template, and only then the kit change, or
 the Template's own scenarios leak state between runs.
 
 ## Verification
@@ -228,6 +228,6 @@ the Template's own scenarios leak state between runs.
   the fix, watch red, restore).
 - Scenarios: pause menu at 1280x800 with `expand` (no letterbox), focus ring
   1:1 crop, pad-only navigation, scale factor at two resolutions.
-- Microbiome full check green after each fixture refresh.
+- Kombucha full check green after each fixture refresh.
 - `tools/sync-tooling.sh <project> --kit` lists the expected drift for
   NavalWar (source of tier D) and Digit (source of `ContentDB`).

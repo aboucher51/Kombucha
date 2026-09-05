@@ -43,8 +43,57 @@ static func get_theme() -> Theme:
 	theme.set_stylebox("grabber_area_highlight", "HSlider", _flat(ACCENT, 3))
 
 	theme.set_stylebox("panel", "ScrollContainer", _flat(BACKGROUND, 0))
+
+	# Focus ring: pad and keyboard navigation are INVISIBLE without one —
+	# every focusable class gets the same 2px accent outline, drawn as an
+	# overlay (no fill) so it layers over each control's own state style.
+	var ring := focus_ring()
+	for cls in ["Button", "OptionButton", "CheckButton", "CheckBox",
+			"HSlider", "LineEdit", "SpinBox", "TextEdit"]:
+		theme.set_stylebox("focus", cls, ring)
 	_cached = theme
 	return theme
+
+
+## The keyboard/pad focus outline: border only, no fill, slightly proud of
+## the control so it reads on any background.
+static func focus_ring() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color.TRANSPARENT
+	style.draw_center = false
+	style.border_color = ACCENT
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(5)
+	style.set_expand_margin_all(2)
+	return style
+
+
+## Standard panel entrance: a quick fade + settle-up from 94% scale. Shared
+## so every panel arrives the same way (hard pops read as prototype). Safe
+## while the tree is paused; safe on a control whose layout hasn't settled
+## (falls back to fade-only).
+static func pop_in(control: Control) -> void:
+	control.modulate.a = 0.0
+	# Deferred by instance id: the control can be freed before the deferred
+	# call lands (scene teardown), and a freed Object argument would error.
+	_pop_in_deferred.call_deferred(control.get_instance_id())
+
+
+static func _pop_in_deferred(control_id: int) -> void:
+	var control := instance_from_id(control_id) as Control
+	if control == null or not control.is_inside_tree() or not control.visible:
+		if control != null:
+			control.modulate.a = 1.0
+		return
+	var tween := control.create_tween()
+	tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+	tween.set_parallel(true)
+	tween.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tween.tween_property(control, "modulate:a", 1.0, 0.16)
+	if control.size != Vector2.ZERO:
+		control.pivot_offset = control.size / 2.0
+		control.scale = Vector2(0.94, 0.94)
+		tween.tween_property(control, "scale", Vector2.ONE, 0.22)
 
 
 static func _flat(color: Color, corner_radius: int, border: Color = Color.TRANSPARENT) -> StyleBoxFlat:

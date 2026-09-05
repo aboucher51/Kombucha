@@ -30,6 +30,14 @@ func scenario_command(parts: PackedStringArray, _line: String) -> Variant:
 
 func console_dispatch(handler: String, args: Dictionary) -> Variant:
 	match handler:
+		"busy":
+			# Feeds the harness's `settle`: the main scene answers is_busy()
+			# for this many frames.
+			var main := get_tree().get_first_node_in_group("settle")
+			if main == null or not main.has_method("set_busy"):
+				return "ERROR: nothing in the 'settle' group to make busy"
+			main.set_busy(int(args["frames"]))
+			return "Busy for %d frames." % int(args["frames"])
 		"note":
 			notes.append(str(args["text"]))
 			return "Noted."

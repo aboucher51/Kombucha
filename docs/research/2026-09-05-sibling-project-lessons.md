@@ -242,7 +242,7 @@ Those are listed first; they are Template bugs, not project quirks.
   lambda captures `self` without binding, so the connection outlives the
   scene and fails on the next emit.
 
-## What to do with this in Microbiome
+## What to do with this in Kombucha
 
 The order below is by how many projects paid for the lesson, then by how
 mechanical the port is.
