@@ -1,16 +1,19 @@
 #!/usr/bin/env bash
-# Produces runnable builds: Linux and Windows, release, PCK embedded.
+# Produces runnable release builds, PCK embedded, for every preset the
+# project declares in export_presets.cfg that this script knows how to
+# build: Linux, Windows Desktop, Web. A preset it does not know is named
+# and skipped, never silently missing from the build.
 #
-#   tools/export.sh              both presets + a smoke test of the Linux one
-#   tools/export.sh --no-smoke   both presets, no smoke (nothing to run it on)
+#   tools/export.sh              every preset + a smoke test of the Linux one
+#   tools/export.sh --no-smoke   every preset, no smoke (nothing to run it on)
 #
 # The binary name comes from config/name in project.godot, so a scaffolded
 # project exports under its own name with no edits here.
 #
 # Export templates are per-Godot-version, ~1 GB, and not in the repo; this
-# fetches the two release binaries it needs on first run. Exit 124 from the
-# smoke run means the build survived the full duration — the same convention
-# as the editor smoke test in CLAUDE.md.
+# fetches only the release templates the declared presets need, on first
+# run. Exit 124 from the smoke run means the build survived the full
+# duration — the same convention as the editor smoke test in CLAUDE.md.
 set -uo pipefail
 GODOT="${GODOT:-godot4}"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -23,26 +26,42 @@ TEMPLATE_URL="https://github.com/godotengine/godot/releases/download/${GODOT_VER
 NAME="$(grep -m1 '^config/name=' project.godot | sed 's/^config\/name="\(.*\)"$/\1/' | tr '[:upper:] ' '[:lower:]_')"
 [[ -z "$NAME" ]] && NAME="game"
 
+# The presets the project declares, in file order. Only these are built.
+mapfile -t PRESETS < <(grep -oP '^name="\K[^"]+' export_presets.cfg 2>/dev/null)
+if [[ ${#PRESETS[@]} -eq 0 ]]; then
+	echo "export: no presets in export_presets.cfg"
+	exit 1
+fi
+has_preset() { local p; for p in "${PRESETS[@]}"; do [[ "$p" == "$1" ]] && return 0; done; return 1; }
+
+# The release templates each known preset needs, by file name.
+templates_for() {
+	case "$1" in
+		"Linux") echo "linux_release.x86_64" ;;
+		"Windows Desktop") echo "windows_release_x86_64.exe windows_release_x86_64_console.exe" ;;
+		"Web") echo "web_nothreads_release.zip web_release.zip" ;;
+	esac
+}
+
 ensure_templates() {
-	if [[ -f "$TEMPLATE_DIR/linux_release.x86_64" && -f "$TEMPLATE_DIR/windows_release_x86_64.exe" ]]; then
-		return 0
-	fi
-	echo "── fetching export templates ($GODOT_VERSION) ──"
+	local missing=() preset name
+	for preset in "${PRESETS[@]}"; do
+		for name in $(templates_for "$preset"); do
+			[[ -f "$TEMPLATE_DIR/$name" ]] || missing+=("templates/$name")
+		done
+	done
+	[[ ${#missing[@]} -eq 0 ]] && return 0
+	echo "── fetching export templates ($GODOT_VERSION): ${missing[*]#templates/} ──"
 	local tpz
 	tpz="$(mktemp --suffix=.tpz)"
 	curl -fL --retry 3 -o "$tpz" "$TEMPLATE_URL" || { echo "template download failed"; return 1; }
 	mkdir -p "$TEMPLATE_DIR"
 	# A .tpz is a zip with everything under templates/; take only what the
-	# two presets need rather than unpacking a gigabyte of platforms.
+	# declared presets need rather than unpacking a gigabyte of platforms.
 	# python3 rather than unzip, which WSL does not ship by default.
-	python3 - "$tpz" "$TEMPLATE_DIR" <<-'PY' || { rm -f "$tpz"; return 1; }
+	python3 - "$tpz" "$TEMPLATE_DIR" "${missing[@]}" <<-'PY' || { rm -f "$tpz"; return 1; }
 		import os, sys, zipfile
-		tpz, dest = sys.argv[1], sys.argv[2]
-		wanted = [
-		    "templates/linux_release.x86_64",
-		    "templates/windows_release_x86_64.exe",
-		    "templates/windows_release_x86_64_console.exe",
-		]
+		tpz, dest, wanted = sys.argv[1], sys.argv[2], sys.argv[3:]
 		with zipfile.ZipFile(tpz) as z:
 		    for name in wanted:
 		        out = os.path.join(dest, os.path.basename(name))
@@ -74,11 +93,21 @@ export_preset() { # preset name, output path
 	rm -f "$log"
 }
 
-export_preset "Linux" "builds/linux/${NAME}.x86_64"
-export_preset "Windows Desktop" "builds/windows/${NAME}.exe"
-chmod +x "builds/linux/${NAME}.x86_64" 2>/dev/null
+for preset in "${PRESETS[@]}"; do
+	case "$preset" in
+		"Linux")
+			export_preset "Linux" "builds/linux/${NAME}.x86_64"
+			chmod +x "builds/linux/${NAME}.x86_64" 2>/dev/null ;;
+		"Windows Desktop")
+			export_preset "Windows Desktop" "builds/windows/${NAME}.exe" ;;
+		"Web")
+			export_preset "Web" "builds/web/index.html" ;;
+		*)
+			echo "  --    preset '$preset' is not one this script builds (Linux, Windows Desktop, Web); skipped" ;;
+	esac
+done
 
-if [[ "${1:-}" != "--no-smoke" && ${#FAILED[@]} -eq 0 ]]; then
+if [[ "${1:-}" != "--no-smoke" && ${#FAILED[@]} -eq 0 ]] && has_preset "Linux"; then
 	echo "── smoke: the exported binary itself ──"
 	timeout 8 "./builds/linux/${NAME}.x86_64" --headless > /tmp/export-smoke.log 2>&1
 	STATUS=$?

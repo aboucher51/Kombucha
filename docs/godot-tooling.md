@@ -52,7 +52,7 @@ empty log from a run that actually worked.
 ```bash
 tools/check.sh          # tests + boot (with memory budget) + all scenarios
 tools/check.sh --quick  # tests + boot only (no display needed)
-tools/export.sh         # Linux + Windows builds, then smoke-tests the binary
+tools/export.sh         # every declared preset (Linux, Windows, Web), then smoke-tests the Linux binary
 ```
 
 Use check.sh before saying something works. It names whatever failed.
@@ -68,9 +68,11 @@ which check.sh runs between the boot and the scenarios with `QUICK` set;
 check.sh itself is synced over. When a project's copy of the tooling is
 behind, check.sh says so in a `note:` line — that is the cue to run
 `/sync-godot-tooling`.
-`tools/export.sh` fetches export templates on first run (~1 GB download,
-cached) and applies the same exit-124 convention to the exported binary; CI
-runs it on version tags (`.github/workflows/export.yml`).
+`tools/export.sh` builds every preset `export_presets.cfg` declares that it
+knows (Linux, Windows Desktop, Web; an unknown one is named and skipped),
+fetches only the export templates those need on first run (~1 GB
+download, cached) and applies the same exit-124 convention to the exported
+Linux binary; CI runs it on version tags (`.github/workflows/export.yml`).
 
 ### The debug console
 

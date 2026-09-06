@@ -1,5 +1,5 @@
-# Builds both release presets on a version tag and attaches them to the
-# run as artifacts. Deliberately dumb: no signing, no store uploads — the
+# Builds every declared release preset on a version tag and attaches the
+# builds to the run as artifacts. Deliberately dumb: no signing, no store uploads — the
 # deliverable is "a stranger can download and run the build".
 #
 # tools/export.sh does all the real work (template fetch, export, headless
@@ -37,3 +37,9 @@ jobs:
         with:
           name: windows
           path: builds/windows/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: web
+          path: builds/web/
+          if-no-files-found: ignore

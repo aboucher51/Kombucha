@@ -596,6 +596,20 @@ func _click(parts: PackedStringArray) -> String:
 		return _lookup_error
 	if not target.is_visible_in_tree():
 		return "ERROR: '%s' is not visible" % parts[1]
+	# A control shown THIS frame has no laid-out rect yet, and clicking its
+	# stale centre misses. Wait until the rect holds still for two
+	# consecutive frames (bounded): under heavy batch load layout can take
+	# more than a fixed two frames, and a first-click-after-reload that
+	# misses fails the whole scenario (one project, in the batch only).
+	var last_rect := Rect2()
+	for i in 30:
+		await get_tree().process_frame
+		if not is_instance_valid(target):
+			return "ERROR: '%s' was freed while its layout settled" % parts[1]
+		var rect := target.get_global_rect()
+		if i > 0 and rect == last_rect:
+			break
+		last_rect = rect
 	return await _click_point(target.get_global_transform_with_canvas() * (target.size / 2.0))
 
 

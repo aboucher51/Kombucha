@@ -145,7 +145,15 @@ func _dispatch(command: Dictionary, args: Dictionary) -> String:
 		"load":
 			var slot := str(args.get("slot", "")) if not str(args.get("slot", "")).is_empty() else SaveManager.current_slot
 			var err := SaveManager.load_game(slot)
-			return "Loaded '%s'." % slot if err == OK else "ERROR: load failed (%d)" % err
+			if err == OK:
+				return "Loaded '%s'." % slot
+			# The kit's SaveManager says WHY (a save from the future, a
+			# missing mod, a corrupt file); duck-typed so a project on older
+			# kit still gets the code.
+			if "last_load_problem" in SaveManager \
+					and not str(SaveManager.last_load_problem).is_empty():
+				return "ERROR: " + str(SaveManager.last_load_problem)
+			return "ERROR: load failed (%d)" % err
 		"saves":
 			var names := _save_names()
 			return "No saves." if names.is_empty() else ", ".join(names)

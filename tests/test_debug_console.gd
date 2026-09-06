@@ -15,7 +15,7 @@ func before_each() -> void:
 
 func after_each() -> void:
 	Keybinds.reset_to_defaults()
-	for save_name in ["slot_1", "other"]:
+	for save_name in ["slot_1", "other", "future"]:
 		SaveManager.delete_save(save_name)
 	DirAccess.remove_absolute(SCRATCH_CONFIG)
 	SaveManager.save_root = SaveManager.DEFAULT_SAVE_ROOT
@@ -54,6 +54,21 @@ func test_save_load_round_trip_via_console() -> void:
 
 func test_load_missing_save_is_error() -> void:
 	assert_string_starts_with(DebugConsole.execute("load nothing_here"), "ERROR:")
+
+
+func test_a_refused_load_names_the_reason() -> void:
+	# A save from a newer schema is refused, and the console must say so
+	# rather than answer with a bare error number: a scenario's `load`
+	# failing on "load failed (20)" is unreadable, "newer version" is not.
+	DirAccess.make_dir_recursive_absolute(SCRATCH_SAVES)
+	var data := SaveCompat.stamp({})
+	data[SaveCompat.KEY]["schema"] = SaveCompat.SCHEMA + 1
+	var file := FileAccess.open("%s/future.json" % SCRATCH_SAVES, FileAccess.WRITE)
+	file.store_string(JSON.stringify(data))
+	file.close()
+	var reply := DebugConsole.execute("load future")
+	assert_string_starts_with(reply, "ERROR:")
+	assert_string_contains(reply, "newer version")
 
 
 func test_volume_applies() -> void:

@@ -121,7 +121,7 @@ No scene attaches them, no autoload names them, no script loads or extends them,
 | `scripts/util/l10n.gd` | RefCounted | L10n | scripts/ui/pause_menu.gd, scripts/ui/volume_sliders.gd, tests/test_l10n.gd | 0 | 3 |
 | `scripts/util/pad_router.gd` | RefCounted | PadRouter | scripts/autoloads/pads.gd, tests/test_pad_router.gd | 0 | 6 |
 | `scripts/util/runtime_textures.gd` | RefCounted | RuntimeTextures | tests/test_kit_utils.gd | 0 | 2 |
-| `scripts/util/save_compat.gd` | RefCounted | SaveCompat | scripts/autoloads/save_manager.gd, tests/test_save_providers.gd | 0 | 3 |
+| `scripts/util/save_compat.gd` | RefCounted | SaveCompat | scripts/autoloads/save_manager.gd, tests/test_debug_console.gd, tests/test_save_providers.gd | 0 | 3 |
 | `scripts/util/version_util.gd` | RefCounted | VersionUtil | scripts/autoloads/save_manager.gd, scripts/util/save_compat.gd, tests/test_kit_utils.gd | 0 | 3 |
 | `tools/seeds/dev_driver.gd` | Node |  |  | 0 | 2 |
 | `tools/seeds/dev_hooks.gd` | Node |  |  | 0 | 4 |

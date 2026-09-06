@@ -439,7 +439,7 @@
     "_input.gui_input"
    ],
    "node_paths": [],
-   "lines": 459
+   "lines": 467
   },
   "res://scripts/dev/dev_hooks.gd": {
    "path": "res://scripts/dev/dev_hooks.gd",
@@ -511,7 +511,7 @@
    "emits": [],
    "connects": [],
    "node_paths": [],
-   "lines": 883
+   "lines": 897
   },
   "res://scripts/dev/selftest_driver.gd": {
    "path": "res://scripts/dev/selftest_driver.gd",
@@ -1074,6 +1074,7 @@
     "test_bad_enum_value_is_error",
     "test_save_load_round_trip_via_console",
     "test_load_missing_save_is_error",
+    "test_a_refused_load_names_the_reason",
     "test_volume_applies",
     "test_bind_and_refusal",
     "test_alias_resolves",
@@ -1082,7 +1083,7 @@
    "emits": [],
    "connects": [],
    "node_paths": [],
-   "lines": 93
+   "lines": 108
   },
   "res://tests/test_dev_hooks.gd": {
    "path": "res://tests/test_dev_hooks.gd",
@@ -1674,6 +1675,7 @@
   ],
   "res://scripts/util/save_compat.gd": [
    "res://scripts/autoloads/save_manager.gd",
+   "res://tests/test_debug_console.gd",
    "res://tests/test_save_providers.gd"
   ],
   "res://scripts/util/version_util.gd": [
