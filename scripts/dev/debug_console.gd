@@ -122,6 +122,14 @@ func execute(line: String) -> String:
 ## dev_hooks.gd, NOT here: this file is overwritten on every tooling sync.
 func _dispatch(command: Dictionary, args: Dictionary) -> String:
 	var handler: String = command.get("handler", "")
+	# The project's hooks are asked FIRST, so a project may take over a
+	# core command (one project's `saves` prints the browser's own row
+	# text; another's `locale` persists through its settings): null from
+	# the hook means "not mine" and the core handler below answers.
+	if hooks != null and hooks.has_method("console_dispatch"):
+		var claimed: Variant = hooks.console_dispatch(handler, args)
+		if claimed != null:
+			return str(claimed)
 	match handler:
 		"help":
 			return _handle_help(args)
@@ -194,10 +202,6 @@ func _dispatch(command: Dictionary, args: Dictionary) -> String:
 		"assert":
 			return _handle_assert(str(args["key"]), str(args["value"]))
 		_:
-			if hooks != null and hooks.has_method("console_dispatch"):
-				var reply: Variant = hooks.console_dispatch(handler, args)
-				if reply != null:
-					return str(reply)
 			return "ERROR: command '%s' names unknown handler '%s'" % [command["id"], handler]
 
 

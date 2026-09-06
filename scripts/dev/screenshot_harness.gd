@@ -73,8 +73,9 @@ extends Node
 ## refuses an ambiguous name rather than answering about whichever loaded
 ## first (that was a test decided by load order, once).
 ##
-## Everything else goes to the project's dev hooks (scripts/dev/dev_hooks.gd,
-## `scenario_command`) and then to the debug console. This file is OWNED BY
+## The project's dev hooks (scripts/dev/dev_hooks.gd, `scenario_command`)
+## are asked first and may claim any line, built-in or not; what nobody
+## claims goes to the debug console. This file is OWNED BY
 ## KOMBUCHA and overwritten by /sync-godot-tooling — project commands and
 ## project sandbox resets live in dev_hooks.gd, never here. When adding UI,
 ## add an input-free seam alongside it (a method the harness can call), or
@@ -104,6 +105,10 @@ var _boot_locale := "en"
 var _masks: Array[Rect2i] = []
 ## --update-baselines: expect_shot WRITES baselines instead of comparing.
 var _update_baselines := false
+## Test seam: a headless GUT test that drives _execute() needs the node to
+## outlive the frame; without arguments _ready() frees it, and
+## cancel_free() does not hold against that (measured).
+static var keep_alive_for_tests := false
 ## Baselines written so far this scenario: a name met twice compares the
 ## second time, so the FIRST frame is the reference, not the last.
 var _written_baselines: Dictionary = {}
@@ -113,7 +118,8 @@ func _ready() -> void:
 	var scenario_paths := Cmdline.values("--scenario")
 	var serve_dir := Cmdline.value("--serve")
 	if scenario_paths.is_empty() and serve_dir.is_empty():
-		queue_free()
+		if not keep_alive_for_tests:
+			queue_free()
 		return
 
 	# Scenarios need a real window to render into, but they have no business
@@ -319,6 +325,14 @@ func _run(path: String) -> void:
 
 func _execute(line: String) -> String:
 	var parts := line.split(" ", false)
+	# The project's hooks are asked FIRST, so a project may take over a
+	# built-in (a `settle` that knows its own busy nodes, a `shot` that
+	# hides a debug overlay); null means "not mine".
+	var hooks: Object = DebugConsole.hooks
+	if hooks != null and hooks.has_method("scenario_command"):
+		var claimed: Variant = await hooks.scenario_command(parts, line)
+		if claimed != null:
+			return str(claimed)
 	match parts[0]:
 		"shot":
 			return await _shot(parts)
@@ -408,12 +422,7 @@ func _execute(line: String) -> String:
 ## harness fails on exactly that shape, so a command that merely answers
 ## "false" passes silently: an assertion-like handler must return an error,
 ## never an answer.
-func _project_command(parts: PackedStringArray, line: String) -> String:
-	var hooks: Object = DebugConsole.hooks
-	if hooks != null and hooks.has_method("scenario_command"):
-		var reply: Variant = await hooks.scenario_command(parts, line)
-		if reply != null:
-			return str(reply)
+func _project_command(_parts: PackedStringArray, line: String) -> String:
 	return DebugConsole.execute(line)
 
 

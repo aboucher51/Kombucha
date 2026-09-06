@@ -33,15 +33,20 @@ func restore() -> void:
 	pass
 
 
-## A scenario line no built-in harness command claimed. Return "" for
-## success, "ERROR: ..." for failure (the harness fails on exactly that
-## shape), or null to say "not mine" and let the debug console try it.
-## Assertions MUST return an error, never a "false" answer that passes.
+## Every scenario line, asked BEFORE the harness's built-ins, so a project
+## may take one over (a `settle` that knows its own busy nodes). Return ""
+## for success, "ERROR: ..." for failure (the harness fails on exactly that
+## shape), or null to say "not mine" and let the built-ins, then the debug
+## console, try it. Assertions MUST return an error, never a "false" answer
+## that passes.
 func scenario_command(_parts: PackedStringArray, _line: String) -> Variant:
 	return null
 
 
-## A console command whose handler id (from data/console_commands.project.json)
-## the shared console does not know. Return the reply, or null for "not mine".
+## Every console command by handler id, asked BEFORE the shared console's
+## own handlers, so a project may take over a core command (its own
+## `saves` text, a `locale` that persists). Project commands declare their
+## surface in data/console_commands.project.json. Return the reply, or null
+## for "not mine".
 func console_dispatch(_handler: String, _args: Dictionary) -> Variant:
 	return null

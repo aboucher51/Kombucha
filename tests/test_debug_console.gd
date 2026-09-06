@@ -73,3 +73,20 @@ func test_bind_and_refusal() -> void:
 
 func test_alias_resolves() -> void:
 	assert_string_contains(DebugConsole.execute("?"), "help")
+
+
+## A project hook is asked before the core handler, so it may take a core
+## command over; null hands it back.
+class OverridingHooks extends Node:
+	func console_dispatch(handler: String, _args: Dictionary) -> Variant:
+		return "project cleared" if handler == "clear" else null
+
+
+func test_project_hooks_may_override_a_core_command() -> void:
+	var previous: Object = DebugConsole.hooks
+	var mine := OverridingHooks.new()
+	DebugConsole.hooks = mine
+	assert_eq(DebugConsole.execute("clear"), "project cleared")
+	assert_string_contains(DebugConsole.execute("help"), "save", "null from the hook falls through to the core handler")
+	DebugConsole.hooks = previous
+	mine.free()

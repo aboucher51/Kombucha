@@ -64,6 +64,12 @@ synced today.
 Failures must be returned as `"ERROR: ..."` — the harness fails a scenario
 on exactly that shape, so an assertion-like handler that answers `"false"`
 instead passes silently.
+**The hooks are asked first**, for console handlers and scenario lines
+alike: a project may take over a core command or a harness built-in by
+answering for its id (one project's `saves` prints the browser's own row
+text, another's `settle` knows its own busy nodes), and `null` means "not
+mine". Without this, a project that needed its own `locale` had to edit
+the synced console, and the next sync erased it.
 
 ### Tests
 

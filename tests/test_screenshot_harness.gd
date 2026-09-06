@@ -85,3 +85,27 @@ func test_a_baseline_round_trips_through_png_bytes() -> void:
 	DirAccess.remove_absolute(path)
 	assert_not_null(back)
 	assert_eq(Harness.compare(image, back, [])["differing"], 0)
+
+
+## The same first refusal for scenario lines: a project may take over a
+## built-in; null falls through to it.
+class ClaimingHooks extends Node:
+	func scenario_command(parts: PackedStringArray, _line: String) -> Variant:
+		return "ERROR: wait is mine" if parts[0] == "wait" else null
+
+
+func test_project_hooks_may_override_a_builtin_scenario_command() -> void:
+	# Without --scenario the harness frees itself at the end of the frame
+	# (cancel_free() does not hold), and an await across that frame would
+	# never resume: the seam keeps it for the test.
+	Harness.keep_alive_for_tests = true
+	var harness: Node = Harness.new()
+	add_child_autofree(harness)
+	Harness.keep_alive_for_tests = false
+	var previous: Object = DebugConsole.hooks
+	var mine := ClaimingHooks.new()
+	DebugConsole.hooks = mine
+	assert_eq(await harness._execute("wait 1"), "ERROR: wait is mine")
+	assert_eq(await harness._execute("ticks 1"), "", "null from the hook falls through to the built-in")
+	DebugConsole.hooks = previous
+	mine.free()
