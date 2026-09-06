@@ -100,18 +100,43 @@ own status at the top.
   replies are files, verdict per command, `reset` returns to the boot
   scene. Proven in `check.local.sh` (runs, fails a bad line, stops).
 
+- **Hooks first**: `console_dispatch` and `scenario_command` are asked
+  before the core handlers and built-ins, so a project may take over
+  `saves`, `locale` or `settle` from `dev_hooks.gd` (NavalWar had edited
+  the synced console for that).
+- **A hidden namesake is not ambiguous**: among nodes sharing a name the
+  one visible in the tree wins when alone; two visible ones stay an
+  error (FrogGame's hub and pause menu both build a `SettingsButton`).
+- **FrogGame and NavalWar migrated** (the user's two active projects):
+  79 and 81 console handlers moved to `dev_hooks.gd` by an extractor
+  (kept in the session scratchpad; worth landing as a tool if another
+  project needs it), sandbox resets to `sandbox()`/`restore()`, CLAUDE.md
+  imports the tooling text. FrogGame's skirmish joined the `settle` group.
+  NavalWar's commit sits on its `combat-popup` branch with only the
+  tooling files, because another session was working in that tree and
+  the sync had already clobbered its uncommitted console edits; its
+  check was not run to completion there at that session's request.
+  Two FrogGame scenarios (`campaign_loop`, `tactics_verbs`) failed once
+  under CPU contention from concurrent checks and pass alone: their
+  waits are frame-counted against wall-clock tweens.
+- `checkout@v5` in both workflows (NavalWar's bump; v4 warns on Node 20).
+
 ## Next
 
 0. **Move projects to the Linux filesystem**
    (`docs/plans/2026-09-05-linux-move.md`): Monmon trialled, boot 15.0 s
    to 0.8 s, full check 395 s to 217 s, identical results. Cut-over and the
    remaining projects are the user's call.
+0. **Never sync into a tree another session is editing.** The sync
+   overwrites owned files; uncommitted edits there are lost. Check
+   `git status` immediately before, and ask the tree's session first.
 1. **Migrate the remaining siblings** (`docs/plans/2026-09-05-absorb-sibling-tooling.md`,
    last section): per project, whole-file diff of every owned path against
    the scaffold commit, move in-file customisations into the seams (and
    generic fixes into Kombucha), sync, full check. Order: Tandem, Zoofle,
-   Orbit, procedural-factory, BossFights, Monmon, FrogGame, NavalWar
-   (scoped above). Carry the JsonLines line-base fix to Monmon.
+   Orbit, procedural-factory, BossFights, Monmon (FrogGame and NavalWar
+   are done). Not active projects; the user works in FrogGame and
+   NavalWar only, so these wait until they are picked up again. Carry the JsonLines line-base fix to Monmon.
 2. **Kit adoption by siblings**: a `--kit` report mode for
    `sync-tooling.sh` listing kit files that differ and the Template commit
    that last touched each, so a project can cherry-pick.
@@ -121,6 +146,13 @@ own status at the top.
 4. **`SHOOT_SLOW`** from the measured runner time: CI's scenario half ran
    in seconds, so the default 3x is generous; revisit when a real suite
    runs there.
+5. **Fast feedback** (`docs/plans/2026-09-05-fast-feedback.md`): one
+   engine-error extractor (`path:line: message (xN)`) under every log and
+   the `test.sh` gap it closes; `tools/lint.sh` (`--check-only` on changed
+   scripts) as the first `check.sh` gate plus a PostToolUse hook seed;
+   scoped `dump` / `assert_prop` harness commands; the GDScript LSP as
+   documented machine setup; consuming the project map from
+   `~/godot-projects/godot-map` (read before grepping, `--check` in CI).
 
 ## Not planned
 
