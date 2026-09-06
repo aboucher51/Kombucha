@@ -12,7 +12,7 @@
 # Linux or WSL2. Nothing here needs sudo: Godot goes to ~/.local/bin.
 set -uo pipefail
 
-GODOT_VERSION="4.7"
+GODOT_VERSION="4.7.2"  # keep equal to tools/GODOT_VERSION (check.local.sh gates it)
 BIN="${SETUP_BIN:-$HOME/.local/bin}"
 CLAUDE_SETTINGS="${SETUP_CLAUDE_SETTINGS:-$HOME/.claude/settings.json}"
 PROJECTS="${SETUP_PROJECTS:-$HOME/godot-projects}"
@@ -54,21 +54,28 @@ have_godot() { command -v godot4 >/dev/null 2>&1 && godot4 --version 2>/dev/null
 if have_godot; then
 	ok "godot4 $(godot4 --version 2>/dev/null | head -1) on PATH"
 else
+	if command -v godot4 >/dev/null 2>&1; then
+		skip "godot4 is $(godot4 --version 2>/dev/null | head -1); installing $GODOT_VERSION to $BIN"
+	fi
 	mkdir -p "$BIN"
 	zip="$(mktemp --suffix=.zip)"
 	url="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+	# Written beside the target and moved into place: a godot4 that is
+	# running (Claude's language server keeps one open) cannot be
+	# overwritten in place, but it can be replaced.
 	if curl -fL --retry 3 --progress-bar -o "$zip" "$url" \
 			&& python3 - "$zip" "$BIN/godot4" <<-'PY'
 		import os, sys, zipfile
 		zip_path, out = sys.argv[1], sys.argv[2]
 		with zipfile.ZipFile(zip_path) as z:
 		    name = next(n for n in z.namelist() if n.endswith("linux.x86_64"))
-		    with open(out, "wb") as f:
+		    with open(out + ".new", "wb") as f:
 		        f.write(z.read(name))
-		os.chmod(out, 0o755)
+		os.chmod(out + ".new", 0o755)
+		os.replace(out + ".new", out)
 	PY
 	then
-		did "installed $BIN/godot4"
+		did "installed $BIN/godot4 ($GODOT_VERSION)"
 	else
 		fail "could not download Godot from $url"
 	fi

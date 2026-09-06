@@ -1,7 +1,7 @@
 {
   "name": "kombucha",
   "description": "The Godot-to-Claude loop: headless test runner, screenshot harness, debug console, check script and the skills that scaffold a Godot 4 project with them and keep it synced.",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "author": {
     "name": "Alex",
     "url": "https://github.com/aboucher51"

@@ -19,7 +19,19 @@ GODOT="${GODOT:-godot4}"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT" || exit 2
 
-GODOT_VERSION="4.7"
+# Export templates must match the engine's exact patch version, so the
+# version is read from the binary itself ("4.7.2.stable.official.xxx" ->
+# "4.7.2"; a .0 release reports "4.7.stable" -> "4.7", which is also how
+# its release is tagged). tools/GODOT_VERSION is the version the project
+# pins for setup.sh and CI; a mismatch is noted, not fatal.
+GODOT_VERSION="$("$GODOT" --version 2>/dev/null | sed -n '1s/^\([0-9][0-9.]*\)\.stable.*/\1/p')"
+if [[ -z "$GODOT_VERSION" ]]; then
+	echo "export: cannot read a stable version from '$GODOT --version'" >&2
+	exit 1
+fi
+if [[ -f tools/GODOT_VERSION ]] && [[ "$(cat tools/GODOT_VERSION)" != "$GODOT_VERSION" ]]; then
+	echo "note: godot4 is $GODOT_VERSION, tools/GODOT_VERSION pins $(cat tools/GODOT_VERSION) (tools/setup.sh installs the pinned one)"
+fi
 TEMPLATE_DIR="$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
 TEMPLATE_URL="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
 

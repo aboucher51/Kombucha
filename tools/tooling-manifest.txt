@@ -11,6 +11,7 @@ tools/serve.sh
 tools/export.sh
 tools/sync-tooling.sh
 tools/tooling-manifest.txt
+tools/GODOT_VERSION
 tools/seeds/
 tools/make_pseudo_locale.py
 docs/godot-tooling.md

@@ -96,6 +96,16 @@ PY
 	fi
 fi
 
+# One Godot version, written in two places: tools/GODOT_VERSION (CI and
+# export.sh read it) and setup.sh (which runs from a curl pipe, with no
+# file beside it). They must agree.
+PINNED="$(cat tools/GODOT_VERSION)"
+if grep -q "^GODOT_VERSION=\"$PINNED\"" tools/setup.sh; then
+	printf '  ok    setup.sh installs the pinned Godot %s\n' "$PINNED"
+else
+	printf '  FAIL  setup.sh GODOT_VERSION differs from tools/GODOT_VERSION (%s)\n' "$PINNED"; MISSING=1
+fi
+
 # The runner's own guards, proven against a scratch copy (see selftest.sh).
 tools/selftest.sh || MISSING=1
 exit $MISSING

@@ -29,7 +29,7 @@ claude plugin install kombucha@kombucha
 
 - Linux, or Windows with WSL2 and WSLg. Keep projects on the Linux
   filesystem, not `/mnt/c`.
-- Godot 4.7 on the PATH as `godot4`; `git`, `python3`, `curl`.
+- Godot on the PATH as `godot4`, the patch version `tools/GODOT_VERSION` pins (4.7.2 today; the setup script installs it); `git`, `python3`, `curl`.
 - Optional: `xvfb-run` for CI-style runs, [godot-map](https://github.com/aboucher51/godot-map)
   for a project map Claude reads before grepping, and the
   [GodotPrompter](https://github.com/jame581/GodotPrompter) plugin, which
