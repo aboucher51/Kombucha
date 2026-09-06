@@ -27,6 +27,8 @@ extends Node
 ##     settle [s] [group]      wait until no node in the group (default
 ##                             "settle") answers is_busy() true; ERROR after s
 ##     click <NodeName>        synthesise a real mouse click on a named Control
+##                             (a target below a ScrollContainer's fold is
+##                             scrolled into view first; hover does the same)
 ##     click_at <x> <y>        the same at viewport coordinates (Node2D boards)
 ##     scroll_to <NodeName>    scroll a ScrollContainer row into view first
 ##     hover <NodeName>        move the real mouse over it and verify it took
@@ -635,6 +637,7 @@ func _click(parts: PackedStringArray) -> String:
 		if i > 0 and rect == last_rect:
 			break
 		last_rect = rect
+	await _scroll_into_view(target)
 	return await _click_point(target.get_global_transform_with_canvas() * (target.size / 2.0))
 
 
@@ -683,15 +686,35 @@ func _scroll_to(parts: PackedStringArray) -> String:
 	var target := _find_control(parts[1])
 	if target == null:
 		return _lookup_error
+	if _scroll_holder(target) == null:
+		return "ERROR: '%s' is not inside a ScrollContainer" % parts[1]
+	await _scroll_into_view(target, true)
+	return ""
+
+
+static func _scroll_holder(target: Control) -> ScrollContainer:
 	var holder: Node = target
 	while holder != null and holder is not ScrollContainer:
 		holder = holder.get_parent()
+	return holder as ScrollContainer
+
+
+## A target below the fold of a ScrollContainer is visible but not
+## clickable: the click lands where the rect is, outside the viewport,
+## and the harness answers ok while nothing opens (a settings header
+## dropped below the fold when its buttons grew an icon slot; the
+## scenario stayed green and the wrong screen was shot). So `click` and
+## `hover` scroll the target into view themselves when its rect is not
+## inside the holder's; `scroll_to` forces it.
+func _scroll_into_view(target: Control, force: bool = false) -> void:
+	var holder := _scroll_holder(target)
 	if holder == null:
-		return "ERROR: '%s' is not inside a ScrollContainer" % parts[1]
-	(holder as ScrollContainer).ensure_control_visible(target)
+		return
+	if not force and holder.get_global_rect().encloses(target.get_global_rect()):
+		return
+	holder.ensure_control_visible(target)
 	for i in 4:
 		await get_tree().process_frame
-	return ""
 
 
 ## Wait until nothing in the group reports is_busy(), or fail after the
@@ -705,6 +728,10 @@ func _settle(parts: PackedStringArray) -> String:
 	while true:
 		var busy: Array[String] = []
 		for node in get_tree().get_nodes_in_group(group):
+			# A queue_free'd node is in the group until the frame ends, and
+			# answers busy one frame too long; skip what is on its way out.
+			if node.is_queued_for_deletion():
+				continue
 			if node.has_method("is_busy") and node.is_busy():
 				busy.append(str(node.name))
 		if busy.is_empty():
@@ -727,20 +754,28 @@ func _hover(parts: PackedStringArray) -> String:
 		return _lookup_error
 	if not target.is_visible_in_tree():
 		return "ERROR: '%s' is not visible" % parts[1]
+	await _scroll_into_view(target)
 	var at := target.get_global_transform_with_canvas() * (target.size / 2.0)
-	_warp_cursor(at)
-	var motion := InputEventMouseMotion.new()
-	motion.position = at
-	motion.global_position = at
-	get_viewport().push_input(motion, true)
-	await get_tree().process_frame
-	await get_tree().process_frame
-	var hovered := get_viewport().gui_get_hovered_control()
+	# Retried: the shards share the ONE real cursor, and another process
+	# warping it across this window lands a real motion event AFTER the
+	# synthetic one, so the hovered control reads wrong for a frame or
+	# two (one batch in ten, measured). The interference is transient;
+	# a stale reading is not a failure until it holds.
+	var hovered: Control = null
+	for attempt in 6:
+		_warp_cursor(at)
+		var motion := InputEventMouseMotion.new()
+		motion.position = at
+		motion.global_position = at
+		get_viewport().push_input(motion, true)
+		await get_tree().process_frame
+		await get_tree().process_frame
+		hovered = get_viewport().gui_get_hovered_control()
+		if hovered != null and (hovered == target or target.is_ancestor_of(hovered)):
+			return ""
 	if hovered == null:
 		return "ERROR: hover did not register at %s (over %s)" % [at, parts[1]]
-	if hovered != target and not target.is_ancestor_of(hovered):
-		return "ERROR: hover landed on '%s', wanted '%s' at %s" % [hovered.name, parts[1], at]
-	return ""
+	return "ERROR: hover landed on '%s', wanted '%s' at %s" % [hovered.name, parts[1], at]
 
 
 ## A layout RULE as a line: the whole rect of the named visible Control in

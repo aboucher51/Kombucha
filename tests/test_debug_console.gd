@@ -105,3 +105,14 @@ func test_project_hooks_may_override_a_core_command() -> void:
 	assert_string_contains(DebugConsole.execute("help"), "save", "null from the hook falls through to the core handler")
 	DebugConsole.hooks = previous
 	mine.free()
+
+
+func test_a_flag_may_precede_a_rest_argument() -> void:
+	assert_eq(DebugConsole.execute("note --kind=todo buy milk"), "Noted.")
+	assert_string_contains(DebugConsole.execute("notes"), "todo: buy milk", "the flag is named, the rest is the text")
+	assert_eq(DebugConsole.execute("note buy --kind=todo eggs"), "Noted.", "anywhere on the line")
+	assert_string_contains(DebugConsole.execute("notes"), "todo: buy eggs")
+	assert_eq(DebugConsole.execute("note plain one"), "Noted.")
+	assert_string_contains(DebugConsole.execute("notes"), "\nplain one", "no flag: the default kind adds nothing")
+	assert_string_starts_with(DebugConsole.execute("note --kind=urgent x"), "ERROR", "a flag's value is checked like any argument")
+	assert_string_starts_with(DebugConsole.execute("note --nope=1 x"), "ERROR", "an unknown flag is refused")

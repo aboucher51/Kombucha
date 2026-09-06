@@ -223,7 +223,8 @@ func _dispatch(command: Dictionary, args: Dictionary) -> String:
 func _state_providers(method: String) -> Array[Node]:
 	var providers: Array[Node] = []
 	for node in get_tree().get_nodes_in_group("state"):
-		if node.has_method(method):
+		# a freed provider is in the group until the frame ends
+		if node.has_method(method) and not node.is_queued_for_deletion():
 			providers.append(node)
 	return providers
 
@@ -301,10 +302,46 @@ func _find_command(name: String) -> Dictionary:
 
 ## Returns { "args": { name: value } } or { "error": String }. A "rest"
 ## argument swallows the remainder of the line, which is what lets a
-## multi-word note work without quoting.
+## multi-word note work without quoting. A spec with `"flag": true` is
+## NAMED, not positional: `--name=value` (or bare `--name` for true)
+## anywhere on the line, pulled out before the positional pass. It is how
+## an optional argument can precede a rest one: positions cannot express
+## that, and one project forked a command per field instead.
 func _parse_args(command: Dictionary, tokens: Array) -> Dictionary:
 	var args: Dictionary = {}
 	var specs: Array = command.get("args", [])
+	var positional: Array = []
+	for token in tokens:
+		var text := str(token)
+		if not text.begins_with("--") or text.length() < 3:
+			positional.append(token)
+			continue
+		var eq := text.find("=")
+		var flag_name := text.substr(2, (eq - 2) if eq > 0 else -1)
+		var found := false
+		for spec in specs:
+			if spec.get("flag", false) and spec.get("name", "") == flag_name:
+				var value: String = text.substr(eq + 1) if eq > 0 else "true"
+				var parsed := _parse_value(spec, value)
+				if parsed.has("error"):
+					return parsed
+				args[flag_name] = parsed["value"]
+				found = true
+				break
+		if not found:
+			return {"error": "Unknown flag --%s." % flag_name}
+	tokens = positional
+	var specs_positional: Array = []
+	for spec in specs:
+		if spec.get("flag", false):
+			if not args.has(spec.get("name", "")):
+				if spec.get("required", false):
+					return {"error": "Missing --%s." % spec.get("name", "")}
+				if spec.has("default"):
+					args[spec.get("name", "")] = spec["default"]
+		else:
+			specs_positional.append(spec)
+	specs = specs_positional
 	for i in specs.size():
 		var spec: Dictionary = specs[i]
 		var name: String = spec.get("name", "arg%d" % i)
@@ -324,23 +361,32 @@ func _parse_args(command: Dictionary, tokens: Array) -> Dictionary:
 				args[name] = spec["default"]
 			continue
 
-		var raw: String = tokens[i]
-		match kind:
-			"int":
-				if not raw.is_valid_int():
-					return {"error": "<%s> must be a whole number." % name}
-				args[name] = clampi(int(raw), int(spec.get("min", -99999)), int(spec.get("max", 99999)))
-			"float":
-				if not raw.is_valid_float():
-					return {"error": "<%s> must be a number." % name}
-				args[name] = float(raw)
-			"enum":
-				if not (spec.get("values", []) as Array).has(raw):
-					return {"error": "<%s> must be one of: %s" % [name, ", ".join(PackedStringArray(spec.get("values", [])))]}
-				args[name] = raw
-			_:
-				args[name] = raw
+		var parsed := _parse_value(spec, str(tokens[i]))
+		if parsed.has("error"):
+			return parsed
+		args[name] = parsed["value"]
 	return {"args": args}
+
+
+## One value against one spec's kind: { "value": ... } or { "error": ... }.
+static func _parse_value(spec: Dictionary, raw: String) -> Dictionary:
+	var name: String = spec.get("name", "arg")
+	match str(spec.get("kind", "string")):
+		"int":
+			if not raw.is_valid_int():
+				return {"error": "<%s> must be a whole number." % name}
+			return {"value": clampi(int(raw), int(spec.get("min", -99999)), int(spec.get("max", 99999)))}
+		"float":
+			if not raw.is_valid_float():
+				return {"error": "<%s> must be a number." % name}
+			return {"value": float(raw)}
+		"enum":
+			if not (spec.get("values", []) as Array).has(raw):
+				return {"error": "<%s> must be one of: %s" % [name, ", ".join(PackedStringArray(spec.get("values", [])))]}
+			return {"value": raw}
+		"bool":
+			return {"value": raw.to_lower() in ["true", "1", "yes", "on"]}
+	return {"value": raw}
 
 
 # ── UI (built lazily) ────────────────────────────────────────────────────

@@ -2,8 +2,15 @@
 	{
 		"id": "note",
 		"handler": "note",
-		"usage": "note <text>",
+		"usage": "note [--kind=<kind>] <text>   (a flag before a rest argument)",
 		"args": [
+			{
+				"name": "kind",
+				"kind": "enum",
+				"values": ["plain", "todo"],
+				"flag": true,
+				"default": "plain"
+			},
 			{
 				"name": "text",
 				"kind": "rest"

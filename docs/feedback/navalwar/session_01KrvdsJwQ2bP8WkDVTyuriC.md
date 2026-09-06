@@ -150,3 +150,45 @@ functions to `FILES`.
   way to see which line failed and why, every single time; the
   `expect_fail` + `toast_assert` / `select_assert` pattern makes a
   scenario a real test. Keep encouraging assertion seams over shots.
+
+## Disposition (Kombucha, 2026-09-06)
+
+Assessed against the tooling at `4a1d6e0`; the items below landed in the
+next commit. NavalWar is on `33c70aa` and gets 1, 7 and 8's audio item by
+syncing.
+
+- **1, batch click** — already done for FrogGame's report (same-frame
+  press and release). Second independent hit; the sync closes it. Delete
+  the project-side copy on sync.
+- **2, `click` scrolls into view** — done: `click` and `hover` scroll a
+  target whose rect is outside its ScrollContainer's; `scroll_to` forces
+  it. `scenarios/click_below_fold.txt`. The manual `scroll_to` lines can
+  go.
+- **3, assert value** — the kit's `assert` has declared `value` as
+  `rest` since its first commit; `nw_assert` declares it `string` in
+  NavalWar's own `console_commands.project.json`, one word to change
+  there. The rule is now in the tooling text.
+- **4, optional before rest** — done as named flags: a spec with
+  `"flag": true` is given as `--name=value` anywhere on the line and
+  pulled out before the positional pass; kinds and defaults apply. So
+  `ed_sprite --field=<f> <dest> <path>` is one command. Fixture: `note
+  --kind=todo <text>`, with a test.
+- **5, settle** — the scaffold's main scene already answers `is_busy()`
+  in the `settle` group (every new project starts from it); the "own
+  table, never child count" rule is in the tooling text.
+- **6, group hosts on their way out** — done: `settle`, the console's
+  `state` providers and SaveManager's provider loops skip
+  `is_queued_for_deletion()`; a CLAUDE.md rule for group-reached UI.
+- **7a, sync headlines** — done: a sync prints the Kombucha commits
+  between the old stamp and the new one.
+- **7b, three-screen loop** — done: the seed `check.local.sh` runs it
+  live, sizes and scenario as variables, and prints `--` while the
+  project has no layout scenario yet.
+- **8 and 9, the UI kit pass** — deferred to a session of its own:
+  ~1,150 lines here and ~1,450 in FrogGame with real differences between
+  the copies, and the fixture's menus must be rebuilt on the pieces so
+  each is exercised. The audio half (lists, `pick`) is already in.
+- **10a, the map hook** — NavalWar has it now; Kombucha itself did not,
+  and does. `check.sh` will not regenerate the map itself: a gate that
+  edits the tree is not a gate.
+- **10b** — noted; the JSONL trace and assertion seams stay the answer.

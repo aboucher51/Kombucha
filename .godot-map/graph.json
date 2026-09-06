@@ -411,7 +411,7 @@
    "node_paths": [],
    "groups_joined": [],
    "groups_queried": [],
-   "lines": 193
+   "lines": 197
   },
   "res://scripts/dev/bug_report.gd": {
    "path": "res://scripts/dev/bug_report.gd",
@@ -466,6 +466,7 @@
     "_save_names",
     "_find_command",
     "_parse_args",
+    "_parse_value",
     "_build_ui",
     "print_line",
     "_on_submitted",
@@ -484,7 +485,7 @@
    "groups_queried": [
     "state"
    ],
-   "lines": 467
+   "lines": 513
   },
   "res://scripts/dev/dev_hooks.gd": {
    "path": "res://scripts/dev/dev_hooks.gd",
@@ -508,7 +509,7 @@
    "groups_queried": [
     "settle"
    ],
-   "lines": 56
+   "lines": 59
   },
   "res://scripts/dev/screenshot_harness.gd": {
    "path": "res://scripts/dev/screenshot_harness.gd",
@@ -543,6 +544,8 @@
     "_click_point",
     "_warp_cursor",
     "_scroll_to",
+    "_scroll_holder",
+    "_scroll_into_view",
     "_settle",
     "_hover",
     "_assert_zone",
@@ -569,7 +572,7 @@
    "node_paths": [],
    "groups_joined": [],
    "groups_queried": [],
-   "lines": 1014
+   "lines": 1049
   },
   "res://scripts/dev/selftest_driver.gd": {
    "path": "res://scripts/dev/selftest_driver.gd",
@@ -1191,14 +1194,15 @@
     "test_volume_applies",
     "test_bind_and_refusal",
     "test_alias_resolves",
-    "test_project_hooks_may_override_a_core_command"
+    "test_project_hooks_may_override_a_core_command",
+    "test_a_flag_may_precede_a_rest_argument"
    ],
    "emits": [],
    "connects": [],
    "node_paths": [],
    "groups_joined": [],
    "groups_queried": [],
-   "lines": 108
+   "lines": 119
   },
   "res://tests/test_dev_hooks.gd": {
    "path": "res://tests/test_dev_hooks.gd",

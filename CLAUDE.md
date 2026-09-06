@@ -301,6 +301,12 @@ right; several were found by two projects independently.
   top-left. Use `set_anchors_and_offsets_preset()`, or set anchors before
   `add_child()`. And `Control.position` on an anchored control is
   parent-relative: place with `offset_*`. (Two projects, independently.)
+- **A node reached by group must skip nodes on their way out.** A
+  `queue_free`'d node stays in its group, visible, until the frame ends:
+  a toast host picked by `get_first_node_in_group` found the previous
+  test's freed host, and "no host is no error" found a host. Every group
+  loop in the kit skips `is_queued_for_deletion()`, and a test asserting
+  absence awaits one frame first.
 - **A child's `_ready()` runs before its parent's, and groups are not filled
   yet.** A pause menu asked in `_ready()` whether a match was running,
   always got no, and its Save button had never once appeared in a running

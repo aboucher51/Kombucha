@@ -39,7 +39,10 @@ func console_dispatch(handler: String, args: Dictionary) -> Variant:
 			main.set_busy(int(args["frames"]))
 			return "Busy for %d frames." % int(args["frames"])
 		"note":
-			notes.append(str(args["text"]))
+			# `--kind=todo` is a FLAG (declared "flag": true): named, so it
+			# may precede the rest argument, which positions cannot do.
+			var kind := str(args.get("kind", "plain"))
+			notes.append(("%s: %s" % [kind, args["text"]]) if kind != "plain" else str(args["text"]))
 			return "Noted."
 		"notes":
 			return "No notes." if notes.is_empty() else "\n".join(notes)

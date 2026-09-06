@@ -88,7 +88,14 @@ sync, which is why one project's 600 lines of in-file commands cannot be
 synced today.
 Failures must be returned as `"ERROR: ..."` — the harness fails a scenario
 on exactly that shape, so an assertion-like handler that answers `"false"`
-instead passes silently.
+instead passes silently. **An assertion's value is `"kind": "rest"`**, as
+the core `assert` declares it: a `string` value stops at the first space,
+and every Vector2i prints with one, so a project's own `x_assert anchor
+(4, 3)` compared against `(4,`. **A named argument is a flag**
+(`"flag": true`, given as `--name=value` anywhere on the line, pulled out
+before the positional pass): it is how an optional argument can precede
+a rest one, which positions cannot express; one project forked a command
+per field instead.
 **The hooks are asked first**, for console handlers and scenario lines
 alike: a project may take over a core command or a harness built-in by
 answering for its id (one project's `saves` prints the browser's own row
@@ -203,7 +210,9 @@ h]`, `wait <frames>`, `ticks <n>` (physics frames: game time), `sleep
 after `s`), `click <NodeName>` (synthesises real input — prefer it when what
 you need to prove is that the *player's* path works, not that a handler
 does), `click_at <x> <y>` (viewport coordinates, for Node2D boards),
-`scroll_to <NodeName>`, `hover <NodeName>`, `press <action>`,
+`scroll_to <NodeName>` (`click` and `hover` scroll a target below a
+ScrollContainer's fold into view themselves; this forces it), `press
+<action>`,
 `assert_visible`, `assert_onscreen` (Control, or Node3D through the live
 camera), `assert_zone <NodeName> <top|bottom|left|right>` (the whole rect
 in that zone of the viewport: a layout rule a scenario enforces instead of
@@ -237,7 +246,14 @@ Rules that keep the harness useful:
   physics falls behind wall time, so a wall-clock sleep under-waits
   exact-timed choreography (one project's ferry failed only in the batch);
   a timer-driven thing wants `sleep`. `settle` beats both when the thing
-  you are waiting for can say it is busy.
+  you are waiting for can say it is busy: **any node that animates joins
+  the `settle` group and answers `is_busy()`** (the scaffold's main scene
+  does, as the pattern), and one project replaced every `sleep 1.6` guess
+  with `settle` the day its board answered. `is_busy()` reads the owner's
+  OWN table of live tweens and effects, never `get_child_count()`: a
+  `queue_free`'d node is a child until the frame ends and reads busy one
+  frame too long. The harness skips nodes on their way out for the same
+  reason, in `settle` and in the `state` group.
 - **A name shared by two VISIBLE nodes is an ERROR, not a coin toss.**
   Every lookup refuses an ambiguous name; assert on a uniquely named node
   instead. One project's `assert_onscreen Cliffs` used to answer about
@@ -257,9 +273,13 @@ Rules that keep the harness useful:
   (found again, at 1280x800 in a 1600x900 game, after the warp was
   added). The local check clicks at 960x540 and 1280x800 for that.
 - **A row below the fold is visible but not clickable**: `click` lands where
-  the rect is, outside the viewport. `scroll_to` it first. A menu whose only
-  seam is a clickable button is not fully scriptable once it scrolls; every
-  menu action also needs a non-click seam.
+  the rect is, outside the viewport, and the harness answered ok while
+  nothing opened (a settings header dropped below the fold when its
+  buttons grew an icon slot). `click` and `hover` now scroll a target
+  into view when its rect is outside its ScrollContainer's; `scroll_to`
+  forces it. A menu whose only seam is a clickable button is still not
+  fully scriptable once it scrolls; every menu action also needs a
+  non-click seam.
 - **`expect_shot` is the visual regression gate, and baselines are per
   rasterizer.** It compares the frame against
   `scenarios/baselines/<renderer>/<stem>-<name>.png` (committed; the
@@ -376,6 +396,10 @@ improvement made here is invisible to every other project. Improve them in
 Kombucha, then sync. Extend them only through `scripts/dev/dev_hooks.gd`,
 `data/console_commands.project.json` and `tools/check.local.sh`.
 
+A sync prints the headlines of the Kombucha commits it pulled (old stamp
+to new), so a note that said "blocked on the next tooling sync" can be
+checked against what just arrived (one project's Steam Deck run was
+already fixed by a sync nobody re-ran the check after).
 Before a sync, `tools/sync-tooling.sh <project> --check --diff` (run from
 Kombucha) measures each drifted owned file against the Kombucha version
 it is closest to and prints the lines THIS project added beyond it: what

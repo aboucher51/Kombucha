@@ -1,0 +1,11 @@
+# A row below a ScrollContainer's fold is visible but not clickable where
+# it stands: `click` scrolls it into view itself (scroll_to is explicit).
+# The failure this guards is silent: an ok line and nothing pressed.
+wait 5
+expect_fail assert last_row Row25
+click Row25
+assert last_row Row25
+hover Row02
+click Row02
+assert last_row Row02
+shot scrolled

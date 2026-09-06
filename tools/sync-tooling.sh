@@ -230,6 +230,19 @@ if [[ -f "$DEST/CLAUDE.md" ]] && ! grep -q '^@docs/godot-tooling.md' "$DEST/CLAU
 	echo "note: CLAUDE.md does not import the tooling rules — replace its tooling sections with a line reading @docs/godot-tooling.md"
 fi
 
+# What this sync PULLS, as headlines: the Kombucha commits between the
+# project's old stamp and the new one, so the project knows which of its
+# own notes ("blocked on the next sync") just went stale. Needs a source
+# with history; a plugin install prints nothing here.
+OLD_STAMP="$(head -1 "$DEST/tools/TOOLING_VERSION" 2>/dev/null || true)"
+if [[ -d "$SRC/.git" && "$OLD_STAMP" =~ ^[0-9a-f]{40}$ ]] && git -C "$SRC" cat-file -e "$OLD_STAMP" 2>/dev/null; then
+	PULLED="$(git -C "$SRC" log --oneline "$OLD_STAMP..HEAD" 2>/dev/null | head -30)"
+	if [[ -n "$PULLED" ]]; then
+		echo "pulled $(wc -l <<<"$PULLED") Kombucha commit(s) since ${OLD_STAMP:0:7}:"
+		sed 's/^/  /' <<<"$PULLED"
+	fi
+fi
+
 {
 	source_commit
 	echo "synced $(date -u +%Y-%m-%dT%H:%M:%SZ) from $SRC"

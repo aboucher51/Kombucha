@@ -42,6 +42,8 @@ var last_load_problem: String = ""
 func collect_save_data() -> Dictionary:
 	var data := {}
 	for node in get_tree().get_nodes_in_group(PROVIDER_GROUP):
+		if node.is_queued_for_deletion():
+			continue   # in the group until the frame ends, gone by the next
 		if not node.has_method("save_key") or not node.has_method("save_payload"):
 			continue
 		var key := str(node.save_key())
@@ -60,6 +62,8 @@ func apply_save_data(data: Dictionary) -> bool:
 		return false
 	var payload: Dictionary = upgraded["payload"]
 	for node in get_tree().get_nodes_in_group(PROVIDER_GROUP):
+		if node.is_queued_for_deletion():
+			continue   # in the group until the frame ends, gone by the next
 		if not node.has_method("save_key") or not node.has_method("restore_payload"):
 			continue
 		var key := str(node.save_key())

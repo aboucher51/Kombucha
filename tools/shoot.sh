@@ -248,12 +248,14 @@ fi
 # compile) would otherwise let a run pass while the game was visibly
 # broken behind the screenshots. Plain `ERROR:` lines count too — a freed
 # lambda capture, a ConfigFile key with no default — minus the exit-time
-# "resources still in use" line, whose count is a coin toss.
+# "resources still in use" line, whose count is a coin toss, and minus
+# the harness's own "ERROR: scenario ..." failure reports, which are
+# already counted as FAIL lines above.
 ERROR_PATTERN="SCRIPT ERROR|Parse Error|shader|^ERROR:"
-ENGINE_ERRORS=$(cat "$WORK"/shard.*.log | grep -vE "resources still in use at exit" | grep -cE "$ERROR_PATTERN")
+ENGINE_ERRORS=$(cat "$WORK"/shard.*.log | grep -vE "resources still in use at exit|^ERROR: scenario " | grep -cE "$ERROR_PATTERN")
 if [[ $ENGINE_ERRORS -gt 0 ]]; then
 	echo "shoot: $ENGINE_ERRORS engine error(s) — a green scenario does not mean a clean run" >&2
-	cat "$WORK"/shard.*.log | grep -vE "resources still in use at exit" | grep -E "$ERROR_PATTERN" | sort -u | head -5 >&2
+	cat "$WORK"/shard.*.log | grep -vE "resources still in use at exit|^ERROR: scenario " | grep -E "$ERROR_PATTERN" | sort -u | head -5 >&2
 	[[ $STATUS -eq 0 ]] && STATUS=1
 fi
 

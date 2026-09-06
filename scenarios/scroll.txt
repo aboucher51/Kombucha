@@ -1,8 +1,7 @@
-# A row below the fold is visible but not clickable until scrolled into
-# view: click lands where the rect is, outside the viewport.
+# scroll_to: the explicit way to bring a ScrollContainer row into view
+# (click and hover do it themselves when the rect is outside the fold;
+# see click_below_fold.txt). A node outside any ScrollContainer is an error.
 wait 5
-click Row30
-expect_fail assert last_row Row30
 scroll_to Row30
 click Row30
 assert last_row Row30
