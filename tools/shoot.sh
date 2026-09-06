@@ -248,14 +248,19 @@ fi
 # compile) would otherwise let a run pass while the game was visibly
 # broken behind the screenshots. Plain `ERROR:` lines count too — a freed
 # lambda capture, a ConfigFile key with no default — minus the exit-time
-# "resources still in use" line, whose count is a coin toss, and minus
-# the harness's own "ERROR: scenario ..." failure reports, which are
-# already counted as FAIL lines above.
+# leak accounting (EXIT_NOISE below), whose counts are a coin toss, and
+# minus the harness's own "ERROR: scenario ..." failure reports, which
+# are already counted as FAIL lines above.
 ERROR_PATTERN="SCRIPT ERROR|Parse Error|shader|^ERROR:"
-ENGINE_ERRORS=$(cat "$WORK"/shard.*.log | grep -vE "resources still in use at exit|^ERROR: scenario " | grep -cE "$ERROR_PATTERN")
+# Exit-time resource accounting is not gated (see docs/godot-tooling.md):
+# "resources still in use", RID and GL texture leak reports all print
+# while the engine tears down, their counts vary between identical runs,
+# and a leak that matters shows in the boot budget or frame_budget.
+EXIT_NOISE="resources still in use at exit|were leaked at exit|Texture with GL ID of [0-9]+: leaked"
+ENGINE_ERRORS=$(cat "$WORK"/shard.*.log | grep -vE "$EXIT_NOISE|^ERROR: scenario " | grep -cE "$ERROR_PATTERN")
 if [[ $ENGINE_ERRORS -gt 0 ]]; then
 	echo "shoot: $ENGINE_ERRORS engine error(s) — a green scenario does not mean a clean run" >&2
-	cat "$WORK"/shard.*.log | grep -vE "resources still in use at exit|^ERROR: scenario " | grep -E "$ERROR_PATTERN" | sort -u | head -5 >&2
+	cat "$WORK"/shard.*.log | grep -vE "$EXIT_NOISE|^ERROR: scenario " | grep -E "$ERROR_PATTERN" | sort -u | head -5 >&2
 	[[ $STATUS -eq 0 ]] && STATUS=1
 fi
 

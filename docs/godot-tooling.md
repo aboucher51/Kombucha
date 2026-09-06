@@ -140,6 +140,13 @@ passing.
 keeps it as the `test-results` artifact beside the shots, so a red run
 can be read per test without the log.
 
+**A shard's budget scales with how few there are.** The default 180 s is
+per shard for four; `TEST_JOBS=1` gets four times that, because one
+process carries the whole suite, and a shard that is killed reports as
+timed out with the scripts it never reached, never as scripts that
+"did not load" (that was the message once, on a 1,000-test suite).
+`TEST_TIMEOUT` overrides.
+
 **A slow test is usually a sleeping one.** Anything that waits out a real
 timer belongs behind a seam a test can shorten; profile with the per-script
 times in `.godot/test-timings`.
@@ -378,12 +385,13 @@ suite. Both exist because a log is read once and a file is asked again.
 `SCRIPT ERROR`s: a freed lambda capture and a ConfigFile key read with no
 default are plain engine errors, and one project logged 738 of them under
 an all-green check before they were counted. The one exception is the
-engine's own exit line `N resources still in use at exit`, which is NOT
-counted as an error: it names a resource a `const preload` still holds
-while the tree is torn down (`--verbose` says which), the count varies
-between identical runs, and a gate on it would be a coin toss. A leak
-that matters shows up as memory in the boot budget or as a growing
-`frame_budget` number, which are gated.
+engine's exit-time resource accounting (`N resources still in use at
+exit`, `N RID allocations ... were leaked at exit`, `Texture with GL ID
+... leaked N bytes`), which is NOT counted: it names a resource a `const
+preload` still holds while the tree is torn down (`--verbose` says
+which), the counts vary between identical runs, and a gate on them
+would be a coin toss. A leak that matters shows up as memory in the boot
+budget or as a growing `frame_budget` number, which are gated.
 
 ### The tooling is a synced copy
 

@@ -9,7 +9,11 @@ extends RefCounted
 ##
 ## A menu that opens without grabbing focus is unreachable by pad. Always
 ## deferred: the control has usually just been added and cannot take focus
-## until it has been laid out.
+## until it has been laid out. Deferred BY INSTANCE ID, like pop_in: a
+## screen that opens on a scenario's last line is torn down before the
+## deferred call lands, and a bare `grab_focus.call_deferred()` then
+## logs `Condition "!is_inside_tree()" is true` — an engine error under a
+## green batch, once per scenario that ended on a menu.
 static func first(root: Node) -> bool:
 	if root == null:
 		return false
@@ -21,11 +25,17 @@ static func first(root: Node) -> bool:
 			var dead: bool = control is BaseButton and (control as BaseButton).disabled
 			if control.focus_mode == Control.FOCUS_ALL and control.visible \
 					and not dead and not control.is_queued_for_deletion():
-				control.grab_focus.call_deferred()
+				_grab_deferred.call_deferred(control.get_instance_id())
 				return true
 		if first(child):
 			return true
 	return false
+
+
+static func _grab_deferred(control_id: int) -> void:
+	var control := instance_from_id(control_id) as Control
+	if control != null and control.is_inside_tree() and control.is_visible_in_tree():
+		control.grab_focus()
 
 
 ## A SpinBox does not answer ui_up / ui_down on its own — focus lands in

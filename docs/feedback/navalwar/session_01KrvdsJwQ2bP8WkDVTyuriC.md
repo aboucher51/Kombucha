@@ -192,3 +192,27 @@ syncing.
   and does. `check.sh` will not regenerate the map itself: a gate that
   edits the tree is not a gate.
 - **10b** — noted; the JSONL trace and assertion seams stay the answer.
+
+Found while syncing NavalWar onto this (2026-09-06, second commit):
+
+- The widened error gate counted the renderer's exit-time leak
+  accounting (`Texture with GL ID ... leaked`, `RID allocations ... were
+  leaked at exit`), which NavalWar prints and the fixture does not. Those
+  join "resources still in use" as ungated exit noise; the doc names all
+  three.
+- The gate then caught one real error per scenario that ended on an open
+  menu: `UIFocus.first`'s bare `grab_focus.call_deferred()` landing
+  after the harness tore the scene down. Fixed in the kit's
+  `ui_focus.gd` (deferred by instance id, like `pop_in`); NavalWar's own
+  copy, and its direct `grab_focus.call_deferred()` calls in `main.gd`,
+  `hud.gd` and `pause_menu.gd`, have the same shape.
+- `TEST_JOBS=1` on a 1,000-test suite was killed by the 180 s shard
+  budget and reported as "88 scripts did not load". The budget now
+  scales with 4/TEST_JOBS and a timed-out shard says so.
+- Three hover-driven scenarios (`pad_play`, `tactical_view`,
+  `info_dock_fog`) failed once in a two-shard batch and pass alone: the
+  shared real cursor reaching the game's own hover state, the case the
+  tooling text already reserves `SHOOT_JOBS=1` for.
+- `test_toasts.gd test_no_host_is_no_error` failed in the sharded run
+  and passes alone: a toast host left visible by a neighbouring test
+  script in the same shard, a cross-test leak of NavalWar's own.

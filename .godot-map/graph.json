@@ -678,6 +678,7 @@
    "signals": [],
    "funcs": [
     "first",
+    "_grab_deferred",
     "pad_spin"
    ],
    "emits": [],
@@ -687,7 +688,7 @@
    "node_paths": [],
    "groups_joined": [],
    "groups_queried": [],
-   "lines": 46
+   "lines": 56
   },
   "res://scripts/ui/ui_scale_root.gd": {
    "path": "res://scripts/ui/ui_scale_root.gd",
@@ -1548,6 +1549,7 @@
     "test_fit_for_takes_the_tighter_axis",
     "test_snapped_factor_floors_above_design_and_keeps_below",
     "test_first_focus_skips_disabled_and_finds_a_button",
+    "test_first_focus_survives_the_screen_leaving_the_tree_first",
     "test_first_focus_with_nothing_focusable_is_false",
     "test_pop_in_survives_the_control_being_freed_first",
     "test_pop_in_lands_at_full_alpha"
@@ -1557,7 +1559,7 @@
    "node_paths": [],
    "groups_joined": [],
    "groups_queried": [],
-   "lines": 64
+   "lines": 77
   },
   "res://tools/seeds/dev_driver.gd": {
    "path": "res://tools/seeds/dev_driver.gd",

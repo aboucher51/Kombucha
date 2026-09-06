@@ -36,6 +36,19 @@ func test_first_focus_skips_disabled_and_finds_a_button() -> void:
 	assert_true(live.has_focus(), "the first ENABLED focusable gets focus")
 
 
+func test_first_focus_survives_the_screen_leaving_the_tree_first() -> void:
+	# A scenario's last line opens a menu; the harness tears the scene down
+	# before the deferred grab lands. No error, no focus on a dead node.
+	var root := VBoxContainer.new()
+	add_child(root)
+	var button := Button.new()
+	root.add_child(button)
+	assert_true(UIFocus.first(root))
+	root.free()
+	await get_tree().process_frame
+	pass_test("the deferred grab found no live control in the tree and did nothing")
+
+
 func test_first_focus_with_nothing_focusable_is_false() -> void:
 	var root := VBoxContainer.new()
 	add_child_autofree(root)

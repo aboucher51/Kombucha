@@ -9,7 +9,10 @@
 #                                    but a green shard prints nothing)
 #   TEST_JOBS=8                      more shards (default 4, capped by the
 #                                    script count and by nproc)
-#   TEST_TIMEOUT=180                 seconds a shard may take
+#   TEST_TIMEOUT=180                 seconds a shard may take (the default
+#                                    is 180 for four shards and scales with
+#                                    4/TEST_JOBS: one process gets 720, since
+#                                    it carries the whole suite)
 #   TEST_JUNIT=.godot/test-results.xml
 #                                    where the merged JUnit report lands
 #                                    (CI keeps it as an artifact; "" skips)
@@ -37,7 +40,8 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 GODOT="${GODOT:-godot4}"
 cd "$ROOT" || exit 2
 
-TIMEOUT="${TEST_TIMEOUT:-180}"
+DEFAULT_TIMEOUT=180
+TIMEOUT="${TEST_TIMEOUT:-$DEFAULT_TIMEOUT}"
 TIMINGS="$ROOT/.godot/test-timings"
 JUNIT="${TEST_JUNIT-$ROOT/.godot/test-results.xml}"
 WORK="$(mktemp -d)"
@@ -80,6 +84,11 @@ JOBS="${TEST_JOBS:-4}"
 (( JOBS > COUNT )) && JOBS=$COUNT
 (( JOBS > CORES )) && JOBS=$CORES
 (( JOBS < 1 )) && JOBS=1
+# The default budget is per shard for FOUR shards; fewer shards carry more
+# of the suite each. Without this, TEST_JOBS=1 on a suite that takes two
+# minutes per shard was killed at 180 s and reported "88 scripts did not
+# load" — a timeout wearing a parse error's message.
+[[ -z "${TEST_TIMEOUT:-}" ]] && (( JOBS < 4 )) && TIMEOUT=$(( DEFAULT_TIMEOUT * 4 / JOBS ))
 
 # Longest-processing-time first onto the emptiest shard. An unknown script
 # is priced at the average, so a new test is not assumed free.
@@ -142,11 +151,13 @@ for ((i = 0; i < JOBS; i++)); do
 done
 
 STATUS=0
+TIMED_OUT=0
 for ((i = 0; i < JOBS; i++)); do
 	wait "${PIDS[$i]}"
 	CODE=$?
 	if [[ $CODE -eq 124 ]]; then
-		echo "test: shard $i timed out — a test is probably awaiting something that never comes" >&2
+		echo "test: shard $i timed out after ${TIMEOUT}s — a test awaiting something that never comes, or a suite bigger than the budget (TEST_TIMEOUT)" >&2
+		TIMED_OUT=1
 	fi
 	FAILS=$(load_fails "$WORK/shard.$i.log")
 	if [[ "$FAILS" -gt 0 ]]; then
@@ -166,9 +177,16 @@ ELAPSED=$(( $(date +%s) - STARTED ))
 # vanished without printing anything at all still shows up here.
 RAN=$(grep -hoE '^res://tests/test_[a-z0-9_]+\.gd' "$WORK"/shard.*.log | sort -u | wc -l)
 if [[ $RAN -lt $COUNT ]]; then
-	echo "test: only $RAN of $COUNT test scripts ran — the rest failed to load" >&2
-	grep -hE 'Failed to load script' "$WORK"/shard.*.log | sed 's/^/  /' >&2
-	echo "Failing Tests         $((COUNT - RAN)) (scripts that did not load)"
+	if [[ $TIMED_OUT -eq 1 ]]; then
+		# A killed shard never reached its remaining scripts: that is the
+		# timeout's doing, not a parse error's, and must not read as one.
+		echo "test: only $RAN of $COUNT test scripts ran — a shard timed out before the rest" >&2
+		echo "Failing Tests         $((COUNT - RAN)) (scripts a timed-out shard never reached)"
+	else
+		echo "test: only $RAN of $COUNT test scripts ran — the rest failed to load" >&2
+		grep -hE 'Failed to load script' "$WORK"/shard.*.log | sed 's/^/  /' >&2
+		echo "Failing Tests         $((COUNT - RAN)) (scripts that did not load)"
+	fi
 	STATUS=1
 fi
 

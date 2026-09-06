@@ -109,7 +109,7 @@ fi
 # 738 of them under an all-green check before they were counted. The
 # exit-time "resources still in use" line is excluded on purpose: its
 # count varies between identical runs (see docs/godot-tooling.md).
-ERRORS=$(grep -vE "resources still in use at exit" "$LOG" | grep -cE "SCRIPT ERROR|Parse Error|shader|^ERROR:")
+ERRORS=$(grep -vE "resources still in use at exit|were leaked at exit|Texture with GL ID of [0-9]+: leaked" "$LOG" | grep -cE "SCRIPT ERROR|Parse Error|shader|^ERROR:")
 [[ $BOOT -ne 124 || $ERRORS -ne 0 ]] && cat "$LOG"
 rm -f "$LOG" "$LOG.rss"
 [[ $BOOT -eq 124 && $ERRORS -eq 0 ]]
