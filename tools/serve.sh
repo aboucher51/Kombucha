@@ -14,7 +14,9 @@
 # The reply is what the harness printed for that command (shot paths,
 # FAIL lines, scenario ok), and the exit code is its verdict; shots and
 # the JSONL trace land in shots/ as usual. Same display and GPU rules as
-# shoot.sh (SHOOT_GPU, SHOOT_RESOLUTION, SHOOT_SEED); needs a real display.
+# shoot.sh (SHOOT_GPU, SHOOT_RESOLUTION, SHOOT_SEED, SHOOT_DISPLAY): a real
+# display when one is reachable, else Xvfb + llvmpipe for the life of the
+# engine (what CI has), so the serve gate in check.local.sh runs there too.
 #
 # OWNED BY KOMBUCHA (tools/tooling-manifest.txt); do not edit in a project.
 set -uo pipefail
@@ -63,7 +65,23 @@ case "${1:-}" in
 		fi
 		SEED=(); [[ -n "${SHOOT_SEED:-}" ]] && SEED=(--seed "$SHOOT_SEED")
 		export DISPLAY="${DISPLAY:-:0}"
-		XDG_DATA_HOME="$SERVE/user" nohup "$GODOT" "${ARGS[@]}" -- --serve "$SERVE" "${SEED[@]}" >"$LOG" 2>&1 &
+		# A display is REACHABLE when its socket exists (DISPLAY alone
+		# proves nothing under WSLg or CI); otherwise a virtual one, held
+		# open by xvfb-run for exactly as long as the engine runs.
+		RUNNER=()
+		n="${DISPLAY#*:}"; n="${n%%.*}"
+		if [[ "${SHOOT_DISPLAY:-auto}" == "xvfb" ]] || { [[ ! -S "/tmp/.X11-unix/X${n}" ]] \
+				&& [[ -z "${WAYLAND_DISPLAY:-}" || ! -S "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/${WAYLAND_DISPLAY:-}" ]]; }; then
+			if ! command -v xvfb-run >/dev/null; then
+				echo "serve: no display and no xvfb-run — install xvfb or run under WSLg" >&2; exit 2
+			fi
+			export LIBGL_ALWAYS_SOFTWARE=1
+			unset GALLIUM_DRIVER
+			RUNNER=(xvfb-run -a -s "-screen 0 ${SHOOT_RESOLUTION:-1280x720}x24")
+			ARGS+=(--audio-driver Dummy)
+			echo "serve: no real display — Xvfb + llvmpipe"
+		fi
+		XDG_DATA_HOME="$SERVE/user" nohup "${RUNNER[@]}" "$GODOT" "${ARGS[@]}" -- --serve "$SERVE" "${SEED[@]}" >"$LOG" 2>&1 &
 		echo $! > "$PIDFILE"
 		for i in $(seq 1 200); do grep -q '^harness: serving' "$LOG" 2>/dev/null && break; sleep 0.1; done
 		grep -q '^harness: serving' "$LOG" || { echo "serve: engine did not start — see $LOG" >&2; exit 1; }
@@ -84,7 +102,8 @@ case "${1:-}" in
 		running || { echo "serve: not running"; exit 0; }
 		: > "$SERVE/quit"
 		for i in $(seq 1 100); do running || break; sleep 0.1; done
-		running && kill "$(cat "$PIDFILE")" 2>/dev/null
+		# A forced stop must take the engine AND a virtual X server with it.
+		running && { pkill -P "$(cat "$PIDFILE")" 2>/dev/null; kill "$(cat "$PIDFILE")" 2>/dev/null; }
 		rm -f "$PIDFILE"; echo "serve: stopped" ;;
 	*) echo "usage: tools/serve.sh start|run <scenario>|say \"<line>\"|status|stop" >&2; exit 2 ;;
 esac
