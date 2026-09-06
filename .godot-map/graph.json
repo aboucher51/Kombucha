@@ -1,0 +1,1688 @@
+{
+ "name": "Kombucha",
+ "main_scene": "res://scenes/main.tscn",
+ "features": [
+  "4.7",
+  "GL Compatibility"
+ ],
+ "autoloads": {
+  "EventBus": "res://scripts/autoloads/event_bus.gd",
+  "SaveManager": "res://scripts/autoloads/save_manager.gd",
+  "Keybinds": "res://scripts/autoloads/keybinds.gd",
+  "Pads": "res://scripts/autoloads/pads.gd",
+  "AudioManager": "res://scripts/autoloads/audio_manager.gd",
+  "GameManager": "res://scripts/autoloads/game_manager.gd",
+  "DebugConsole": "res://scripts/dev/debug_console.gd",
+  "ScreenshotHarness": "res://scripts/dev/screenshot_harness.gd",
+  "SelftestDriver": "res://scripts/dev/selftest_driver.gd"
+ },
+ "scenes": {
+  "res://scenes/main.tscn": {
+   "path": "res://scenes/main.tscn",
+   "uid": null,
+   "root": {
+    "path": ".",
+    "name": "Main",
+    "type": "Control",
+    "script": "res://scripts/main.gd",
+    "instance": null,
+    "groups": [],
+    "unique": false
+   },
+   "inherits": null,
+   "nodes": [
+    {
+     "path": ".",
+     "name": "Main",
+     "type": "Control",
+     "script": "res://scripts/main.gd",
+     "instance": null,
+     "groups": [],
+     "unique": false
+    },
+    {
+     "path": "Camera3D",
+     "name": "Camera3D",
+     "type": "Camera3D",
+     "script": null,
+     "instance": null,
+     "groups": [],
+     "unique": false
+    },
+    {
+     "path": "Cube",
+     "name": "Cube",
+     "type": "MeshInstance3D",
+     "script": null,
+     "instance": null,
+     "groups": [],
+     "unique": false
+    },
+    {
+     "path": "Behind",
+     "name": "Behind",
+     "type": "MeshInstance3D",
+     "script": null,
+     "instance": null,
+     "groups": [],
+     "unique": false
+    },
+    {
+     "path": "CenterContainer",
+     "name": "CenterContainer",
+     "type": "CenterContainer",
+     "script": null,
+     "instance": null,
+     "groups": [],
+     "unique": false
+    },
+    {
+     "path": "CenterContainer/TitleLabel",
+     "name": "TitleLabel",
+     "type": "Label",
+     "script": null,
+     "instance": null,
+     "groups": [],
+     "unique": true
+    },
+    {
+     "path": "RowList",
+     "name": "RowList",
+     "type": "ScrollContainer",
+     "script": null,
+     "instance": null,
+     "groups": [],
+     "unique": true
+    },
+    {
+     "path": "TwinA",
+     "name": "TwinA",
+     "type": "MarginContainer",
+     "script": null,
+     "instance": null,
+     "groups": [],
+     "unique": false
+    },
+    {
+     "path": "TwinA/Twin",
+     "name": "Twin",
+     "type": "Label",
+     "script": null,
+     "instance": null,
+     "groups": [],
+     "unique": false
+    },
+    {
+     "path": "TwinB",
+     "name": "TwinB",
+     "type": "MarginContainer",
+     "script": null,
+     "instance": null,
+     "groups": [],
+     "unique": false
+    },
+    {
+     "path": "TwinB/Twin",
+     "name": "Twin",
+     "type": "Label",
+     "script": null,
+     "instance": null,
+     "groups": [],
+     "unique": false
+    },
+    {
+     "path": "PauseMenu",
+     "name": "PauseMenu",
+     "type": "Control",
+     "script": "res://scripts/ui/pause_menu.gd",
+     "instance": null,
+     "groups": [],
+     "unique": false
+    }
+   ],
+   "scripts": [
+    "res://scripts/main.gd",
+    "res://scripts/ui/pause_menu.gd"
+   ],
+   "instances": [],
+   "resources": [],
+   "connections": []
+  },
+  "res://scenes/second.tscn": {
+   "path": "res://scenes/second.tscn",
+   "uid": null,
+   "root": {
+    "path": ".",
+    "name": "Second",
+    "type": "Control",
+    "script": null,
+    "instance": null,
+    "groups": [],
+    "unique": false
+   },
+   "inherits": null,
+   "nodes": [
+    {
+     "path": ".",
+     "name": "Second",
+     "type": "Control",
+     "script": null,
+     "instance": null,
+     "groups": [],
+     "unique": false
+    },
+    {
+     "path": "SecondLabel",
+     "name": "SecondLabel",
+     "type": "Label",
+     "script": null,
+     "instance": null,
+     "groups": [],
+     "unique": false
+    }
+   ],
+   "scripts": [],
+   "instances": [],
+   "resources": [],
+   "connections": []
+  }
+ },
+ "scripts": {
+  "res://scripts/autoloads/audio_manager.gd": {
+   "path": "res://scripts/autoloads/audio_manager.gd",
+   "lang": "gdscript",
+   "class_name": null,
+   "global": true,
+   "extends": "Node",
+   "tool": false,
+   "loads": [],
+   "refs": [],
+   "signals": [],
+   "funcs": [
+    "_ready",
+    "play_sfx",
+    "ui_event",
+    "bind_button",
+    "play_music",
+    "stop_music",
+    "_process",
+    "set_bus_volume",
+    "get_bus_volume",
+    "apply_saved_volumes",
+    "_schedule_save",
+    "flush_volumes",
+    "_write_volumes"
+   ],
+   "emits": [],
+   "connects": [
+    "button.pressed",
+    "button.mouse_entered",
+    "_save_timer.timeout"
+   ],
+   "node_paths": [],
+   "lines": 182
+  },
+  "res://scripts/autoloads/event_bus.gd": {
+   "path": "res://scripts/autoloads/event_bus.gd",
+   "lang": "gdscript",
+   "class_name": null,
+   "global": true,
+   "extends": "Node",
+   "tool": false,
+   "loads": [],
+   "refs": [],
+   "signals": [
+    "score_changed",
+    "settings_changed"
+   ],
+   "funcs": [],
+   "emits": [],
+   "connects": [],
+   "node_paths": [],
+   "lines": 22
+  },
+  "res://scripts/autoloads/game_manager.gd": {
+   "path": "res://scripts/autoloads/game_manager.gd",
+   "lang": "gdscript",
+   "class_name": null,
+   "global": true,
+   "extends": "Node",
+   "tool": false,
+   "loads": [],
+   "refs": [],
+   "signals": [
+    "scene_changed",
+    "game_paused"
+   ],
+   "funcs": [
+    "_ready",
+    "_apply_scale_policy",
+    "snapped_factor",
+    "canvas_scale",
+    "design_size",
+    "change_scene",
+    "set_paused",
+    "quit_game",
+    "_notification"
+   ],
+   "emits": [
+    "scene_changed",
+    "game_paused"
+   ],
+   "connects": [
+    "size_changed"
+   ],
+   "node_paths": [],
+   "lines": 87
+  },
+  "res://scripts/autoloads/keybinds.gd": {
+   "path": "res://scripts/autoloads/keybinds.gd",
+   "lang": "gdscript",
+   "class_name": null,
+   "global": true,
+   "extends": "Node",
+   "tool": false,
+   "loads": [],
+   "refs": [],
+   "signals": [
+    "bindings_changed"
+   ],
+   "funcs": [
+    "_ready",
+    "apply_saved",
+    "binding",
+    "set_binding",
+    "holder_of",
+    "group_of",
+    "clear_binding",
+    "reset_to_defaults",
+    "has_action",
+    "describe",
+    "describe_event",
+    "parse_binding_text",
+    "_normalise",
+    "_group_of",
+    "_default_slots",
+    "_sync",
+    "_persist",
+    "_encode",
+    "_decode"
+   ],
+   "emits": [
+    "bindings_changed"
+   ],
+   "connects": [],
+   "node_paths": [],
+   "lines": 256
+  },
+  "res://scripts/autoloads/pads.gd": {
+   "path": "res://scripts/autoloads/pads.gd",
+   "lang": "gdscript",
+   "class_name": null,
+   "global": true,
+   "extends": "Node",
+   "tool": false,
+   "loads": [],
+   "refs": [],
+   "signals": [],
+   "funcs": [
+    "_ready",
+    "_refresh_settings",
+    "_input",
+    "_process",
+    "_allowed",
+    "fire",
+    "_on_joy_changed"
+   ],
+   "emits": [],
+   "connects": [
+    "Input.joy_connection_changed",
+    "EventBus.settings_changed"
+   ],
+   "node_paths": [],
+   "lines": 119
+  },
+  "res://scripts/autoloads/save_manager.gd": {
+   "path": "res://scripts/autoloads/save_manager.gd",
+   "lang": "gdscript",
+   "class_name": null,
+   "global": true,
+   "extends": "Node",
+   "tool": false,
+   "loads": [],
+   "refs": [],
+   "signals": [],
+   "funcs": [
+    "collect_save_data",
+    "apply_save_data",
+    "save_game",
+    "slot_meta",
+    "list_slots",
+    "_describe_slot",
+    "_slots_on_disk",
+    "load_game",
+    "has_save",
+    "delete_save",
+    "_slot_path",
+    "set_setting",
+    "get_setting"
+   ],
+   "emits": [
+    "EventBus.settings_changed"
+   ],
+   "connects": [],
+   "node_paths": [],
+   "lines": 193
+  },
+  "res://scripts/dev/bug_report.gd": {
+   "path": "res://scripts/dev/bug_report.gd",
+   "lang": "gdscript",
+   "class_name": "BugReport",
+   "global": true,
+   "extends": "RefCounted",
+   "tool": false,
+   "loads": [],
+   "refs": [],
+   "signals": [],
+   "funcs": [
+    "write",
+    "_pack_or_note",
+    "_pack_tail_or_note"
+   ],
+   "emits": [],
+   "connects": [],
+   "node_paths": [],
+   "lines": 65
+  },
+  "res://scripts/dev/debug_console.gd": {
+   "path": "res://scripts/dev/debug_console.gd",
+   "lang": "gdscript",
+   "class_name": null,
+   "global": true,
+   "extends": "Node",
+   "tool": false,
+   "loads": [],
+   "refs": [
+    "res://data/console_commands.json",
+    "res://data/console_commands.project.json",
+    "res://scripts/dev/dev_hooks.gd"
+   ],
+   "signals": [],
+   "funcs": [
+    "_ready",
+    "_load_commands",
+    "_load_hooks",
+    "_input_event_toggle",
+    "_unhandled_input",
+    "toggle",
+    "execute",
+    "_dispatch",
+    "_state_providers",
+    "_handle_state",
+    "_handle_assert",
+    "_handle_help",
+    "_handle_bind",
+    "_save_names",
+    "_find_command",
+    "_parse_args",
+    "_build_ui",
+    "print_line",
+    "_on_submitted",
+    "_on_input_key",
+    "_recall",
+    "_autocomplete",
+    "_completions_from"
+   ],
+   "emits": [],
+   "connects": [
+    "_input.text_submitted",
+    "_input.gui_input"
+   ],
+   "node_paths": [],
+   "lines": 459
+  },
+  "res://scripts/dev/dev_hooks.gd": {
+   "path": "res://scripts/dev/dev_hooks.gd",
+   "lang": "gdscript",
+   "class_name": null,
+   "global": true,
+   "extends": "Node",
+   "tool": false,
+   "loads": [],
+   "refs": [],
+   "signals": [],
+   "funcs": [
+    "sandbox",
+    "scenario_command",
+    "console_dispatch"
+   ],
+   "emits": [],
+   "connects": [],
+   "node_paths": [],
+   "lines": 56
+  },
+  "res://scripts/dev/screenshot_harness.gd": {
+   "path": "res://scripts/dev/screenshot_harness.gd",
+   "lang": "gdscript",
+   "class_name": null,
+   "global": true,
+   "extends": "Node",
+   "tool": false,
+   "loads": [],
+   "refs": [
+    "res://shots",
+    "res://scenarios/baselines"
+   ],
+   "signals": [],
+   "funcs": [
+    "_ready",
+    "_serve",
+    "_sandbox",
+    "_restore",
+    "_reset_between_scenarios",
+    "_run",
+    "_execute",
+    "_project_command",
+    "_hook",
+    "_shot",
+    "capture",
+    "_expect_shot",
+    "renderer_slug",
+    "load_png",
+    "compare",
+    "_click",
+    "_click_point",
+    "_warp_cursor",
+    "_scroll_to",
+    "_settle",
+    "_hover",
+    "_assert_tooltip",
+    "_frame_budget",
+    "_press",
+    "_assert_onscreen",
+    "_find_all",
+    "pick_named",
+    "_find_named",
+    "_find_control",
+    "_is_error",
+    "_fail",
+    "_wipe_dir"
+   ],
+   "emits": [],
+   "connects": [],
+   "node_paths": [],
+   "lines": 883
+  },
+  "res://scripts/dev/selftest_driver.gd": {
+   "path": "res://scripts/dev/selftest_driver.gd",
+   "lang": "gdscript",
+   "class_name": null,
+   "global": true,
+   "extends": "Node",
+   "tool": false,
+   "loads": [],
+   "refs": [],
+   "signals": [],
+   "funcs": [
+    "_ready",
+    "_run"
+   ],
+   "emits": [],
+   "connects": [],
+   "node_paths": [],
+   "lines": 24
+  },
+  "res://scripts/main.gd": {
+   "path": "res://scripts/main.gd",
+   "lang": "gdscript",
+   "class_name": null,
+   "global": true,
+   "extends": "Control",
+   "tool": false,
+   "loads": [
+    "res://assets/audio/sfx/click.wav",
+    "res://assets/audio/sfx/hover.wav",
+    "res://assets/audio/sfx/menu_open.wav",
+    "res://assets/audio/sfx/menu_close.wav",
+    "res://assets/audio/sfx/confirm.wav",
+    "res://assets/audio/sfx/error.wav"
+   ],
+   "refs": [],
+   "signals": [],
+   "funcs": [
+    "_ready",
+    "_build_rows",
+    "_input",
+    "set_busy",
+    "is_busy",
+    "state_text",
+    "assert_key",
+    "_yes_no",
+    "_point"
+   ],
+   "emits": [],
+   "connects": [
+    "row.pressed"
+   ],
+   "node_paths": [
+    "%RowList",
+    "%TitleLabel"
+   ],
+   "lines": 95
+  },
+  "res://scripts/ui/pause_menu.gd": {
+   "path": "res://scripts/ui/pause_menu.gd",
+   "lang": "gdscript",
+   "class_name": "PauseMenu",
+   "global": true,
+   "extends": "Control",
+   "tool": false,
+   "loads": [],
+   "refs": [],
+   "signals": [],
+   "funcs": [
+    "_ready",
+    "_unhandled_input",
+    "open",
+    "close"
+   ],
+   "emits": [],
+   "connects": [
+    "resume.pressed",
+    "quit.pressed"
+   ],
+   "node_paths": [],
+   "lines": 90
+  },
+  "res://scripts/ui/ui_focus.gd": {
+   "path": "res://scripts/ui/ui_focus.gd",
+   "lang": "gdscript",
+   "class_name": "UIFocus",
+   "global": true,
+   "extends": "RefCounted",
+   "tool": false,
+   "loads": [],
+   "refs": [],
+   "signals": [],
+   "funcs": [
+    "first",
+    "pad_spin"
+   ],
+   "emits": [],
+   "connects": [
+    "gui_input"
+   ],
+   "node_paths": [],
+   "lines": 46
+  },
+  "res://scripts/ui/ui_scale_root.gd": {
+   "path": "res://scripts/ui/ui_scale_root.gd",
+   "lang": "gdscript",
+   "class_name": "UiScaleRoot",
+   "global": true,
+   "extends": "Node",
+   "tool": false,
+   "loads": [],
+   "refs": [],
+   "signals": [],
+   "funcs": [
+    "attach",
+    "attach_if_outermost",
+    "_ready",
+    "refresh_scale",
+    "factor",
+    "fit_for",
+    "_apply_scale",
+    "_apply_font_oversampling"
+   ],
+   "emits": [],
+   "connects": [
+    "size_changed"
+   ],
+   "node_paths": [],
+   "lines": 149
+  },
+  "res://scripts/ui/ui_theme.gd": {
+   "path": "res://scripts/ui/ui_theme.gd",
+   "lang": "gdscript",
+   "class_name": "UITheme",
+   "global": true,
+   "extends": "RefCounted",
+   "tool": false,
+   "loads": [],
+   "refs": [],
+   "signals": [],
+   "funcs": [
+    "get_theme",
+    "focus_ring",
+    "pop_in",
+    "_pop_in_deferred",
+    "_flat",
+    "accent_border"
+   ],
+   "emits": [],
+   "connects": [],
+   "node_paths": [],
+   "lines": 118
+  },
+  "res://scripts/ui/volume_sliders.gd": {
+   "path": "res://scripts/ui/volume_sliders.gd",
+   "lang": "gdscript",
+   "class_name": "VolumeSliders",
+   "global": true,
+   "extends": "RefCounted",
+   "tool": false,
+   "loads": [],
+   "refs": [],
+   "signals": [],
+   "funcs": [
+    "make"
+   ],
+   "emits": [],
+   "connects": [
+    "slider.value_changed"
+   ],
+   "node_paths": [],
+   "lines": 33
+  },
+  "res://scripts/util/bbcode.gd": {
+   "path": "res://scripts/util/bbcode.gd",
+   "lang": "gdscript",
+   "class_name": "BBCode",
+   "global": true,
+   "extends": "RefCounted",
+   "tool": false,
+   "loads": [],
+   "refs": [],
+   "signals": [],
+   "funcs": [
+    "escape",
+    "sanitise"
+   ],
+   "emits": [],
+   "connects": [],
+   "node_paths": [],
+   "lines": 38
+  },
+  "res://scripts/util/cmdline.gd": {
+   "path": "res://scripts/util/cmdline.gd",
+   "lang": "gdscript",
+   "class_name": "Cmdline",
+   "global": true,
+   "extends": "RefCounted",
+   "tool": false,
+   "loads": [],
+   "refs": [],
+   "signals": [],
+   "funcs": [
+    "values",
+    "value",
+    "has_flag",
+    "values_in",
+    "has_flag_in"
+   ],
+   "emits": [],
+   "connects": [],
+   "node_paths": [],
+   "lines": 41
+  },
+  "res://scripts/util/content_db.gd": {
+   "path": "res://scripts/util/content_db.gd",
+   "lang": "gdscript",
+   "class_name": "ContentDB",
+   "global": true,
+   "extends": "RefCounted",
+   "tool": false,
+   "loads": [],
+   "refs": [
+    "res://data/%s"
+   ],
+   "signals": [],
+   "funcs": [
+    "load_layered",
+    "mod_names",
+    "_read_json"
+   ],
+   "emits": [],
+   "connects": [],
+   "node_paths": [],
+   "lines": 56
+  },
+  "res://scripts/util/data_merger.gd": {
+   "path": "res://scripts/util/data_merger.gd",
+   "lang": "gdscript",
+   "class_name": "DataMerger",
+   "global": true,
+   "extends": "RefCounted",
+   "tool": false,
+   "loads": [],
+   "refs": [],
+   "signals": [],
+   "funcs": [
+    "is_default",
+    "merge_dict",
+    "merge_list",
+    "_patch_list",
+    "_copy"
+   ],
+   "emits": [],
+   "connects": [],
+   "node_paths": [],
+   "lines": 114
+  },
+  "res://scripts/util/function_registry.gd": {
+   "path": "res://scripts/util/function_registry.gd",
+   "lang": "gdscript",
+   "class_name": "FunctionRegistry",
+   "global": true,
+   "extends": "RefCounted",
+   "tool": false,
+   "loads": [],
+   "refs": [],
+   "signals": [
+    "registered"
+   ],
+   "funcs": [
+    "register",
+    "has_function",
+    "get_callable",
+    "source_of",
+    "ids",
+    "invoke"
+   ],
+   "emits": [
+    "registered"
+   ],
+   "connects": [],
+   "node_paths": [],
+   "lines": 46
+  },
+  "res://scripts/util/json_lines.gd": {
+   "path": "res://scripts/util/json_lines.gd",
+   "lang": "gdscript",
+   "class_name": "JsonLines",
+   "global": true,
+   "extends": "RefCounted",
+   "tool": false,
+   "loads": [],
+   "refs": [],
+   "signals": [],
+   "funcs": [
+    "syntax_error",
+    "tokens_in",
+    "line_of",
+    "line_for",
+    "line_for_text"
+   ],
+   "emits": [],
+   "connects": [],
+   "node_paths": [],
+   "lines": 84
+  },
+  "res://scripts/util/json_value.gd": {
+   "path": "res://scripts/util/json_value.gd",
+   "lang": "gdscript",
+   "class_name": "JsonValue",
+   "global": true,
+   "extends": "RefCounted",
+   "tool": false,
+   "loads": [],
+   "refs": [],
+   "signals": [],
+   "funcs": [
+    "truthy",
+    "typed_truthy"
+   ],
+   "emits": [],
+   "connects": [],
+   "node_paths": [],
+   "lines": 46
+  },
+  "res://scripts/util/l10n.gd": {
+   "path": "res://scripts/util/l10n.gd",
+   "lang": "gdscript",
+   "class_name": "L10n",
+   "global": true,
+   "extends": "RefCounted",
+   "tool": false,
+   "loads": [],
+   "refs": [],
+   "signals": [],
+   "funcs": [
+    "key",
+    "tr_or_fallback",
+    "data_text"
+   ],
+   "emits": [],
+   "connects": [],
+   "node_paths": [],
+   "lines": 27
+  },
+  "res://scripts/util/pad_router.gd": {
+   "path": "res://scripts/util/pad_router.gd",
+   "lang": "gdscript",
+   "class_name": "PadRouter",
+   "global": true,
+   "extends": "RefCounted",
+   "tool": false,
+   "loads": [],
+   "refs": [],
+   "signals": [],
+   "funcs": [
+    "button_action",
+    "tick",
+    "reset",
+    "device_allowed",
+    "_quantise",
+    "_steps"
+   ],
+   "emits": [],
+   "connects": [],
+   "node_paths": [],
+   "lines": 106
+  },
+  "res://scripts/util/runtime_textures.gd": {
+   "path": "res://scripts/util/runtime_textures.gd",
+   "lang": "gdscript",
+   "class_name": "RuntimeTextures",
+   "global": true,
+   "extends": "RefCounted",
+   "tool": false,
+   "loads": [],
+   "refs": [],
+   "signals": [],
+   "funcs": [
+    "from_path",
+    "placeholder"
+   ],
+   "emits": [],
+   "connects": [],
+   "node_paths": [],
+   "lines": 37
+  },
+  "res://scripts/util/save_compat.gd": {
+   "path": "res://scripts/util/save_compat.gd",
+   "lang": "gdscript",
+   "class_name": "SaveCompat",
+   "global": true,
+   "extends": "RefCounted",
+   "tool": false,
+   "loads": [],
+   "refs": [],
+   "signals": [],
+   "funcs": [
+    "stamp",
+    "upgrade",
+    "_to_1"
+   ],
+   "emits": [],
+   "connects": [],
+   "node_paths": [],
+   "lines": 52
+  },
+  "res://scripts/util/version_util.gd": {
+   "path": "res://scripts/util/version_util.gd",
+   "lang": "gdscript",
+   "class_name": "VersionUtil",
+   "global": true,
+   "extends": "RefCounted",
+   "tool": false,
+   "loads": [],
+   "refs": [],
+   "signals": [],
+   "funcs": [
+    "game",
+    "compare",
+    "at_least"
+   ],
+   "emits": [],
+   "connects": [],
+   "node_paths": [],
+   "lines": 27
+  },
+  "res://tests/test_audio_manager.gd": {
+   "path": "res://tests/test_audio_manager.gd",
+   "lang": "gdscript",
+   "class_name": null,
+   "global": true,
+   "extends": "GutTest",
+   "tool": false,
+   "loads": [],
+   "refs": [],
+   "signals": [],
+   "funcs": [
+    "before_each",
+    "after_each",
+    "test_volume_round_trip",
+    "test_zero_is_mute_not_negative_infinity",
+    "test_save_is_debounced_then_written",
+    "test_a_quit_inside_the_debounce_still_writes",
+    "test_ui_event_with_no_sound_is_silence"
+   ],
+   "emits": [],
+   "connects": [],
+   "node_paths": [],
+   "lines": 61
+  },
+  "res://tests/test_cmdline.gd": {
+   "path": "res://tests/test_cmdline.gd",
+   "lang": "gdscript",
+   "class_name": null,
+   "global": true,
+   "extends": "GutTest",
+   "tool": false,
+   "loads": [],
+   "refs": [],
+   "signals": [],
+   "funcs": [
+    "test_values_collects_every_pair_in_order",
+    "test_a_bare_switch_has_no_value_but_is_a_flag",
+    "test_a_trailing_name_with_no_value_is_not_a_pair"
+   ],
+   "emits": [],
+   "connects": [],
+   "node_paths": [],
+   "lines": 19
+  },
+  "res://tests/test_console_state.gd": {
+   "path": "res://tests/test_console_state.gd",
+   "lang": "gdscript",
+   "class_name": null,
+   "global": true,
+   "extends": "GutTest",
+   "tool": false,
+   "loads": [
+    "res://scenes/main.tscn"
+   ],
+   "refs": [],
+   "signals": [],
+   "funcs": [
+    "before_each",
+    "test_state_reports_the_provider",
+    "test_assert_matches_and_mismatches_are_error_shaped",
+    "test_unknown_key_is_an_error_naming_the_key",
+    "test_missing_value_is_a_usage_error"
+   ],
+   "emits": [],
+   "connects": [],
+   "node_paths": [],
+   "lines": 30
+  },
+  "res://tests/test_content_db.gd": {
+   "path": "res://tests/test_content_db.gd",
+   "lang": "gdscript",
+   "class_name": null,
+   "global": true,
+   "extends": "GutTest",
+   "tool": false,
+   "loads": [],
+   "refs": [],
+   "signals": [],
+   "funcs": [
+    "before_each",
+    "after_each",
+    "_write",
+    "test_mods_layer_in_sorted_order_over_a_missing_base",
+    "test_no_mods_root_is_a_normal_empty_answer"
+   ],
+   "emits": [],
+   "connects": [],
+   "node_paths": [],
+   "lines": 41
+  },
+  "res://tests/test_data_merger.gd": {
+   "path": "res://tests/test_data_merger.gd",
+   "lang": "gdscript",
+   "class_name": null,
+   "global": true,
+   "extends": "GutTest",
+   "tool": false,
+   "loads": [],
+   "refs": [],
+   "signals": [],
+   "funcs": [
+    "test_plain_merge_skips_defaults",
+    "test_list_merge_rules",
+    "test_nested_dicts_recurse",
+    "test_patch_mode_applies_explicit_defaults",
+    "test_patch_replace_object",
+    "test_patch_list_ops",
+    "test_patch_set_null",
+    "test_incoming_containers_are_copied"
+   ],
+   "emits": [],
+   "connects": [],
+   "node_paths": [],
+   "lines": 60
+  },
+  "res://tests/test_debug_console.gd": {
+   "path": "res://tests/test_debug_console.gd",
+   "lang": "gdscript",
+   "class_name": null,
+   "global": true,
+   "extends": "GutTest",
+   "tool": false,
+   "loads": [],
+   "refs": [],
+   "signals": [],
+   "funcs": [
+    "before_each",
+    "after_each",
+    "test_unknown_command_is_error_shaped",
+    "test_help_lists_commands",
+    "test_missing_required_arg_is_error_with_usage",
+    "test_bad_enum_value_is_error",
+    "test_save_load_round_trip_via_console",
+    "test_load_missing_save_is_error",
+    "test_volume_applies",
+    "test_bind_and_refusal",
+    "test_alias_resolves",
+    "test_project_hooks_may_override_a_core_command"
+   ],
+   "emits": [],
+   "connects": [],
+   "node_paths": [],
+   "lines": 93
+  },
+  "res://tests/test_dev_hooks.gd": {
+   "path": "res://tests/test_dev_hooks.gd",
+   "lang": "gdscript",
+   "class_name": null,
+   "global": true,
+   "extends": "GutTest",
+   "tool": false,
+   "loads": [],
+   "refs": [],
+   "signals": [],
+   "funcs": [
+    "before_each",
+    "after_each",
+    "test_hooks_are_loaded_and_parented_to_the_console",
+    "test_project_command_surface_is_merged_into_help",
+    "test_project_handler_is_dispatched_through_hooks",
+    "test_unknown_handler_is_still_an_error",
+    "test_scenario_command_is_error_shaped_and_passes_through_unknowns",
+    "test_sandbox_hook_clears_project_state"
+   ],
+   "emits": [],
+   "connects": [],
+   "node_paths": [],
+   "lines": 51
+  },
+  "res://tests/test_function_registry.gd": {
+   "path": "res://tests/test_function_registry.gd",
+   "lang": "gdscript",
+   "class_name": null,
+   "global": true,
+   "extends": "GutTest",
+   "tool": false,
+   "loads": [],
+   "refs": [],
+   "signals": [],
+   "funcs": [
+    "before_each",
+    "test_register_and_invoke",
+    "test_last_registration_wins",
+    "test_registered_signal_reports_override",
+    "test_missing_id_returns_default_not_crash"
+   ],
+   "emits": [],
+   "connects": [],
+   "node_paths": [],
+   "lines": 37
+  },
+  "res://tests/test_json_lines.gd": {
+   "path": "res://tests/test_json_lines.gd",
+   "lang": "gdscript",
+   "class_name": null,
+   "global": true,
+   "extends": "GutTest",
+   "tool": false,
+   "loads": [],
+   "refs": [],
+   "signals": [],
+   "funcs": [
+    "test_syntax_error_reports_the_parsers_line",
+    "test_valid_json_has_no_syntax_error",
+    "test_semantic_message_lands_on_the_quoted_token",
+    "test_enumerated_legal_values_are_not_matched",
+    "test_no_token_in_the_file_means_no_line"
+   ],
+   "emits": [],
+   "connects": [],
+   "node_paths": [],
+   "lines": 30
+  },
+  "res://tests/test_keybinds.gd": {
+   "path": "res://tests/test_keybinds.gd",
+   "lang": "gdscript",
+   "class_name": null,
+   "global": true,
+   "extends": "GutTest",
+   "tool": false,
+   "loads": [],
+   "refs": [],
+   "signals": [],
+   "funcs": [
+    "before_each",
+    "after_each",
+    "_key",
+    "test_defaults_reach_input_map",
+    "test_rebind_and_persist_round_trip",
+    "test_secondary_slot_defaults_unbound_without_a_pad_entry",
+    "test_conflict_within_group_is_refused_not_stolen",
+    "test_unbind_then_rebind_frees_the_key",
+    "test_reset_restores_defaults",
+    "test_parse_binding_text",
+    "test_describe_uses_friendly_names_for_odd_os_names",
+    "test_a_catalog_pad_button_lands_in_the_secondary_slot",
+    "test_joy_bindings_round_trip_as_text"
+   ],
+   "emits": [],
+   "connects": [],
+   "node_paths": [],
+   "lines": 97
+  },
+  "res://tests/test_kit_utils.gd": {
+   "path": "res://tests/test_kit_utils.gd",
+   "lang": "gdscript",
+   "class_name": null,
+   "global": true,
+   "extends": "GutTest",
+   "tool": false,
+   "loads": [],
+   "refs": [],
+   "signals": [],
+   "funcs": [
+    "test_truthy_reads_json_values_by_their_type",
+    "test_typed_truthy_reads_the_word_false",
+    "test_version_compare_and_malformed_reads_low",
+    "test_bbcode_escape_and_sanitise",
+    "test_runtime_textures_placeholder_and_missing"
+   ],
+   "emits": [],
+   "connects": [],
+   "node_paths": [],
+   "lines": 41
+  },
+  "res://tests/test_l10n.gd": {
+   "path": "res://tests/test_l10n.gd",
+   "lang": "gdscript",
+   "class_name": null,
+   "global": true,
+   "extends": "GutTest",
+   "tool": false,
+   "loads": [],
+   "refs": [],
+   "signals": [],
+   "funcs": [
+    "test_key_hyphenates_the_id_only",
+    "test_data_text_falls_back_to_the_defs_own_text",
+    "test_translated_ui_key_is_returned"
+   ],
+   "emits": [],
+   "connects": [],
+   "node_paths": [],
+   "lines": 15
+  },
+  "res://tests/test_localization.gd": {
+   "path": "res://tests/test_localization.gd",
+   "lang": "gdscript",
+   "class_name": null,
+   "global": true,
+   "extends": "GutTest",
+   "tool": false,
+   "loads": [],
+   "refs": [
+    "res://scripts"
+   ],
+   "signals": [],
+   "funcs": [
+    "_scan_dir",
+    "_script_keys",
+    "test_every_ui_key_in_scripts_has_a_translation",
+    "test_the_scan_actually_finds_keys",
+    "test_the_pseudo_locale_is_loaded"
+   ],
+   "emits": [],
+   "connects": [],
+   "node_paths": [],
+   "lines": 51
+  },
+  "res://tests/test_pad_router.gd": {
+   "path": "res://tests/test_pad_router.gd",
+   "lang": "gdscript",
+   "class_name": null,
+   "global": true,
+   "extends": "GutTest",
+   "tool": false,
+   "loads": [],
+   "refs": [],
+   "signals": [],
+   "funcs": [
+    "before_each",
+    "test_face_buttons_map_to_accept_and_cancel",
+    "test_inside_the_deadzone_nothing_fires",
+    "test_dominant_axis_wins_and_a_fresh_press_steps_once",
+    "test_a_held_direction_echoes_after_the_initial_delay_then_faster",
+    "test_releasing_and_pressing_again_steps_at_once",
+    "test_devices_keep_separate_clocks",
+    "test_device_gating_falls_open_unless_another_seat_owns_the_pad"
+   ],
+   "emits": [],
+   "connects": [],
+   "node_paths": [],
+   "lines": 61
+  },
+  "res://tests/test_save_manager.gd": {
+   "path": "res://tests/test_save_manager.gd",
+   "lang": "gdscript",
+   "class_name": null,
+   "global": true,
+   "extends": "GutTest",
+   "tool": false,
+   "loads": [],
+   "refs": [],
+   "signals": [],
+   "funcs": [
+    "before_each",
+    "after_each",
+    "test_save_then_has_save",
+    "test_load_missing_slot_errors",
+    "test_save_load_round_trip",
+    "test_delete_save",
+    "test_setting_round_trip",
+    "test_a_saved_dictionary_equals_itself_key_order_included",
+    "test_a_corrupt_save_loads_with_a_reason",
+    "test_set_setting_announces_itself"
+   ],
+   "emits": [],
+   "connects": [],
+   "node_paths": [],
+   "lines": 88
+  },
+  "res://tests/test_save_providers.gd": {
+   "path": "res://tests/test_save_providers.gd",
+   "lang": "gdscript",
+   "class_name": null,
+   "global": true,
+   "extends": "GutTest",
+   "tool": false,
+   "loads": [],
+   "refs": [],
+   "signals": [],
+   "funcs": [
+    "before_each",
+    "after_each",
+    "test_provider_slice_round_trips_through_a_slot",
+    "test_empty_payload_writes_no_key",
+    "test_slot_meta_is_stamped_at_write",
+    "test_list_slots_numbers_first_then_extras",
+    "test_a_save_from_the_future_is_refused_with_a_reason",
+    "test_a_save_needing_a_missing_mod_is_refused_by_name"
+   ],
+   "emits": [],
+   "connects": [],
+   "node_paths": [],
+   "lines": 79
+  },
+  "res://tests/test_screenshot_harness.gd": {
+   "path": "res://tests/test_screenshot_harness.gd",
+   "lang": "gdscript",
+   "class_name": null,
+   "global": true,
+   "extends": "GutTest",
+   "tool": false,
+   "loads": [
+    "res://scripts/dev/screenshot_harness.gd"
+   ],
+   "refs": [
+    "res://scenarios/baselines/nowhere/none.png"
+   ],
+   "signals": [],
+   "funcs": [
+    "test_capture_is_null_without_a_rasterizer",
+    "test_sandbox_runs_the_project_hook",
+    "_solid",
+    "test_identical_frames_do_not_differ",
+    "test_a_changed_pixel_is_counted_and_painted_red",
+    "test_a_mask_hides_a_change_but_nothing_else",
+    "test_a_size_mismatch_is_an_error_not_a_count",
+    "test_renderer_slug_is_the_adapter_family",
+    "test_a_missing_baseline_loads_as_null_without_an_engine_error",
+    "test_a_baseline_round_trips_through_png_bytes",
+    "test_project_hooks_may_override_a_builtin_scenario_command",
+    "_named",
+    "test_a_hidden_namesake_does_not_make_a_name_ambiguous",
+    "test_two_visible_namesakes_are_ambiguous_and_none_is_not_visible"
+   ],
+   "emits": [],
+   "connects": [],
+   "node_paths": [],
+   "lines": 139
+  },
+  "res://tests/test_smoke.gd": {
+   "path": "res://tests/test_smoke.gd",
+   "lang": "gdscript",
+   "class_name": null,
+   "global": true,
+   "extends": "GutTest",
+   "tool": false,
+   "loads": [
+    "res://scenes/main.tscn"
+   ],
+   "refs": [],
+   "signals": [],
+   "funcs": [
+    "test_autoloads_exist",
+    "test_main_scene_instantiates",
+    "test_audio_buses_exist"
+   ],
+   "emits": [],
+   "connects": [],
+   "node_paths": [],
+   "lines": 26
+  },
+  "res://tests/test_ui_kit.gd": {
+   "path": "res://tests/test_ui_kit.gd",
+   "lang": "gdscript",
+   "class_name": null,
+   "global": true,
+   "extends": "GutTest",
+   "tool": false,
+   "loads": [],
+   "refs": [],
+   "signals": [],
+   "funcs": [
+    "test_fit_for_takes_the_tighter_axis",
+    "test_snapped_factor_floors_above_design_and_keeps_below",
+    "test_first_focus_skips_disabled_and_finds_a_button",
+    "test_first_focus_with_nothing_focusable_is_false",
+    "test_pop_in_survives_the_control_being_freed_first",
+    "test_pop_in_lands_at_full_alpha"
+   ],
+   "emits": [],
+   "connects": [],
+   "node_paths": [],
+   "lines": 63
+  },
+  "res://tools/seeds/dev_driver.gd": {
+   "path": "res://tools/seeds/dev_driver.gd",
+   "lang": "gdscript",
+   "class_name": null,
+   "global": true,
+   "extends": "Node",
+   "tool": false,
+   "loads": [],
+   "refs": [],
+   "signals": [],
+   "funcs": [
+    "_ready",
+    "_run"
+   ],
+   "emits": [],
+   "connects": [],
+   "node_paths": [],
+   "lines": 37
+  },
+  "res://tools/seeds/dev_hooks.gd": {
+   "path": "res://tools/seeds/dev_hooks.gd",
+   "lang": "gdscript",
+   "class_name": null,
+   "global": true,
+   "extends": "Node",
+   "tool": false,
+   "loads": [],
+   "refs": [],
+   "signals": [],
+   "funcs": [
+    "sandbox",
+    "restore",
+    "scenario_command",
+    "console_dispatch"
+   ],
+   "emits": [],
+   "connects": [],
+   "node_paths": [],
+   "lines": 53
+  }
+ },
+ "resources": {
+  "res://default_bus_layout.tres": {
+   "path": "res://default_bus_layout.tres",
+   "type": "AudioBusLayout",
+   "script": null,
+   "resources": []
+  }
+ },
+ "data": {
+  "res://.gutconfig.json": {
+   "used_by": []
+  },
+  "res://data/console_commands.json": {
+   "used_by": [
+    "res://scripts/dev/debug_console.gd"
+   ]
+  },
+  "res://data/console_commands.project.json": {
+   "used_by": [
+    "res://scripts/dev/debug_console.gd"
+   ]
+  },
+  "res://localization/game.csv": {
+   "used_by": []
+  },
+  "res://tools/seeds/claude-hooks.json": {
+   "used_by": []
+  },
+  "res://tools/seeds/console_commands.project.json": {
+   "used_by": []
+  }
+ },
+ "classes": {
+  "BBCode": "res://scripts/util/bbcode.gd",
+  "BugReport": "res://scripts/dev/bug_report.gd",
+  "Cmdline": "res://scripts/util/cmdline.gd",
+  "ContentDB": "res://scripts/util/content_db.gd",
+  "DataMerger": "res://scripts/util/data_merger.gd",
+  "FunctionRegistry": "res://scripts/util/function_registry.gd",
+  "JsonLines": "res://scripts/util/json_lines.gd",
+  "JsonValue": "res://scripts/util/json_value.gd",
+  "L10n": "res://scripts/util/l10n.gd",
+  "PadRouter": "res://scripts/util/pad_router.gd",
+  "PauseMenu": "res://scripts/ui/pause_menu.gd",
+  "RuntimeTextures": "res://scripts/util/runtime_textures.gd",
+  "SaveCompat": "res://scripts/util/save_compat.gd",
+  "UIFocus": "res://scripts/ui/ui_focus.gd",
+  "UITheme": "res://scripts/ui/ui_theme.gd",
+  "UiScaleRoot": "res://scripts/ui/ui_scale_root.gd",
+  "VersionUtil": "res://scripts/util/version_util.gd",
+  "VolumeSliders": "res://scripts/ui/volume_sliders.gd"
+ },
+ "used_by": {
+  "res://assets/audio/sfx/click.wav": [
+   "res://scripts/main.gd"
+  ],
+  "res://assets/audio/sfx/confirm.wav": [
+   "res://scripts/main.gd"
+  ],
+  "res://assets/audio/sfx/error.wav": [
+   "res://scripts/main.gd"
+  ],
+  "res://assets/audio/sfx/hover.wav": [
+   "res://scripts/main.gd"
+  ],
+  "res://assets/audio/sfx/menu_close.wav": [
+   "res://scripts/main.gd"
+  ],
+  "res://assets/audio/sfx/menu_open.wav": [
+   "res://scripts/main.gd"
+  ],
+  "res://data/%s": [
+   "res://scripts/util/content_db.gd"
+  ],
+  "res://data/console_commands.json": [
+   "res://scripts/dev/debug_console.gd"
+  ],
+  "res://data/console_commands.project.json": [
+   "res://scripts/dev/debug_console.gd"
+  ],
+  "res://scenarios/baselines": [
+   "res://scripts/dev/screenshot_harness.gd"
+  ],
+  "res://scenarios/baselines/nowhere/none.png": [
+   "res://tests/test_screenshot_harness.gd"
+  ],
+  "res://scenes/main.tscn": [
+   "res://tests/test_console_state.gd",
+   "res://tests/test_smoke.gd"
+  ],
+  "res://scripts": [
+   "res://tests/test_localization.gd"
+  ],
+  "res://scripts/autoloads/audio_manager.gd": [
+   "autoload:AudioManager",
+   "res://scripts/autoloads/game_manager.gd",
+   "res://scripts/dev/debug_console.gd",
+   "res://scripts/dev/screenshot_harness.gd",
+   "res://scripts/main.gd",
+   "res://scripts/ui/pause_menu.gd",
+   "res://scripts/ui/volume_sliders.gd",
+   "res://tests/test_audio_manager.gd",
+   "res://tests/test_debug_console.gd"
+  ],
+  "res://scripts/autoloads/event_bus.gd": [
+   "autoload:EventBus",
+   "res://scripts/autoloads/pads.gd",
+   "res://scripts/autoloads/save_manager.gd",
+   "res://tests/test_save_manager.gd"
+  ],
+  "res://scripts/autoloads/game_manager.gd": [
+   "autoload:GameManager",
+   "res://scripts/dev/dev_hooks.gd",
+   "res://scripts/ui/pause_menu.gd",
+   "res://tests/test_ui_kit.gd"
+  ],
+  "res://scripts/autoloads/keybinds.gd": [
+   "autoload:Keybinds",
+   "res://scripts/autoloads/pads.gd",
+   "res://scripts/dev/debug_console.gd",
+   "res://scripts/dev/screenshot_harness.gd",
+   "res://tests/test_debug_console.gd",
+   "res://tests/test_keybinds.gd"
+  ],
+  "res://scripts/autoloads/pads.gd": [
+   "autoload:Pads"
+  ],
+  "res://scripts/autoloads/save_manager.gd": [
+   "autoload:SaveManager",
+   "res://scripts/autoloads/audio_manager.gd",
+   "res://scripts/autoloads/game_manager.gd",
+   "res://scripts/autoloads/keybinds.gd",
+   "res://scripts/autoloads/pads.gd",
+   "res://scripts/dev/bug_report.gd",
+   "res://scripts/dev/debug_console.gd",
+   "res://scripts/dev/screenshot_harness.gd",
+   "res://scripts/ui/ui_scale_root.gd",
+   "res://scripts/util/content_db.gd",
+   "res://tests/test_audio_manager.gd",
+   "res://tests/test_content_db.gd",
+   "res://tests/test_debug_console.gd",
+   "res://tests/test_keybinds.gd",
+   "res://tests/test_save_manager.gd",
+   "res://tests/test_save_providers.gd"
+  ],
+  "res://scripts/dev/bug_report.gd": [
+   "res://scripts/dev/debug_console.gd"
+  ],
+  "res://scripts/dev/debug_console.gd": [
+   "autoload:DebugConsole",
+   "res://scripts/dev/screenshot_harness.gd",
+   "res://tests/test_console_state.gd",
+   "res://tests/test_debug_console.gd",
+   "res://tests/test_dev_hooks.gd",
+   "res://tests/test_screenshot_harness.gd"
+  ],
+  "res://scripts/dev/dev_hooks.gd": [
+   "res://scripts/dev/debug_console.gd"
+  ],
+  "res://scripts/dev/screenshot_harness.gd": [
+   "autoload:ScreenshotHarness",
+   "res://tests/test_screenshot_harness.gd"
+  ],
+  "res://scripts/dev/selftest_driver.gd": [
+   "autoload:SelftestDriver"
+  ],
+  "res://scripts/main.gd": [
+   "res://scenes/main.tscn"
+  ],
+  "res://scripts/ui/pause_menu.gd": [
+   "res://scenes/main.tscn"
+  ],
+  "res://scripts/ui/ui_focus.gd": [
+   "res://scripts/ui/pause_menu.gd",
+   "res://tests/test_ui_kit.gd"
+  ],
+  "res://scripts/ui/ui_scale_root.gd": [
+   "res://tests/test_ui_kit.gd"
+  ],
+  "res://scripts/ui/ui_theme.gd": [
+   "res://scripts/dev/debug_console.gd",
+   "res://scripts/main.gd",
+   "res://scripts/ui/pause_menu.gd",
+   "res://tests/test_ui_kit.gd"
+  ],
+  "res://scripts/ui/volume_sliders.gd": [
+   "res://scripts/ui/pause_menu.gd"
+  ],
+  "res://scripts/util/bbcode.gd": [
+   "res://tests/test_kit_utils.gd"
+  ],
+  "res://scripts/util/cmdline.gd": [
+   "res://scripts/dev/screenshot_harness.gd",
+   "res://scripts/dev/selftest_driver.gd",
+   "res://tests/test_cmdline.gd",
+   "res://tools/seeds/dev_driver.gd"
+  ],
+  "res://scripts/util/content_db.gd": [
+   "res://tests/test_content_db.gd"
+  ],
+  "res://scripts/util/data_merger.gd": [
+   "res://scripts/util/content_db.gd",
+   "res://tests/test_data_merger.gd"
+  ],
+  "res://scripts/util/function_registry.gd": [
+   "res://tests/test_function_registry.gd"
+  ],
+  "res://scripts/util/json_lines.gd": [
+   "res://tests/test_json_lines.gd"
+  ],
+  "res://scripts/util/json_value.gd": [
+   "res://tests/test_kit_utils.gd"
+  ],
+  "res://scripts/util/l10n.gd": [
+   "res://scripts/ui/pause_menu.gd",
+   "res://scripts/ui/volume_sliders.gd",
+   "res://tests/test_l10n.gd"
+  ],
+  "res://scripts/util/pad_router.gd": [
+   "res://scripts/autoloads/pads.gd",
+   "res://tests/test_pad_router.gd"
+  ],
+  "res://scripts/util/runtime_textures.gd": [
+   "res://tests/test_kit_utils.gd"
+  ],
+  "res://scripts/util/save_compat.gd": [
+   "res://scripts/autoloads/save_manager.gd",
+   "res://tests/test_save_providers.gd"
+  ],
+  "res://scripts/util/version_util.gd": [
+   "res://scripts/autoloads/save_manager.gd",
+   "res://scripts/util/save_compat.gd",
+   "res://tests/test_kit_utils.gd"
+  ],
+  "res://shots": [
+   "res://scripts/dev/screenshot_harness.gd"
+  ]
+ }
+}

@@ -59,6 +59,27 @@ done
 [[ ${#NOEXEC[@]} -eq 0 ]]
 pass_or_fail "tool scripts executable${NOEXEC[*]:+ (missing +x: ${NOEXEC[*]})}" $?
 
+# The project map (godot-map, its own repo) is committed so a checkout
+# reads without the tool. With the tool here a stale map is a failure:
+# Claude reads PROJECT_MAP.md first, and a wrong map sends it to a node
+# that moved. No map at all is a note — adopting it is one command.
+echo "── map ──"
+if ! command -v godot-map >/dev/null 2>&1; then
+	printf '  --    project map (godot-map not installed: uv tool install --editable ~/godot-projects/godot-map)\n'
+elif [[ ! -f PROJECT_MAP.md ]]; then
+	printf '  --    no project map yet (run godot-map . and commit PROJECT_MAP.md + .godot-map/)\n'
+else
+	OUT="$(godot-map . --check 2>&1)"
+	STATUS=$?
+	if [[ $STATUS -eq 0 ]]; then
+		printf '  ok    project map up to date\n'
+	else
+		printf '%s\n' "$OUT" | sed 's/^/        /'
+		pass_or_fail "project map (run godot-map . and commit)" $STATUS
+	fi
+fi
+
+
 echo "── tests ──"
 OUT="$(tools/test.sh 2>&1)"; STATUS=$?
 printf '  %s\n' "$(grep -E 'Passing Tests|Failing Tests' <<<"$OUT" | tr -s ' ' | paste -sd'  ' -)"

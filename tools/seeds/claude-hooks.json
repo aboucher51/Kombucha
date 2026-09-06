@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "grep -qE '\\.(gd|cs|tscn|tres|godot)\"' && command -v godot-map >/dev/null && godot-map . >/dev/null 2>&1; true"
+          }
+        ]
+      }
+    ]
+  }
+}
