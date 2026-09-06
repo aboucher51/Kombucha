@@ -25,6 +25,9 @@ SHOOT_BASELINES=update tools/shoot.sh <scenario>
 tools/export.sh             # Linux + Windows builds, smoke-tested
 ```
 
+Every scenario also leaves a `shots/<stem>.jsonl` trace and every test
+run a merged `.godot/test-results.xml`.
+
 `CLAUDE.md` is the contract: every rule in it names what breaks without
 it, and every tool above is what lets Claude say "this works" without a
 human at the keyboard.
@@ -34,7 +37,11 @@ human at the keyboard.
 Every project carries a copy of the paths in `tools/tooling-manifest.txt`,
 stamped with the Kombucha commit in `tools/TOOLING_VERSION`. The global
 `/sync-godot-tooling` skill (which runs `tools/sync-tooling.sh`) refreshes
-the copy, and each project's `check.sh` says when it is behind. Projects
+the copy, and each project's `check.sh` says when it is behind;
+`--check --diff` shows what a project added to an owned file before a
+sync overwrites it, and `--kit` reports the Template kit files it could
+cherry-pick. The tooling rules themselves are one owned text,
+`docs/godot-tooling.md`, imported by every project's `CLAUDE.md`. Projects
 extend the tooling only through `scripts/dev/dev_hooks.gd`,
 `data/console_commands.project.json` and `tools/check.local.sh`; seeds for
 those are in `tools/seeds/`.

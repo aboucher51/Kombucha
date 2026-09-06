@@ -62,6 +62,32 @@ own status at the top.
   `test.sh`, a check.sh lock, and an uncommitted working tree. It needs
   its own session, started from a clean tree.
 
+## Landed 2026-09-06, second pass
+
+- **One tooling text**: the CLAUDE.md tooling sections are
+  `docs/godot-tooling.md`, an owned file every project's CLAUDE.md
+  imports with `@docs/godot-tooling.md`; the sync notes a missing import.
+  No more hand-splicing rules into each project.
+- **Drift with provenance**: `sync-tooling.sh --check` measures each
+  drifted owned file against the Kombucha or Template version it is
+  closest to and reports the project's own lines; `--diff` prints them.
+- **The kit report** (former item 2): `--kit` lists, per Template kit
+  file, the version a project's copy is at, its own lines, and the
+  Template commits since.
+- **The sync self-tests** in `tools/selftest.sh`: stamp, seeds, execute
+  bit, drift report with the project's line, the import note, a dirty
+  source refused. It caught a blank line counted as a project edit.
+- **JSONL trace per scenario** (the rest of former item 7) beside the
+  PNGs, proven complete by `check.local.sh`.
+- **Recursive sandbox wipe** (NavalWar's fix): a mods tree with
+  subdirectories is wiped whole.
+- **The exit-time "resources still in use" line** was investigated: a
+  `const preload` (`menu_close.wav`) held during teardown, count varying
+  between identical runs. Documented as not gateable; not counted.
+- **Xvfb locally**: `check.local.sh` forces a scenario through the
+  virtual display when `xvfb-run` exists and prints a `--` line until it
+  is installed (`sudo apt install xvfb`, needs the user's password).
+
 ## Next
 
 0. **Move projects to the Linux filesystem**

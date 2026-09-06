@@ -45,6 +45,32 @@ if [[ "${QUICK:-0}" -eq 0 ]]; then
 	else
 		printf '  FAIL  harness did not return to the boot scene between scenarios\n'; MISSING=1
 	fi
+	# The JSONL trace beside the shots: one JSON object per line, a summary
+	# last, and the lines a scenario ran are all there.
+	if python3 - <<'PY'
+import json, sys
+rows = [json.loads(l) for l in open("shots/example.jsonl")]
+ok = rows[-1].get("scenario") == "scenarios/example.txt" and rows[-1]["ok"] is True \
+	and any(r.get("line") == "assert_visible TitleLabel" and r["ok"] for r in rows) \
+	and any(r.get("line", "").startswith("expect_fail") for r in rows) and all("ms" in r for r in rows[:-1])
+sys.exit(0 if ok else 1)
+PY
+	then
+		printf '  ok    scenario trace shots/example.jsonl is complete\n'
+	else
+		printf '  FAIL  scenario trace shots/example.jsonl missing or incomplete\n'; MISSING=1
+	fi
+	# The CI path (virtual display, software GL) exercised HERE when the
+	# package is present, so the branch cannot rot between pushes.
+	if command -v xvfb-run >/dev/null; then
+		if SHOOT_DISPLAY=xvfb SHOOT_JOBS=1 SHOOT_KEEP=1 tools/shoot.sh scenarios/example.txt 2>&1 | grep -q 'renderer llvmpipe'; then
+			printf '  ok    Xvfb path renders with llvmpipe\n'
+		else
+			printf '  FAIL  Xvfb path did not render with llvmpipe\n'; MISSING=1
+		fi
+	else
+		printf '  --    Xvfb path (xvfb-run not installed: sudo apt install xvfb)\n'
+	fi
 fi
 
 # The runner's own guards, proven against a scratch copy (see selftest.sh).

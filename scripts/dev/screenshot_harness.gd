@@ -51,6 +51,11 @@ extends Node
 ##     expect_fail <command>   fail unless the wrapped command fails
 ##     # comment               ignored, as are blank lines
 ##
+## Beside the PNGs, every scenario leaves shots/<stem>.jsonl: one line per
+## executed command with its reply and milliseconds, then a summary line.
+## It is the run as data — what a scenario did, how long each step took
+## and where it failed — greppable without the engine log.
+##
 ## A name shared by two nodes is an ERROR, not a coin toss: every lookup
 ## refuses an ambiguous name rather than answering about whichever loaded
 ## first (that was a test decided by load order, once).
@@ -234,18 +239,29 @@ func _run(path: String) -> void:
 	_scenario_stem = path.get_file().get_basename()
 	var started := Time.get_ticks_msec()
 	var line_number := 0
+	var trace: Array[String] = []
 	while not file.eof_reached():
 		var line := file.get_line().strip_edges()
 		line_number += 1
 		if line.is_empty() or line.begins_with("#"):
 			continue
+		var began := Time.get_ticks_msec()
 		var reply := await _execute(line)
+		trace.append(JSON.stringify({"n": line_number, "line": line, "reply": reply,
+			"ms": Time.get_ticks_msec() - began, "ok": not _is_error(reply)}))
 		if _is_error(reply):
 			_fail(path, line_number, "%s -> %s" % [line, reply])
+	var seconds := float(Time.get_ticks_msec() - started) / 1000.0
+	trace.append(JSON.stringify({"scenario": path, "ok": _failures == 0,
+		"failures": _failures, "seconds": seconds, "shots": _shot_index}))
+	DirAccess.make_dir_recursive_absolute(SHOT_DIR)
+	var trace_file := FileAccess.open("%s/%s.jsonl" % [SHOT_DIR, _scenario_stem], FileAccess.WRITE)
+	if trace_file != null:
+		trace_file.store_string("\n".join(trace) + "\n")
 	# The seconds are the point: with dozens of scenarios in one process,
 	# the expensive ones must be visible without a profiler.
 	if _failures == 0:
-		print("scenario ok: %s (%.1fs)" % [path, float(Time.get_ticks_msec() - started) / 1000.0])
+		print("scenario ok: %s (%.1fs)" % [path, seconds])
 
 
 func _execute(line: String) -> String:
@@ -753,14 +769,14 @@ func _fail(path: String, line_number: int, message: String) -> void:
 	print("FAIL %s:%d %s" % [path, line_number, message])
 
 
+## Recursive: a sandboxed mods root holds whole directory trees, and a
+## wipe that skipped subdirectories left one scenario's mod for the next.
 func _wipe_dir(dir_path: String) -> void:
 	var dir := DirAccess.open(dir_path)
 	if dir == null:
 		return
-	dir.list_dir_begin()
-	var file_name := dir.get_next()
-	while file_name != "":
-		if not dir.current_is_dir():
-			dir.remove(file_name)
-		file_name = dir.get_next()
-	dir.list_dir_end()
+	for sub in dir.get_directories():
+		_wipe_dir("%s/%s" % [dir_path, sub])
+		dir.remove(sub)
+	for file_name in dir.get_files():
+		dir.remove(file_name)
