@@ -167,6 +167,16 @@ Template; the Template repo must be public for that. Next: bump
 `version` in both manifests on a release, and an install-from-marketplace
 smoke in CI once the repo is public.
 
+## One repo (2026-09-06)
+
+The Template repo is retired: its kit was byte-identical to the fixture's,
+so `tools/new-project.sh` now scaffolds from this repo, leaving the
+Kombucha-only paths behind and stripping the `<!-- kombucha-only -->`
+sections of CLAUDE.md and LICENSES.md. `/update-kombucha` replaces
+`/update-template`; `--kit` measures against Kombucha's history (and the
+old Template's, where a clone still exists). The self-test scaffolds a
+project and checks what stayed behind.
+
 ## Not planned
 
 - Any editor-bridge MCP server as a dependency: it needs the editor open,

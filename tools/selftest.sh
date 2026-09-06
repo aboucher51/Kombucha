@@ -80,6 +80,25 @@ if "$SRC2/tools/sync-tooling.sh" "$DEST2" --check >/dev/null 2>&1; then
 else
 	say FAIL "sync --check still reports drift after a sync"; FAILED=1
 fi
+# 3b. The scaffolder, from the scratch source: Kombucha-only paths stay
+#     behind, the fenced sections are gone, the project is named, stamped
+#     and committed once.
+DEST3="$(mktemp -d)/Scaffolded"
+trap 'rm -rf "$SCRATCH" "$SRC2" "$DEST2" "$(dirname "$DEST3")"' EXIT
+OUT="$("$SRC2/tools/new-project.sh" "$DEST3" "Self Test" --no-check 2>&1)"; CODE=$?
+if [[ $CODE -eq 0 && -f "$DEST3/tools/TOOLING_VERSION" && -f "$DEST3/scripts/dev/dev_hooks.gd" \
+		&& ! -e "$DEST3/skills" && ! -e "$DEST3/.claude-plugin" && ! -e "$DEST3/tools/selftest.sh" \
+		&& ! -e "$DEST3/tests/test_dev_hooks.gd" && ! -e "$DEST3/scenarios/hooks.txt" \
+		&& ! -e "$DEST3/docs/roadmap.md" ]] \
+		&& ! grep -q 'What this repo is' "$DEST3/CLAUDE.md" && ! grep -q 'kombucha-only' "$DEST3/CLAUDE.md" \
+		&& grep -q 'docs/godot-tooling.md' "$DEST3/CLAUDE.md" && ! grep -q 'itself is MIT' "$DEST3/LICENSES.md" \
+		&& grep -q 'config/name="Self Test"' "$DEST3/project.godot" && ! grep -q SelftestDriver "$DEST3/project.godot" \
+		&& [[ "$(git -C "$DEST3" rev-list --count HEAD)" == "1" ]] && [[ -z "$(git -C "$DEST3" status --porcelain)" ]]; then
+	say ok "new-project.sh scaffolds a named, stamped, committed project without the Kombucha-only paths"
+else
+	say FAIL "new-project.sh scaffold is wrong (exit $CODE): $(tail -3 <<<"$OUT")"; FAILED=1
+fi
+
 echo "# dirty" >> "$SRC2/tools/shoot.sh"
 if "$SRC2/tools/sync-tooling.sh" "$DEST2" --no-check >/dev/null 2>&1; then
 	say FAIL "sync accepted a source with uncommitted owned changes"; FAILED=1

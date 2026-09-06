@@ -9,7 +9,6 @@ tools/check.sh
 tools/shoot.sh
 tools/serve.sh
 tools/export.sh
-tools/new-project.sh
 tools/sync-tooling.sh
 tools/tooling-manifest.txt
 tools/seeds/

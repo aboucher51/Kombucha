@@ -44,20 +44,20 @@ claude plugin install kombucha@kombucha
 
 Then, in Claude Code:
 
-- `/new-godot-project <Name>` scaffolds a project from the
-  [Template](https://github.com/aboucher51/Template) repo, which carries
-  the kit the tooling assumes (autoloads for saves, keybinds, audio,
-  pads; a code-built UI theme) and a copy of this tooling. It clones the
-  Template next to your projects on first use.
-- `/sync-godot-tooling` in any such project refreshes its copy from the
-  plugin's version and says what the project had changed in an owned
-  file before overwriting it. `tools/check.sh` prints a note when the
-  copy is behind.
-- `/update-template` backports a kit improvement to the Template.
+- `/new-godot-project <Name>` scaffolds a project from this plugin's own
+  checkout: the kit the tooling assumes (autoloads for saves, keybinds,
+  audio, pads; a code-built UI theme), the tooling, and a `CLAUDE.md`
+  whose every convention says what breaks without it.
+- `/sync-godot-tooling` in any such project refreshes its tooling copy
+  from the plugin's version and says what the project had changed in an
+  owned file before overwriting it. `tools/check.sh` prints a note when
+  the copy is behind.
+- `/update-kombucha` backports a kit or tooling improvement from a
+  project into a clone of this repo.
 
 The tooling is not a drop-in for an arbitrary existing project: the
-harness and console name the Template's autoloads. Adopting it in an
-existing project means adopting the kit first.
+harness and console name the kit's autoloads. Adopting it in an existing
+project means adopting the kit first.
 
 ## Extending it in a project
 
@@ -73,9 +73,11 @@ three files a sync never touches, seeded on first sync:
 
 ## Developing the tooling
 
-This repo is the workshop and the fixture, not a game. The main scene,
-autoloads, tests and scenarios here are the smallest project the tooling
-needs in order to exercise itself; a tool change the fixture cannot
+This repo is the workshop, the fixture and the scaffold, not a game. The
+main scene, autoloads, tests and scenarios here are the smallest project
+the tooling needs in order to exercise itself, and what a new project
+starts as (minus this repo's own paths and doc sections, which
+`tools/new-project.sh` leaves behind); a tool change the fixture cannot
 exercise needs the fixture extended in the same commit.
 
 ```bash
@@ -93,8 +95,8 @@ rather than the installed plugin, set `GODOT_TOOLING` to the clone.
 - `.claude-plugin/` — plugin and marketplace manifests. `skills/` — the
   three skills above.
 - `tools/` — the scripts, `sync-tooling.sh` and its manifest, `seeds/`
-  for a project's extension files, `new-project.sh` (used from the
-  Template).
+  for a project's extension files and README, `new-project.sh` (the
+  scaffolder), `selftest.sh`.
 - `scripts/dev/` — screenshot harness, debug console, bug report, and the
   fixture's `dev_hooks.gd`. `data/console_commands.json` is the console's
   core command table.

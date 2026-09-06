@@ -1,5 +1,6 @@
 # CLAUDE.md
 
+<!-- kombucha-only -->
 ## What this repo is
 
 Kombucha is the workshop for the Godot-to-Claude workflow itself: the
@@ -21,8 +22,8 @@ Rules that follow from that:
   `skills/`): a user installs it from the marketplace and the skills
   find the tooling in the plugin checkout. Nothing under `tools/`,
   `skills/` or the docs may name a path on one machine; `GODOT_TOOLING`
-  and `GODOT_TEMPLATE` are the overrides, `$HOME/godot-projects/` the
-  convention.
+  is the override (a clone with history, for backports and the kit
+  report), `$HOME/godot-projects/` the convention.
 - **The tooling is owned here and copied outward.** `tools/tooling-manifest.txt`
   lists the paths every project carries as a copy; `tools/sync-tooling.sh`
   (the `/sync-godot-tooling` skill) refreshes them and stamps
@@ -31,10 +32,16 @@ Rules that follow from that:
   and `tools/check.local.sh`, which a sync never touches. Seeds for those
   live in `tools/seeds/`. Without this split, nine projects each carried a
   diverged harness and the same bug was fixed four times.
+- **This repo is also the scaffold.** `tools/new-project.sh` copies the
+  fixture minus Kombucha-only paths and strips the sections fenced
+  `<!-- kombucha-only -->` from CLAUDE.md and LICENSES.md, so the kit,
+  the contract and the conventions have ONE source. A kit improvement
+  made in a game comes back here with `/update-kombucha`; projects
+  cherry-pick kit files (`sync-tooling.sh --kit` says what is newer).
 - **Lessons flow two ways.** Findings go in `docs/research/`; rules earn a
-  place below as *the rule plus what breaks without it*; both are
-  backported to `Template` with the `/update-template` skill so new
-  projects inherit them. Read `docs/roadmap.md` for the current order.
+  place below as *the rule plus what breaks without it*, and every new
+  project inherits them. Read `docs/roadmap.md` for the current order.
+<!-- /kombucha-only -->
 
 ## GodotPrompter
 
@@ -49,9 +56,11 @@ one matches.
 ## Project conventions
 
 Godot 4.7, GL Compatibility renderer, GDScript with static typing. The
-conventions below are the Template's; each transferred from a project where
-it had already cost a debugging pass when violated. They are maintained here
-first and backported. State every rule *and* what breaks without it.
+conventions below are the kit's; each transferred from a project where it
+had already cost a debugging pass when violated. They are maintained in
+Kombucha and every scaffolded project starts with them; as a project grows
+its own load-bearing conventions, record them here the same way. State
+every rule *and* what breaks without it.
 
 ### Layout
 
@@ -184,7 +193,7 @@ gating which pad may act is opt-in through the `pad_gate` group.
   `attach_if_outermost` refuses when the screen is embedded.
 - **Window scaling snaps to integers above design size** (`GameManager`
   `_apply_scale_policy`, `snapped_factor`): pixel art stays 1:1 or 2:1
-  and the viewport expands (aspect `expand`, the Template default, which
+  and the viewport expands (aspect `expand`, the kit default, which
   seven of ten projects had switched to). Godot's own `STRETCH_INTEGER`
   letterboxes instead, measured. Below design size keep the fractional
   shrink or a Steam Deck crops.
@@ -295,6 +304,7 @@ project imports here. Edit that file, never a project's copy.
 
 @docs/godot-tooling.md
 
+<!-- kombucha-only -->
 ### Kombucha-only checks
 
 `tools/selftest.sh` proves the runner's guards (a broken test file is red,
@@ -303,6 +313,7 @@ the execute bit, reports drift, refuses a dirty source) against scratch
 copies; `tools/check.local.sh` here is the fixture's own gate and runs it,
 plus the manifest check, the driver skeleton both ways, and the ordered
 scenario pair. A game project has nothing to prove there.
+<!-- /kombucha-only -->
 
 ## Interpretation notes (decided + tested)
 

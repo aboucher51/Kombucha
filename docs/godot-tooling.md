@@ -312,7 +312,7 @@ Rules that keep the harness useful:
   them — but **anything global survives that reload**. When introducing new
   global state (autoload fields, static vars, write-through files), reset it
   in `sandbox()` in `scripts/dev/dev_hooks.gd` (the harness's own
-  `_sandbox()` is synced over and only knows the Template autoloads), or a
+  `_sandbox()` is synced over and only knows the kit's autoloads), or a
   scenario that changes it poisons every scenario after it. The symptom is
   always misleading: a scenario that passes alone and fails in the batch,
   or vice versa.
@@ -345,10 +345,11 @@ Kombucha, then sync. Extend them only through `scripts/dev/dev_hooks.gd`,
 `data/console_commands.project.json` and `tools/check.local.sh`.
 
 Before a sync, `tools/sync-tooling.sh <project> --check --diff` (run from
-Kombucha) measures each drifted owned file against the Kombucha or
-Template version it is closest to and prints the lines THIS project added
-beyond it: what must move into a seam, or go to Kombucha first, before
-the sync overwrites it. `--kit` is the same report for the kit files the
-Template owns (autoloads, util, ui), which are cherry-picked, never
-synced: per file, the Template version the copy is at, the project's own
-lines, and the Template commits since.
+Kombucha) measures each drifted owned file against the Kombucha version
+it is closest to and prints the lines THIS project added beyond it: what
+must move into a seam, or go to Kombucha first, before the sync
+overwrites it. `--kit` is the same report for the kit files (autoloads,
+util, ui), which are cherry-picked, never synced: per file, the Kombucha
+version the copy is at, the project's own lines, and the Kombucha commits
+since. Both need a clone of Kombucha with its history (`GODOT_TOOLING`);
+the installed plugin has none.

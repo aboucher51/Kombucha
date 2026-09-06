@@ -9,7 +9,7 @@ Kombucha owns the Godot-to-Claude workflow tooling. Its checkout is this
 plugin's own directory, `${CLAUDE_PLUGIN_ROOT}` (a developer working from
 a clone sets `GODOT_TOOLING` to it instead); every path below that says
 `<kombucha>` means that directory. Every other
-project, the Template included, carries a **copy** of the paths listed in
+project carries a **copy** of the paths listed in
 `tools/tooling-manifest.txt`, stamped in `tools/TOOLING_VERSION` with the
 Kombucha commit it came from. `tools/check.sh` prints a note when that
 stamp falls behind.
@@ -56,7 +56,7 @@ three files a sync never touches:
 
    **Diff the WHOLE owned file, not just those seams.** A project fixes
    the tooling's own logic in place too (Digit's harness returned to the
-   boot scene between scenarios where the Template's reloaded the current
+   boot scene between scenarios where the original reloaded the current
    one), and a sync that only moved the seams erased it: five of eight
    scenarios then failed with "no node named 'PlayButton'". The cheap
    test: diff the project's copy against the Kombucha commit it was
@@ -95,4 +95,4 @@ three files a sync never touches:
 - Improving the tooling itself: do that in Kombucha, prove it against
   the fixture there, then sync outward.
 - Non-tooling improvements (utilities, conventions, UI kit): those still
-  travel with the project-local `/update-template` skill.
+  travel with the `/update-kombucha` skill.

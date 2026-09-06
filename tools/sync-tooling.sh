@@ -23,8 +23,8 @@
 #                                                  is to cherry-pick. Kit is
 #                                                  never synced: games edit it.
 #
-# Run from Kombucha (this script's own repo), or from anywhere via the
-# /sync-godot-tooling skill. Drift in an owned file means the project edited
+# Run from Kombucha (this script's own repo: a clone, or the installed
+# plugin), or from anywhere via the /sync-godot-tooling skill. Drift in an owned file means the project edited
 # tooling in place: back the change up to Kombucha first (or move it into
 # dev_hooks.gd / check.local.sh), because the sync overwrites it.
 set -uo pipefail
@@ -54,15 +54,19 @@ fi
 mapfile -t OWNED < <(grep -vE '^\s*(#|$)' "$SRC/tools/tooling-manifest.txt")
 
 # ── the kit report ────────────────────────────────────────────────────────
-# Kit (autoloads, util, ui) lives in the Template and travels by
-# cherry-pick, because every game edits these files in place. The report
-# answers, per file: which Template version is this copy, what did the
-# project add, and what has the Template done to the file since.
+# Kit (autoloads, util, ui) lives here and travels by cherry-pick, because
+# every game edits these files in place. The report answers, per file:
+# which Kombucha version is this copy, what did the project add, and what
+# has Kombucha done to the file since. A project scaffolded from the old
+# Template repo is measured against that history too, where a clone of it
+# exists ($GODOT_TEMPLATE); the source needs git either way.
 if [[ "$MODE" == "--kit" ]]; then
-	if [[ ! -d "$TEMPLATE/.git" ]]; then
-		echo "sync-tooling: no Template at $TEMPLATE (set GODOT_TEMPLATE)" >&2
+	if [[ ! -d "$SRC/.git" ]]; then
+		echo "sync-tooling: the kit report needs a clone of Kombucha with its history (set GODOT_TOOLING)" >&2
 		exit 2
 	fi
+	repos=("$SRC")
+	[[ -d "$TEMPLATE/.git" ]] && repos+=("$TEMPLATE")
 	tmp="$(mktemp)"
 	behind_total=0
 	while read -r file; do
@@ -72,28 +76,38 @@ if [[ "$MODE" == "--kit" ]]; then
 			printf '  absent %s\n' "$file"
 			continue
 		fi
-		best=999999; best_ref=""
-		while read -r commit; do
-			git -C "$TEMPLATE" show "$commit:$file" > "$tmp" 2>/dev/null || continue
-			n=$(diff "$tmp" "$DEST/$file" | grep -cE '^[<>]')
-			if (( n < best )); then best=$n; best_ref="$commit"; fi
-		done < <(git -C "$TEMPLATE" log --format=%H -- "$file")
+		best=999999; best_ref=""; best_repo=""
+		for repo in "${repos[@]}"; do
+			while read -r commit; do
+				git -C "$repo" show "$commit:$file" > "$tmp" 2>/dev/null || continue
+				n=$(diff "$tmp" "$DEST/$file" | grep -cE '^[<>]')
+				if (( n < best )); then best=$n; best_ref="$commit"; best_repo="$repo"; fi
+			done < <(git -C "$repo" log --format=%H -- "$file")
+		done
 		[[ -z "$best_ref" ]] && continue
-		git -C "$TEMPLATE" show "$best_ref:$file" > "$tmp"
+		git -C "$best_repo" show "$best_ref:$file" > "$tmp"
 		plus=$(diff "$tmp" "$DEST/$file" | grep -E '^>' | grep -vcE '^>\s*#')
 		minus=$(diff "$tmp" "$DEST/$file" | grep -E '^<' | grep -vcE '^<\s*#')
-		newer=$(git -C "$TEMPLATE" rev-list --count "$best_ref"..HEAD -- "$file")
+		# What is newer: Kombucha's commits to the file since the version
+		# the copy matches (all of them, when the match was in the Template).
+		if [[ "$best_repo" == "$SRC" ]]; then
+			newer=$(git -C "$SRC" rev-list --count "$best_ref"..HEAD -- "$file")
+			since="$best_ref"
+		else
+			newer=$(git -C "$SRC" rev-list --count HEAD -- "$file")
+			since=""
+		fi
 		behind_total=$(( behind_total + newer ))
 		if (( newer == 0 && plus == 0 && minus == 0 )); then
 			printf '  same   %s\n' "$file"
 		else
-			printf '  kit    %s  at Template@%s, own +%d -%d, %d newer Template commit(s)\n' \
-				"$file" "$(git -C "$TEMPLATE" rev-parse --short "$best_ref")" "$plus" "$minus" "$newer"
-			git -C "$TEMPLATE" log --format='           %h %ad %s' --date=short "$best_ref"..HEAD -- "$file"
+			printf '  kit    %s  at %s@%s, own +%d -%d, %d newer Kombucha commit(s)\n' \
+				"$file" "$(basename "$best_repo")" "$(git -C "$best_repo" rev-parse --short "$best_ref")" "$plus" "$minus" "$newer"
+			git -C "$SRC" log --format='           %h %ad %s' --date=short ${since:+"$since"..HEAD} -- "$file"
 		fi
-	done < <(git -C "$TEMPLATE" ls-files scripts/autoloads scripts/util scripts/ui | grep -vE '\.uid$')
+	done < <(git -C "$SRC" ls-files scripts/autoloads scripts/util scripts/ui | grep -vE '\.uid$')
 	rm -f "$tmp"
-	echo "kit: $behind_total Template commit(s) to consider across the kit"
+	echo "kit: $behind_total Kombucha commit(s) to consider across the kit"
 	exit 0
 fi
 
