@@ -27,7 +27,8 @@
     "script": "res://scripts/main.gd",
     "instance": null,
     "groups": [],
-    "unique": false
+    "unique": false,
+    "node_paths": []
    },
    "inherits": null,
    "nodes": [
@@ -38,7 +39,8 @@
      "script": "res://scripts/main.gd",
      "instance": null,
      "groups": [],
-     "unique": false
+     "unique": false,
+     "node_paths": []
     },
     {
      "path": "Camera3D",
@@ -47,7 +49,8 @@
      "script": null,
      "instance": null,
      "groups": [],
-     "unique": false
+     "unique": false,
+     "node_paths": []
     },
     {
      "path": "Cube",
@@ -56,7 +59,8 @@
      "script": null,
      "instance": null,
      "groups": [],
-     "unique": false
+     "unique": false,
+     "node_paths": []
     },
     {
      "path": "Behind",
@@ -65,7 +69,8 @@
      "script": null,
      "instance": null,
      "groups": [],
-     "unique": false
+     "unique": false,
+     "node_paths": []
     },
     {
      "path": "CenterContainer",
@@ -74,7 +79,8 @@
      "script": null,
      "instance": null,
      "groups": [],
-     "unique": false
+     "unique": false,
+     "node_paths": []
     },
     {
      "path": "CenterContainer/TitleLabel",
@@ -83,7 +89,8 @@
      "script": null,
      "instance": null,
      "groups": [],
-     "unique": true
+     "unique": true,
+     "node_paths": []
     },
     {
      "path": "RowList",
@@ -92,7 +99,8 @@
      "script": null,
      "instance": null,
      "groups": [],
-     "unique": true
+     "unique": true,
+     "node_paths": []
     },
     {
      "path": "TwinA",
@@ -101,7 +109,8 @@
      "script": null,
      "instance": null,
      "groups": [],
-     "unique": false
+     "unique": false,
+     "node_paths": []
     },
     {
      "path": "TwinA/Twin",
@@ -110,7 +119,8 @@
      "script": null,
      "instance": null,
      "groups": [],
-     "unique": false
+     "unique": false,
+     "node_paths": []
     },
     {
      "path": "TwinB",
@@ -119,7 +129,8 @@
      "script": null,
      "instance": null,
      "groups": [],
-     "unique": false
+     "unique": false,
+     "node_paths": []
     },
     {
      "path": "TwinB/Twin",
@@ -128,7 +139,8 @@
      "script": null,
      "instance": null,
      "groups": [],
-     "unique": false
+     "unique": false,
+     "node_paths": []
     },
     {
      "path": "PauseMenu",
@@ -137,7 +149,8 @@
      "script": "res://scripts/ui/pause_menu.gd",
      "instance": null,
      "groups": [],
-     "unique": false
+     "unique": false,
+     "node_paths": []
     }
    ],
    "scripts": [
@@ -158,7 +171,8 @@
     "script": null,
     "instance": null,
     "groups": [],
-    "unique": false
+    "unique": false,
+    "node_paths": []
    },
    "inherits": null,
    "nodes": [
@@ -169,7 +183,8 @@
      "script": null,
      "instance": null,
      "groups": [],
-     "unique": false
+     "unique": false,
+     "node_paths": []
     },
     {
      "path": "SecondLabel",
@@ -178,7 +193,8 @@
      "script": null,
      "instance": null,
      "groups": [],
-     "unique": false
+     "unique": false,
+     "node_paths": []
     }
    ],
    "scripts": [],
@@ -220,6 +236,8 @@
     "_save_timer.timeout"
    ],
    "node_paths": [],
+   "groups_joined": [],
+   "groups_queried": [],
    "lines": 182
   },
   "res://scripts/autoloads/event_bus.gd": {
@@ -239,6 +257,8 @@
    "emits": [],
    "connects": [],
    "node_paths": [],
+   "groups_joined": [],
+   "groups_queried": [],
    "lines": 22
   },
   "res://scripts/autoloads/game_manager.gd": {
@@ -270,9 +290,11 @@
     "game_paused"
    ],
    "connects": [
-    "size_changed"
+    "?.size_changed"
    ],
    "node_paths": [],
+   "groups_joined": [],
+   "groups_queried": [],
    "lines": 87
   },
   "res://scripts/autoloads/keybinds.gd": {
@@ -313,6 +335,8 @@
    ],
    "connects": [],
    "node_paths": [],
+   "groups_joined": [],
+   "groups_queried": [],
    "lines": 256
   },
   "res://scripts/autoloads/pads.gd": {
@@ -340,6 +364,10 @@
     "EventBus.settings_changed"
    ],
    "node_paths": [],
+   "groups_joined": [],
+   "groups_queried": [
+    "pad_gate"
+   ],
    "lines": 119
   },
   "res://scripts/autoloads/save_manager.gd": {
@@ -372,6 +400,8 @@
    ],
    "connects": [],
    "node_paths": [],
+   "groups_joined": [],
+   "groups_queried": [],
    "lines": 193
   },
   "res://scripts/dev/bug_report.gd": {
@@ -392,6 +422,8 @@
    "emits": [],
    "connects": [],
    "node_paths": [],
+   "groups_joined": [],
+   "groups_queried": [],
    "lines": 65
   },
   "res://scripts/dev/debug_console.gd": {
@@ -439,6 +471,10 @@
     "_input.gui_input"
    ],
    "node_paths": [],
+   "groups_joined": [],
+   "groups_queried": [
+    "state"
+   ],
    "lines": 467
   },
   "res://scripts/dev/dev_hooks.gd": {
@@ -459,6 +495,10 @@
    "emits": [],
    "connects": [],
    "node_paths": [],
+   "groups_joined": [],
+   "groups_queried": [
+    "settle"
+   ],
    "lines": 56
   },
   "res://scripts/dev/screenshot_harness.gd": {
@@ -511,6 +551,8 @@
    "emits": [],
    "connects": [],
    "node_paths": [],
+   "groups_joined": [],
+   "groups_queried": [],
    "lines": 897
   },
   "res://scripts/dev/selftest_driver.gd": {
@@ -530,6 +572,8 @@
    "emits": [],
    "connects": [],
    "node_paths": [],
+   "groups_joined": [],
+   "groups_queried": [],
    "lines": 24
   },
   "res://scripts/main.gd": {
@@ -568,6 +612,11 @@
     "%RowList",
     "%TitleLabel"
    ],
+   "groups_joined": [
+    "state",
+    "settle"
+   ],
+   "groups_queried": [],
    "lines": 95
   },
   "res://scripts/ui/pause_menu.gd": {
@@ -592,6 +641,8 @@
     "quit.pressed"
    ],
    "node_paths": [],
+   "groups_joined": [],
+   "groups_queried": [],
    "lines": 90
   },
   "res://scripts/ui/ui_focus.gd": {
@@ -610,9 +661,11 @@
    ],
    "emits": [],
    "connects": [
-    "gui_input"
+    "?.gui_input"
    ],
    "node_paths": [],
+   "groups_joined": [],
+   "groups_queried": [],
    "lines": 46
   },
   "res://scripts/ui/ui_scale_root.gd": {
@@ -637,9 +690,11 @@
    ],
    "emits": [],
    "connects": [
-    "size_changed"
+    "?.size_changed"
    ],
    "node_paths": [],
+   "groups_joined": [],
+   "groups_queried": [],
    "lines": 149
   },
   "res://scripts/ui/ui_theme.gd": {
@@ -663,6 +718,8 @@
    "emits": [],
    "connects": [],
    "node_paths": [],
+   "groups_joined": [],
+   "groups_queried": [],
    "lines": 118
   },
   "res://scripts/ui/volume_sliders.gd": {
@@ -683,6 +740,8 @@
     "slider.value_changed"
    ],
    "node_paths": [],
+   "groups_joined": [],
+   "groups_queried": [],
    "lines": 33
   },
   "res://scripts/util/bbcode.gd": {
@@ -702,6 +761,8 @@
    "emits": [],
    "connects": [],
    "node_paths": [],
+   "groups_joined": [],
+   "groups_queried": [],
    "lines": 38
   },
   "res://scripts/util/cmdline.gd": {
@@ -724,6 +785,8 @@
    "emits": [],
    "connects": [],
    "node_paths": [],
+   "groups_joined": [],
+   "groups_queried": [],
    "lines": 41
   },
   "res://scripts/util/content_db.gd": {
@@ -746,6 +809,8 @@
    "emits": [],
    "connects": [],
    "node_paths": [],
+   "groups_joined": [],
+   "groups_queried": [],
    "lines": 56
   },
   "res://scripts/util/data_merger.gd": {
@@ -768,6 +833,8 @@
    "emits": [],
    "connects": [],
    "node_paths": [],
+   "groups_joined": [],
+   "groups_queried": [],
    "lines": 114
   },
   "res://scripts/util/function_registry.gd": {
@@ -795,6 +862,8 @@
    ],
    "connects": [],
    "node_paths": [],
+   "groups_joined": [],
+   "groups_queried": [],
    "lines": 46
   },
   "res://scripts/util/json_lines.gd": {
@@ -817,6 +886,8 @@
    "emits": [],
    "connects": [],
    "node_paths": [],
+   "groups_joined": [],
+   "groups_queried": [],
    "lines": 84
   },
   "res://scripts/util/json_value.gd": {
@@ -836,6 +907,8 @@
    "emits": [],
    "connects": [],
    "node_paths": [],
+   "groups_joined": [],
+   "groups_queried": [],
    "lines": 46
   },
   "res://scripts/util/l10n.gd": {
@@ -856,6 +929,8 @@
    "emits": [],
    "connects": [],
    "node_paths": [],
+   "groups_joined": [],
+   "groups_queried": [],
    "lines": 27
   },
   "res://scripts/util/pad_router.gd": {
@@ -879,6 +954,8 @@
    "emits": [],
    "connects": [],
    "node_paths": [],
+   "groups_joined": [],
+   "groups_queried": [],
    "lines": 106
   },
   "res://scripts/util/runtime_textures.gd": {
@@ -898,6 +975,8 @@
    "emits": [],
    "connects": [],
    "node_paths": [],
+   "groups_joined": [],
+   "groups_queried": [],
    "lines": 37
   },
   "res://scripts/util/save_compat.gd": {
@@ -918,6 +997,8 @@
    "emits": [],
    "connects": [],
    "node_paths": [],
+   "groups_joined": [],
+   "groups_queried": [],
    "lines": 52
   },
   "res://scripts/util/version_util.gd": {
@@ -938,6 +1019,8 @@
    "emits": [],
    "connects": [],
    "node_paths": [],
+   "groups_joined": [],
+   "groups_queried": [],
    "lines": 27
   },
   "res://tests/test_audio_manager.gd": {
@@ -962,6 +1045,8 @@
    "emits": [],
    "connects": [],
    "node_paths": [],
+   "groups_joined": [],
+   "groups_queried": [],
    "lines": 61
   },
   "res://tests/test_cmdline.gd": {
@@ -982,6 +1067,8 @@
    "emits": [],
    "connects": [],
    "node_paths": [],
+   "groups_joined": [],
+   "groups_queried": [],
    "lines": 19
   },
   "res://tests/test_console_state.gd": {
@@ -1006,6 +1093,8 @@
    "emits": [],
    "connects": [],
    "node_paths": [],
+   "groups_joined": [],
+   "groups_queried": [],
    "lines": 30
   },
   "res://tests/test_content_db.gd": {
@@ -1028,6 +1117,8 @@
    "emits": [],
    "connects": [],
    "node_paths": [],
+   "groups_joined": [],
+   "groups_queried": [],
    "lines": 41
   },
   "res://tests/test_data_merger.gd": {
@@ -1053,6 +1144,8 @@
    "emits": [],
    "connects": [],
    "node_paths": [],
+   "groups_joined": [],
+   "groups_queried": [],
    "lines": 60
   },
   "res://tests/test_debug_console.gd": {
@@ -1083,6 +1176,8 @@
    "emits": [],
    "connects": [],
    "node_paths": [],
+   "groups_joined": [],
+   "groups_queried": [],
    "lines": 108
   },
   "res://tests/test_dev_hooks.gd": {
@@ -1108,6 +1203,8 @@
    "emits": [],
    "connects": [],
    "node_paths": [],
+   "groups_joined": [],
+   "groups_queried": [],
    "lines": 51
   },
   "res://tests/test_function_registry.gd": {
@@ -1130,6 +1227,8 @@
    "emits": [],
    "connects": [],
    "node_paths": [],
+   "groups_joined": [],
+   "groups_queried": [],
    "lines": 37
   },
   "res://tests/test_json_lines.gd": {
@@ -1152,6 +1251,8 @@
    "emits": [],
    "connects": [],
    "node_paths": [],
+   "groups_joined": [],
+   "groups_queried": [],
    "lines": 30
   },
   "res://tests/test_keybinds.gd": {
@@ -1182,6 +1283,8 @@
    "emits": [],
    "connects": [],
    "node_paths": [],
+   "groups_joined": [],
+   "groups_queried": [],
    "lines": 97
   },
   "res://tests/test_kit_utils.gd": {
@@ -1204,6 +1307,8 @@
    "emits": [],
    "connects": [],
    "node_paths": [],
+   "groups_joined": [],
+   "groups_queried": [],
    "lines": 41
   },
   "res://tests/test_l10n.gd": {
@@ -1224,6 +1329,8 @@
    "emits": [],
    "connects": [],
    "node_paths": [],
+   "groups_joined": [],
+   "groups_queried": [],
    "lines": 15
   },
   "res://tests/test_localization.gd": {
@@ -1248,6 +1355,8 @@
    "emits": [],
    "connects": [],
    "node_paths": [],
+   "groups_joined": [],
+   "groups_queried": [],
    "lines": 51
   },
   "res://tests/test_pad_router.gd": {
@@ -1273,6 +1382,8 @@
    "emits": [],
    "connects": [],
    "node_paths": [],
+   "groups_joined": [],
+   "groups_queried": [],
    "lines": 61
   },
   "res://tests/test_save_manager.gd": {
@@ -1300,6 +1411,8 @@
    "emits": [],
    "connects": [],
    "node_paths": [],
+   "groups_joined": [],
+   "groups_queried": [],
    "lines": 88
   },
   "res://tests/test_save_providers.gd": {
@@ -1325,6 +1438,8 @@
    "emits": [],
    "connects": [],
    "node_paths": [],
+   "groups_joined": [],
+   "groups_queried": [],
    "lines": 79
   },
   "res://tests/test_screenshot_harness.gd": {
@@ -1360,6 +1475,8 @@
    "emits": [],
    "connects": [],
    "node_paths": [],
+   "groups_joined": [],
+   "groups_queried": [],
    "lines": 139
   },
   "res://tests/test_smoke.gd": {
@@ -1382,6 +1499,8 @@
    "emits": [],
    "connects": [],
    "node_paths": [],
+   "groups_joined": [],
+   "groups_queried": [],
    "lines": 26
   },
   "res://tests/test_ui_kit.gd": {
@@ -1405,6 +1524,8 @@
    "emits": [],
    "connects": [],
    "node_paths": [],
+   "groups_joined": [],
+   "groups_queried": [],
    "lines": 63
   },
   "res://tools/seeds/dev_driver.gd": {
@@ -1424,6 +1545,8 @@
    "emits": [],
    "connects": [],
    "node_paths": [],
+   "groups_joined": [],
+   "groups_queried": [],
    "lines": 37
   },
   "res://tools/seeds/dev_hooks.gd": {
@@ -1445,6 +1568,8 @@
    "emits": [],
    "connects": [],
    "node_paths": [],
+   "groups_joined": [],
+   "groups_queried": [],
    "lines": 53
   }
  },
@@ -1462,12 +1587,14 @@
   },
   "res://data/console_commands.json": {
    "used_by": [
-    "res://scripts/dev/debug_console.gd"
+    "res://scripts/dev/debug_console.gd",
+    "res://scripts/util/content_db.gd"
    ]
   },
   "res://data/console_commands.project.json": {
    "used_by": [
-    "res://scripts/dev/debug_console.gd"
+    "res://scripts/dev/debug_console.gd",
+    "res://scripts/util/content_db.gd"
    ]
   },
   "res://localization/game.csv": {
@@ -1500,6 +1627,33 @@
   "VersionUtil": "res://scripts/util/version_util.gd",
   "VolumeSliders": "res://scripts/ui/volume_sliders.gd"
  },
+ "groups": {
+  "pad_gate": {
+   "scenes": {},
+   "joined_in": [],
+   "queried_in": [
+    "res://scripts/autoloads/pads.gd"
+   ]
+  },
+  "settle": {
+   "scenes": {},
+   "joined_in": [
+    "res://scripts/main.gd"
+   ],
+   "queried_in": [
+    "res://scripts/dev/dev_hooks.gd"
+   ]
+  },
+  "state": {
+   "scenes": {},
+   "joined_in": [
+    "res://scripts/main.gd"
+   ],
+   "queried_in": [
+    "res://scripts/dev/debug_console.gd"
+   ]
+  }
+ },
  "used_by": {
   "res://assets/audio/sfx/click.wav": [
    "res://scripts/main.gd"
@@ -1523,10 +1677,12 @@
    "res://scripts/util/content_db.gd"
   ],
   "res://data/console_commands.json": [
-   "res://scripts/dev/debug_console.gd"
+   "res://scripts/dev/debug_console.gd",
+   "res://scripts/util/content_db.gd"
   ],
   "res://data/console_commands.project.json": [
-   "res://scripts/dev/debug_console.gd"
+   "res://scripts/dev/debug_console.gd",
+   "res://scripts/util/content_db.gd"
   ],
   "res://scenarios/baselines": [
    "res://scripts/dev/screenshot_harness.gd"

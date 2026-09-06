@@ -32,7 +32,7 @@ Every `signal` a project script declares that something listens to, or that anot
 
 ### `scenes/main.tscn` — Main:Control
 
-12 nodes; scripts: `scripts/main.gd`, `scripts/ui/pause_menu.gd`; used by: `tests/test_console_state.gd`, `tests/test_smoke.gd`.
+12 nodes; scripts: `scripts/main.gd`, `scripts/ui/pause_menu.gd`; used by: 2 tests.
 
 ```
 Main:Control  [scripts/main.gd]
@@ -83,10 +83,20 @@ Second:Control
 
 ## Scripts nothing references
 
-No scene attaches them, no autoload names them, no script loads or extends them, and they declare no class_name. Entry points, dead code, or loaded by a path built at runtime.
+No scene attaches them, no autoload names them, no script loads, extends or names them, and they declare no class_name. Entry points, dead code, or loaded by a path built at runtime.
 
 - `tools/seeds/dev_driver.gd`
 - `tools/seeds/dev_hooks.gd`
+
+## Groups
+
+Membership from scenes and `add_to_group`; queries are `get_nodes_in_group`, `call_group`, `is_in_group`.
+
+| Group | In scenes | Joined in code | Queried in code |
+|---|---|---|---|
+| pad_gate | — | — | scripts/autoloads/pads.gd |
+| settle | — | scripts/main.gd | scripts/dev/dev_hooks.gd |
+| state | — | scripts/main.gd | scripts/dev/debug_console.gd |
 
 ## Scripts
 
@@ -94,35 +104,35 @@ No scene attaches them, no autoload names them, no script loads or extends them,
 
 | Script | extends | class_name | attached in / used by | signals | funcs |
 |---|---|---|---|---|---|
-| `scripts/autoloads/audio_manager.gd` | Node |  | AudioManager, scripts/autoloads/game_manager.gd, scripts/dev/debug_console.gd, scripts/dev/screenshot_harness.gd, +5 more | 0 | 13 |
-| `scripts/autoloads/event_bus.gd` | Node |  | EventBus, scripts/autoloads/pads.gd, scripts/autoloads/save_manager.gd, tests/test_save_manager.gd | 2 | 0 |
-| `scripts/autoloads/game_manager.gd` | Node |  | GameManager, scripts/dev/dev_hooks.gd, scripts/ui/pause_menu.gd, tests/test_ui_kit.gd | 2 | 9 |
-| `scripts/autoloads/keybinds.gd` | Node |  | Keybinds, scripts/autoloads/pads.gd, scripts/dev/debug_console.gd, scripts/dev/screenshot_harness.gd, tests/test_debug_console.gd, tests/test_keybinds.gd | 1 | 19 |
+| `scripts/autoloads/audio_manager.gd` | Node |  | AudioManager, scripts/autoloads/game_manager.gd, scripts/dev/debug_console.gd, scripts/dev/screenshot_harness.gd, +3 more, 2 tests | 0 | 13 |
+| `scripts/autoloads/event_bus.gd` | Node |  | EventBus, scripts/autoloads/pads.gd, scripts/autoloads/save_manager.gd, 1 test | 2 | 0 |
+| `scripts/autoloads/game_manager.gd` | Node |  | GameManager, scripts/dev/dev_hooks.gd, scripts/ui/pause_menu.gd, 1 test | 2 | 9 |
+| `scripts/autoloads/keybinds.gd` | Node |  | Keybinds, scripts/autoloads/pads.gd, scripts/dev/debug_console.gd, scripts/dev/screenshot_harness.gd, 2 tests | 1 | 19 |
 | `scripts/autoloads/pads.gd` | Node |  | Pads | 0 | 7 |
-| `scripts/autoloads/save_manager.gd` | Node |  | SaveManager, scripts/autoloads/audio_manager.gd, scripts/autoloads/game_manager.gd, scripts/autoloads/keybinds.gd, +12 more | 0 | 13 |
+| `scripts/autoloads/save_manager.gd` | Node |  | SaveManager, scripts/autoloads/audio_manager.gd, scripts/autoloads/game_manager.gd, scripts/autoloads/keybinds.gd, +6 more, 6 tests | 0 | 13 |
 | `scripts/dev/bug_report.gd` | RefCounted | BugReport | scripts/dev/debug_console.gd | 0 | 3 |
-| `scripts/dev/debug_console.gd` | Node |  | DebugConsole, scripts/dev/screenshot_harness.gd, tests/test_console_state.gd, tests/test_debug_console.gd, tests/test_dev_hooks.gd, tests/test_screenshot_harness.gd | 0 | 23 |
+| `scripts/dev/debug_console.gd` | Node |  | DebugConsole, scripts/dev/screenshot_harness.gd, 4 tests | 0 | 23 |
 | `scripts/dev/dev_hooks.gd` | Node |  | scripts/dev/debug_console.gd | 0 | 3 |
-| `scripts/dev/screenshot_harness.gd` | Node |  | ScreenshotHarness, tests/test_screenshot_harness.gd | 0 | 32 |
+| `scripts/dev/screenshot_harness.gd` | Node |  | ScreenshotHarness, 1 test | 0 | 32 |
 | `scripts/dev/selftest_driver.gd` | Node |  | SelftestDriver | 0 | 2 |
 | `scripts/main.gd` | Control |  | scenes/main.tscn | 0 | 9 |
 | `scripts/ui/pause_menu.gd` | Control | PauseMenu | scenes/main.tscn | 0 | 4 |
-| `scripts/ui/ui_focus.gd` | RefCounted | UIFocus | scripts/ui/pause_menu.gd, tests/test_ui_kit.gd | 0 | 2 |
-| `scripts/ui/ui_scale_root.gd` | Node | UiScaleRoot | tests/test_ui_kit.gd | 0 | 8 |
-| `scripts/ui/ui_theme.gd` | RefCounted | UITheme | scripts/dev/debug_console.gd, scripts/main.gd, scripts/ui/pause_menu.gd, tests/test_ui_kit.gd | 0 | 6 |
+| `scripts/ui/ui_focus.gd` | RefCounted | UIFocus | scripts/ui/pause_menu.gd, 1 test | 0 | 2 |
+| `scripts/ui/ui_scale_root.gd` | Node | UiScaleRoot | 1 test | 0 | 8 |
+| `scripts/ui/ui_theme.gd` | RefCounted | UITheme | scripts/dev/debug_console.gd, scripts/main.gd, scripts/ui/pause_menu.gd, 1 test | 0 | 6 |
 | `scripts/ui/volume_sliders.gd` | RefCounted | VolumeSliders | scripts/ui/pause_menu.gd | 0 | 1 |
-| `scripts/util/bbcode.gd` | RefCounted | BBCode | tests/test_kit_utils.gd | 0 | 2 |
-| `scripts/util/cmdline.gd` | RefCounted | Cmdline | scripts/dev/screenshot_harness.gd, scripts/dev/selftest_driver.gd, tests/test_cmdline.gd, tools/seeds/dev_driver.gd | 0 | 5 |
-| `scripts/util/content_db.gd` | RefCounted | ContentDB | tests/test_content_db.gd | 0 | 3 |
-| `scripts/util/data_merger.gd` | RefCounted | DataMerger | scripts/util/content_db.gd, tests/test_data_merger.gd | 0 | 5 |
-| `scripts/util/function_registry.gd` | RefCounted | FunctionRegistry | tests/test_function_registry.gd | 1 | 6 |
-| `scripts/util/json_lines.gd` | RefCounted | JsonLines | tests/test_json_lines.gd | 0 | 5 |
-| `scripts/util/json_value.gd` | RefCounted | JsonValue | tests/test_kit_utils.gd | 0 | 2 |
-| `scripts/util/l10n.gd` | RefCounted | L10n | scripts/ui/pause_menu.gd, scripts/ui/volume_sliders.gd, tests/test_l10n.gd | 0 | 3 |
-| `scripts/util/pad_router.gd` | RefCounted | PadRouter | scripts/autoloads/pads.gd, tests/test_pad_router.gd | 0 | 6 |
-| `scripts/util/runtime_textures.gd` | RefCounted | RuntimeTextures | tests/test_kit_utils.gd | 0 | 2 |
-| `scripts/util/save_compat.gd` | RefCounted | SaveCompat | scripts/autoloads/save_manager.gd, tests/test_debug_console.gd, tests/test_save_providers.gd | 0 | 3 |
-| `scripts/util/version_util.gd` | RefCounted | VersionUtil | scripts/autoloads/save_manager.gd, scripts/util/save_compat.gd, tests/test_kit_utils.gd | 0 | 3 |
+| `scripts/util/bbcode.gd` | RefCounted | BBCode | 1 test | 0 | 2 |
+| `scripts/util/cmdline.gd` | RefCounted | Cmdline | scripts/dev/screenshot_harness.gd, scripts/dev/selftest_driver.gd, tools/seeds/dev_driver.gd, 1 test | 0 | 5 |
+| `scripts/util/content_db.gd` | RefCounted | ContentDB | 1 test | 0 | 3 |
+| `scripts/util/data_merger.gd` | RefCounted | DataMerger | scripts/util/content_db.gd, 1 test | 0 | 5 |
+| `scripts/util/function_registry.gd` | RefCounted | FunctionRegistry | 1 test | 1 | 6 |
+| `scripts/util/json_lines.gd` | RefCounted | JsonLines | 1 test | 0 | 5 |
+| `scripts/util/json_value.gd` | RefCounted | JsonValue | 1 test | 0 | 2 |
+| `scripts/util/l10n.gd` | RefCounted | L10n | scripts/ui/pause_menu.gd, scripts/ui/volume_sliders.gd, 1 test | 0 | 3 |
+| `scripts/util/pad_router.gd` | RefCounted | PadRouter | scripts/autoloads/pads.gd, 1 test | 0 | 6 |
+| `scripts/util/runtime_textures.gd` | RefCounted | RuntimeTextures | 1 test | 0 | 2 |
+| `scripts/util/save_compat.gd` | RefCounted | SaveCompat | scripts/autoloads/save_manager.gd, 2 tests | 0 | 3 |
+| `scripts/util/version_util.gd` | RefCounted | VersionUtil | scripts/autoloads/save_manager.gd, scripts/util/save_compat.gd, 1 test | 0 | 3 |
 | `tools/seeds/dev_driver.gd` | Node |  |  | 0 | 2 |
 | `tools/seeds/dev_hooks.gd` | Node |  |  | 0 | 4 |
 
