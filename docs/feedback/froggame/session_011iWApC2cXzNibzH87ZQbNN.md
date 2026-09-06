@@ -166,3 +166,48 @@ screens, information top and left, the action menu floating by the
 frog). The SHAPE of a rule — what we do, why, what breaks without it,
 how it is checked — is the same shape as CLAUDE.md's conventions and is
 worth copying as a template for a `docs/ux-philosophy.md` in Template.
+
+## Disposition (Kombucha, 2026-09-06)
+
+Assessed and acted on in one commit; FrogGame's overrides listed under
+"delete on sync" can go the day it syncs past it.
+
+- **1, click** — done: `_click_point` pushes press and release in the
+  same frame. Delete FrogGame's `_click_same_frame` override on sync.
+- **2, applied settings** — (b) done: one paragraph in the tooling doc
+  and the seed's `dev_hooks.gd`. (a) not ported: the kit applies only
+  keybinds, volumes, locale, deadzone and UI scale from settings, and the
+  sandbox already resets all but UI scale; a kit `GameSettings` would be
+  a settings sheet the kit does not have. FrogGame keeps its own.
+- **3, ConfigFile default** — done (`-1.0` sentinel), with a test, and a
+  CLAUDE.md rule. The bigger finding hiding under it and under 9: the
+  boot and batch gates grepped only `SCRIPT ERROR`, so a plain engine
+  `ERROR:` line (this one, the freed lambda) never counted. **Both gates
+  now count every `ERROR:` line** (minus the exit-time "resources still
+  in use" line), and `selftest.sh` proves each can go red. Verified
+  green on the fixture first.
+- **4, three screens** — done: `window` is a harness built-in, the seed
+  `check.local.sh` carries the loop commented, the fixture's local check
+  runs the zone scenario at two sizes and checks the `window` reply.
+- **5, `assert_zone`** — done, built-in, `scenarios/zones.txt`. Delete
+  FrogGame's override on sync.
+- **6, `select` / `select_assert`** — done, built-in, with a fixture
+  dropdown and `scenarios/dropdown.txt`. Delete FrogGame's on sync.
+- **7, sound families** — done: `AudioManager.pick(kind)`, lists never
+  repeat, a bare stream and an unknown kind (`none`) as before; test.
+- **8, joypad** — the autoload half ported: `axis:<n>:<+|->` bindings
+  (`joy:` kept as the stored button encoding, so no settings.cfg
+  migrates), the axis describer, and the capture rules as a UI-free
+  seam in Keybinds (`begin_capture`, `capture_event`, `capture_text`,
+  `capture_ended`), with tests. The settings screen itself stays a
+  project piece until a second project needs it; FrogGame's panel can
+  shrink to a display over the seam when it syncs.
+- **9, lambda** — CLAUDE.md now says connect a method AND disconnect in
+  `_exit_tree`; the gate change above is what actually catches it.
+- **10, offset transform** — done: `pop_in` moved to
+  `offset_transform_scale`, a UI kit rule with the icon note.
+- **11, patterns** — the motion kill switch not adopted: the batch would
+  stop exercising the pop-in path, and `settle`/`wait` past it is the
+  documented answer. The verb helper and toasts are FrogGame UX.
+- **12** — `SHOOT_KEEP` and the wipe are in the tooling doc; the timings
+  file is now merged, so a single-scenario run updates one row.

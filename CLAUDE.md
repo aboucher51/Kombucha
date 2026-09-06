@@ -133,6 +133,10 @@ saves, settings or mods.
 - **Every settings write emits `EventBus.settings_changed`**; live systems
   re-apply from that one seam, and listeners connect a METHOD, never a
   lambda (below).
+- **A settings read passes a default.** `ConfigFile.get_value` with no
+  default logs an ENGINE ERROR for a missing key, so the first setting
+  added after the file existed errs on every boot; `AudioManager` reads
+  volumes with a `-1.0` sentinel and skips on it.
 
 ### Reading JSON values: `str()` and `JsonValue.truthy()`
 
@@ -165,8 +169,20 @@ Rules Keybinds enforces, each paid for elsewhere:
 - **Pollers must check `Keybinds.capturing`** — `Input.get_vector()` and
   friends never see events a rebind-capture UI consumes, so pressing W to
   rebind it also pans the camera unless polling code checks the flag.
-- Bindings store as legible `key:F5` / `mouse:3` / `joy:6` strings in
-  settings.cfg, so a support answer can say "put key:F5 back".
+- Bindings store as legible `key:F5` / `mouse:3` / `joy:6` /
+  `axis:1:-` strings in settings.cfg, so a support answer can say "put
+  key:F5 back". **Half an axis is a binding like a key**: a stick pushed
+  up rebinds and conflicts the same way, or every pad-aware project grows
+  its own axis table beside Keybinds.
+- **The rebinding rules live in Keybinds, not in the settings screen**:
+  `begin_capture(action, slot)`, then raw events into `capture_event()`
+  from the screen's `_input` (a modifier alone waits, the wheel is
+  ignored, Escape and a click away cancel, Backspace clears, a stick
+  counts past 0.5, a taken key is refused naming the holder), or
+  `capture_text("F7" | "mouse:3" | "axis:0:-" | "escape" | "clear")` from
+  a test or a scenario; `capture_ended` tells the row to redraw. The
+  screen only displays. One project rebuilt these rules in 500 lines of
+  UI before the seam existed.
 
 **Controllers: one router, `ui_*` everywhere, focus is the contract.** The
 `Pads` autoload is the ONE reader of raw joypad input: it strips Godot's
@@ -184,6 +200,13 @@ gating which pad may act is opt-in through the `pad_gate` group.
 - **The focus ring is the theme's** (`UITheme.focus_ring()` on every
   focusable class): keyboard and pad navigation are invisible without it.
   An HSlider has no focus stylebox in Godot, so the ring shows on buttons.
+- **Chrome motion goes on `offset_transform_*`, never `position` or
+  `scale`.** A container lays its children out every frame, and a tween
+  on a laid-out property fights it (a toast slid to the left edge because
+  its rest position was captured before the stack had placed it). The
+  offset transform is what the engine draws, not what the layout reads;
+  `pop_in` is the reference. Also: `icon_alignment = CENTER` draws the
+  icon UNDER centred text, not beside it.
 - **Panels arrive with `UITheme.pop_in()`**, deferred by instance id so a
   control freed before the deferred call lands is not an error, and
   pause-mode process so it runs while the tree is paused.
@@ -282,9 +305,12 @@ right; several were found by two projects independently.
   connection whose bound object was freed, but a lambda is bound to
   nothing; it merely captures `self`. A scene node's lambda connected to an
   autoload signal outlives the scene and fails on the next emit with
-  "Lambda capture at index 0 was freed". Same for any lambda capturing a
-  thing that can die first (a tween callback capturing a sprite): bind an
-  id and look it up.
+  "Lambda capture at index 0 was freed". Connect a METHOD and disconnect
+  it in `_exit_tree()`. Same for any lambda capturing a thing that can
+  die first (a tween callback capturing a sprite): bind an id and look
+  it up. Found twice in one project after this rule was written: the
+  second time as 738 engine errors under a green check, which is why the
+  gates now count every `ERROR:` line.
 - **A code-built UI tree must theme itself.** A Control under a bare
   CanvasLayer inherits no theme, renders Godot's translucent defaults, and
   the game bleeds through its panels; it looks like a layout bug and is one

@@ -5,10 +5,23 @@ extends Node
 ## consumer's private constants.
 ##
 ## Each action has SLOTS binding slots: primary (the default key) and
-## secondary (unbound by default, unless the catalog names a "pad" button,
-## which lands there so a controller works out of the box). Overrides persist through SaveManager's
-## settings file — a keybind describes this MACHINE, like the volumes, not
-## any run or save.
+## secondary (unbound by default, unless the catalog names a "pad" default,
+## which lands there so a controller works out of the box). Overrides
+## persist through SaveManager's settings file — a keybind describes this
+## MACHINE, like the volumes, not any run or save.
+##
+## A binding is a key, a mouse button, a pad button OR HALF AN AXIS
+## ("axis:1:-" is the left stick pushed up): a stick half is a binding
+## like a key, so a game whose cursor moves on the stick rebinds it the
+## same way. Without that, every pad-aware project grew its own axis
+## table beside Keybinds.
+##
+## CAPTURE (begin_capture / capture_event / capture_text) is the rebinding
+## rule set a settings screen feeds raw events into: a modifier alone
+## waits, the wheel is ignored, Escape and a click away cancel, Backspace
+## clears, a stick counts past 0.5, a taken key is refused and the holder
+## named. The screen only displays; the rules live here so the next
+## project does not rebuild them (one did, 500 lines).
 ##
 ## The catalog is code, not data: an action is only meaningful with a
 ## handler behind it, and handlers are code.
@@ -18,10 +31,17 @@ extends Node
 ## binding changed OUTSIDE it never shows stale on its rows.
 signal bindings_changed
 
+## A capture finished: `result` is "" (bound or cleared), "cancelled", or
+## "ERROR: ..." (refused, naming the holder). A settings row listens to
+## redraw itself — with a METHOD, this being an autoload signal.
+signal capture_ended(action: String, slot: int, result: String)
+
 ## Ordered — a settings panel lists its rows in this order. "group" is the
 ## CONFLICT GROUP: actions in the same group are live in the same context,
 ## so a key can only mean one of them — see set_binding. Keys may repeat
 ## across groups. EXTEND THIS as the game grows actions.
+## `pad` is the joypad default for the SECOND slot: a JOY_BUTTON_* index,
+## or "axis:<n>:<+|->" for a stick or trigger half.
 const ACTIONS := [
 	{"action": "pause", "key": KEY_ESCAPE, "pad": JOY_BUTTON_START,
 		"label": "Pause", "group": "game"},
@@ -37,6 +57,8 @@ const SETTINGS_SECTION := "keybinds"
 ## by the capture UI, so pollers must check this flag themselves — or
 ## pressing W to rebind "pan up" also pans the camera.
 var capturing := false
+## {"action", "slot"} while a capture listens; empty otherwise.
+var _capture: Dictionary = {}
 
 ## action -> Array of InputEvent-or-null, one per slot. The source of truth
 ## for which slot holds what: InputMap only keeps a flat event list, so an
@@ -158,12 +180,148 @@ func describe_event(event: InputEvent) -> String:
 		if button >= 0 and button < PAD_NAMES.size():
 			return "Pad %s" % PAD_NAMES[button]
 		return "Pad button %d" % button
+	if event is InputEventJoypadMotion:
+		var motion := event as InputEventJoypadMotion
+		var half := 1 if motion.axis_value >= 0.0 else 0
+		if AXIS_NAMES.has(motion.axis):
+			return AXIS_NAMES[motion.axis][half]
+		return "Axis %d %s" % [motion.axis, "+" if half == 1 else "-"]
 	return ""
 
 
 ## Index = JoyButton value; xbox-style names, the lingua franca of prompts.
 const PAD_NAMES := ["A", "B", "X", "Y", "Back", "Guide", "Start",
 	"L-stick", "R-stick", "LB", "RB", "D-up", "D-down", "D-left", "D-right"]
+## Axis -> [negative half, positive half]; a trigger only has a positive one.
+const AXIS_NAMES := {
+	JOY_AXIS_LEFT_X: ["Left stick left", "Left stick right"],
+	JOY_AXIS_LEFT_Y: ["Left stick up", "Left stick down"],
+	JOY_AXIS_RIGHT_X: ["Right stick left", "Right stick right"],
+	JOY_AXIS_RIGHT_Y: ["Right stick up", "Right stick down"],
+	JOY_AXIS_TRIGGER_LEFT: ["LT", "LT"],
+	JOY_AXIS_TRIGGER_RIGHT: ["RT", "RT"],
+}
+
+
+# ── capture: the rebinding rules, UI-free ──────────────────────────────────
+
+## Start listening for the event that will fill this action's slot. The
+## settings screen calls this from its key button, then routes `_input`
+## events to capture_event while is_capturing().
+func begin_capture(action: String, slot: int = 0) -> String:
+	if not _slots.has(action):
+		return "ERROR: no action '%s'" % action
+	if slot < 0 or slot >= SLOTS:
+		return "ERROR: slot must be 0..%d" % (SLOTS - 1)
+	_capture = {"action": action, "slot": slot}
+	capturing = true
+	return ""
+
+
+func is_capturing() -> bool:
+	return not _capture.is_empty()
+
+
+func cancel_capture() -> String:
+	if _capture.is_empty():
+		return ""
+	var action := str(_capture["action"])
+	var slot := int(_capture["slot"])
+	_capture = {}
+	capturing = false
+	capture_ended.emit(action, slot, "cancelled")
+	return ""
+
+
+## Feed a raw event from the screen's `_input` (which runs before the GUI,
+## so the key never also presses the button under it). Returns true when
+## the event was CONSUMED — the caller then set_input_as_handled(). A
+## modifier alone waits for the real key, the wheel is never a binding,
+## Escape and a click away keep the old binding, Backspace/Delete clear
+## the slot, a stick counts once pushed past 0.5.
+func capture_event(event: InputEvent) -> bool:
+	if _capture.is_empty():
+		return false
+	if event is InputEventKey:
+		var key := event as InputEventKey
+		if not key.pressed or key.echo:
+			return false
+		if key.physical_keycode in [KEY_SHIFT, KEY_CTRL, KEY_ALT, KEY_META]:
+			return true
+		if key.physical_keycode == KEY_ESCAPE:
+			cancel_capture()
+		elif key.physical_keycode == KEY_BACKSPACE or key.physical_keycode == KEY_DELETE:
+			_apply_capture(null)
+		else:
+			var clean := InputEventKey.new()
+			clean.physical_keycode = key.physical_keycode
+			_apply_capture(clean)
+		return true
+	if event is InputEventJoypadButton:
+		if not (event as InputEventJoypadButton).pressed:
+			return false
+		var pad := InputEventJoypadButton.new()
+		pad.button_index = (event as InputEventJoypadButton).button_index
+		_apply_capture(pad)
+		return true
+	if event is InputEventJoypadMotion:
+		var motion := event as InputEventJoypadMotion
+		if absf(motion.axis_value) < 0.5:
+			return false
+		var axis := InputEventJoypadMotion.new()
+		axis.axis = motion.axis
+		axis.axis_value = 1.0 if motion.axis_value > 0.0 else -1.0
+		_apply_capture(axis)
+		return true
+	if event is InputEventMouseButton:
+		var mouse := event as InputEventMouseButton
+		if not mouse.pressed:
+			return false
+		match mouse.button_index:
+			MOUSE_BUTTON_LEFT, MOUSE_BUTTON_RIGHT:
+				cancel_capture()
+				return true
+			MOUSE_BUTTON_WHEEL_UP, MOUSE_BUTTON_WHEEL_DOWN, MOUSE_BUTTON_WHEEL_LEFT, MOUSE_BUTTON_WHEEL_RIGHT:
+				return false
+			_:
+				var clean := InputEventMouseButton.new()
+				clean.button_index = mouse.button_index
+				_apply_capture(clean)
+				return true
+	return false
+
+
+## The input-free answer to a capture: "F7", "mouse:3", "joy:0",
+## "axis:0:-", "escape" or "clear" — what a test or a scenario presses.
+## Error-shaped on a refusal so a scenario that expects one can say so.
+func capture_text(text: String) -> String:
+	if _capture.is_empty():
+		return "ERROR: not listening for a key (begin_capture first)"
+	match text.to_lower():
+		"escape", "esc": return cancel_capture()
+		"clear", "backspace": return _apply_capture(null)
+	var event := parse_binding_text(text)
+	if event == null:
+		return "ERROR: '%s' names no key" % text
+	return _apply_capture(event)
+
+
+## Bind (or clear, for null) into the listening slot and stop listening.
+## A refusal names the holder instead of stealing the key.
+func _apply_capture(event: InputEvent) -> String:
+	var action := str(_capture["action"])
+	var slot := int(_capture["slot"])
+	_capture = {}
+	capturing = false
+	var result := ""
+	if not set_binding(action, slot, event):
+		var holder := holder_of(event, _group_of(action))
+		if holder.is_empty():
+			result = "ERROR: '%s' cannot be bound" % describe_event(event)
+		else:
+			result = "ERROR: %s already means %s" % [describe_event(event), holder]
+	capture_ended.emit(action, slot, result)
+	return result
 
 
 ## "F5", "W" (OS key names) or "mouse:4" into an event — a console bind
@@ -174,7 +332,7 @@ func parse_binding_text(text: String) -> InputEvent:
 
 func _normalise(text: String) -> String:
 	if text.begins_with("mouse:") or text.begins_with("key:") \
-			or text.begins_with("joy:"):
+			or text.begins_with("joy:") or text.begins_with("axis:"):
 		return text
 	return "key:" + text
 
@@ -191,10 +349,9 @@ func _default_slots(entry: Dictionary) -> Array:
 	primary.physical_keycode = entry["key"]
 	var slots: Array = [primary]
 	slots.resize(SLOTS)  # secondary defaults unbound...
-	if entry.has("pad"):   # ...unless the catalog names a pad button
-		var pad := InputEventJoypadButton.new()
-		pad.button_index = entry["pad"]
-		slots[1] = pad
+	if entry.has("pad") and SLOTS > 1:   # ...unless the catalog names a pad default
+		var pad: Variant = entry["pad"]
+		slots[1] = _decode(str(pad) if pad is String else "joy:%d" % int(pad))
 	return slots
 
 
@@ -227,6 +384,9 @@ func _encode(event: InputEvent) -> String:
 		return "mouse:%d" % (event as InputEventMouseButton).button_index
 	if event is InputEventJoypadButton:
 		return "joy:%d" % (event as InputEventJoypadButton).button_index
+	if event is InputEventJoypadMotion:
+		var motion := event as InputEventJoypadMotion
+		return "axis:%d:%s" % [motion.axis, "+" if motion.axis_value >= 0.0 else "-"]
 	return ""
 
 
@@ -251,5 +411,15 @@ func _decode(text: String) -> InputEvent:
 			return null
 		var event := InputEventJoypadButton.new()
 		event.button_index = raw.to_int() as JoyButton
+		return event
+	if text.begins_with("axis:"):
+		# axis:<n>:<+|->, the half of the axis that means the action
+		var parts := text.split(":")
+		if parts.size() != 3 or not parts[1].is_valid_int() or parts[1].to_int() < 0 \
+				or parts[2] not in ["+", "-"]:
+			return null
+		var event := InputEventJoypadMotion.new()
+		event.axis = parts[1].to_int() as JoyAxis
+		event.axis_value = 1.0 if parts[2] == "+" else -1.0
 		return event
 	return null

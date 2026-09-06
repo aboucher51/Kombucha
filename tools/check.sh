@@ -104,8 +104,12 @@ else
 	BOOT=$?
 fi
 # Shader compile errors are not SCRIPT ERRORs; software GL surfaces ones a
-# GPU driver forgives.
-ERRORS=$(grep -cE "SCRIPT ERROR|Parse Error|shader" "$LOG")
+# GPU driver forgives. Plain `ERROR:` lines are the ENGINE's own (a freed
+# lambda capture, a ConfigFile key with no default): one project logged
+# 738 of them under an all-green check before they were counted. The
+# exit-time "resources still in use" line is excluded on purpose: its
+# count varies between identical runs (see docs/godot-tooling.md).
+ERRORS=$(grep -vE "resources still in use at exit" "$LOG" | grep -cE "SCRIPT ERROR|Parse Error|shader|^ERROR:")
 [[ $BOOT -ne 124 || $ERRORS -ne 0 ]] && cat "$LOG"
 rm -f "$LOG" "$LOG.rss"
 [[ $BOOT -eq 124 && $ERRORS -eq 0 ]]

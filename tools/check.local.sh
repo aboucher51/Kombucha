@@ -64,11 +64,20 @@ PY
 	# shrink) and ABOVE it (integer snap), not only at 1280x720: the real
 	# cursor is warped in window pixels while the event is in canvas
 	# coordinates, and the two only agree at the design size.
+	# The zone scenario rides along: a layout rule must hold at every size,
+	# and its `window` reply must name the size the run asked for (the
+	# seed's three-screen check reads exactly that line).
 	for res in 960x540 1280x800; do
-		if SHOOT_RESOLUTION=$res SHOOT_JOBS=1 SHOOT_KEEP=1 tools/shoot.sh scenarios/pause_menu.txt scenarios/tooltip.txt >/dev/null 2>&1; then
+		if SHOOT_RESOLUTION=$res SHOOT_JOBS=1 SHOOT_KEEP=1 tools/shoot.sh scenarios/pause_menu.txt scenarios/tooltip.txt scenarios/zones.txt >/dev/null 2>&1; then
 			printf '  ok    clicks and hovers land at %s\n' "$res"
 		else
 			printf '  FAIL  clicks or hovers miss at %s\n' "$res"; MISSING=1
+		fi
+		got="$(grep -o '"reply": *"window [0-9x]*"' shots/zones.jsonl 2>/dev/null | grep -o '[0-9]*x[0-9]*' | head -1)"
+		if [[ "$got" == "$res" ]]; then
+			printf '  ok    window reports the granted size at %s\n' "$res"
+		else
+			printf '  FAIL  window reported %s at %s\n' "${got:-nothing}" "$res"; MISSING=1
 		fi
 	done
 	# Serve mode: one engine, commands as files, verdict per command. A

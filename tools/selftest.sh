@@ -11,7 +11,10 @@
 #   2. the sharded run and the single-process run count the same tests;
 #   3. the sync script stamps, seeds, sets the execute bit, reports drift
 #      (with the project's own lines), notes a missing CLAUDE.md import,
-#      and refuses a dirty source — against a scratch source and project.
+#      and refuses a dirty source — against a scratch source and project;
+#   4. a plain engine `ERROR:` line (a ConfigFile key with no default, a
+#      freed lambda capture) turns the boot gate and the scenario gate
+#      red — 738 of them once sat under an all-green check.
 set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SCRATCH="$(mktemp -d)"
@@ -44,6 +47,31 @@ else
 	say FAIL "shard counts differ or a run failed (1: $(count <<<"$ONE") exit $ONE_CODE; 2: $(count <<<"$TWO") exit $TWO_CODE)"; FAILED=1
 fi
 [[ -f "$SCRATCH/.godot/test-timings" ]] && say ok "timings written for the next deal" || { say FAIL "no .godot/test-timings after a full run"; FAILED=1; }
+
+# 4. A gate must be proven able to fail: plant one plain engine ERROR in
+#    the scratch copy's boot scene and watch both gates go red on it. The
+#    scratch's test runner and local check are stubbed for this run: the
+#    suite was just proven above, and the local check is THIS script.
+printf '\n\nfunc _plant_engine_error() -> void:\n\tConfigFile.new().get_value("no", "such_key")\n' >> "$SCRATCH/scripts/main.gd"
+sed -i 's/^\t_build_rows()$/\t_build_rows()\n\t_plant_engine_error()/' "$SCRATCH/scripts/main.gd"
+printf '#!/usr/bin/env bash\necho "Passing Tests 0"\n' > "$SCRATCH/tools/test.sh"
+printf '#!/usr/bin/env bash\nexit 0\n' > "$SCRATCH/tools/check.local.sh"
+OUT="$(cd "$SCRATCH" && tools/check.sh --quick 2>&1)"; CODE=$?
+if [[ $CODE -ne 0 ]] && grep -qE 'FAIL +headless boot \(clean, [1-9][0-9]* engine errors\)' <<<"$OUT"; then
+	say ok "boot gate is red on a plain engine ERROR line"
+else
+	say FAIL "boot gate stayed green on a plain engine ERROR line (exit $CODE)"; FAILED=1
+fi
+if [[ "${QUICK:-0}" -eq 0 ]]; then
+	OUT="$(cd "$SCRATCH" && SHOOT_JOBS=1 tools/shoot.sh scenarios/example.txt 2>&1)"; CODE=$?
+	if [[ $CODE -ne 0 ]] && grep -q 'engine error(s)' <<<"$OUT"; then
+		say ok "scenario gate is red on a plain engine ERROR line"
+	else
+		say FAIL "scenario gate stayed green on a plain engine ERROR line (exit $CODE)"; FAILED=1
+	fi
+else
+	say -- "scenario gate on an engine ERROR line (no display)"
+fi
 
 # 3. The sync script. A scratch SOURCE (the working tree committed into a
 #    fresh repo, so the script under test is this one and HEAD is known)

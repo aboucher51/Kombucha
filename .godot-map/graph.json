@@ -218,6 +218,7 @@
     "_ready",
     "play_sfx",
     "ui_event",
+    "pick",
     "bind_button",
     "play_music",
     "stop_music",
@@ -238,7 +239,7 @@
    "node_paths": [],
    "groups_joined": [],
    "groups_queried": [],
-   "lines": 182
+   "lines": 207
   },
   "res://scripts/autoloads/event_bus.gd": {
    "path": "res://scripts/autoloads/event_bus.gd",
@@ -307,7 +308,8 @@
    "loads": [],
    "refs": [],
    "signals": [
-    "bindings_changed"
+    "bindings_changed",
+    "capture_ended"
    ],
    "funcs": [
     "_ready",
@@ -321,6 +323,12 @@
     "has_action",
     "describe",
     "describe_event",
+    "begin_capture",
+    "is_capturing",
+    "cancel_capture",
+    "capture_event",
+    "capture_text",
+    "_apply_capture",
     "parse_binding_text",
     "_normalise",
     "_group_of",
@@ -331,13 +339,14 @@
     "_decode"
    ],
    "emits": [
-    "bindings_changed"
+    "bindings_changed",
+    "capture_ended"
    ],
    "connects": [],
    "node_paths": [],
    "groups_joined": [],
    "groups_queried": [],
-   "lines": 256
+   "lines": 426
   },
   "res://scripts/autoloads/pads.gd": {
    "path": "res://scripts/autoloads/pads.gd",
@@ -536,6 +545,11 @@
     "_scroll_to",
     "_settle",
     "_hover",
+    "_assert_zone",
+    "_select",
+    "_select_assert",
+    "_find_dropdown",
+    "_dropdown_index",
     "_assert_tooltip",
     "_frame_budget",
     "_press",
@@ -548,12 +562,14 @@
     "_fail",
     "_wipe_dir"
    ],
-   "emits": [],
+   "emits": [
+    "dropdown.item_selected"
+   ],
    "connects": [],
    "node_paths": [],
    "groups_joined": [],
    "groups_queried": [],
-   "lines": 897
+   "lines": 1014
   },
   "res://scripts/dev/selftest_driver.gd": {
    "path": "res://scripts/dev/selftest_driver.gd",
@@ -596,6 +612,7 @@
    "funcs": [
     "_ready",
     "_build_rows",
+    "_build_dropdown",
     "_input",
     "set_busy",
     "is_busy",
@@ -606,7 +623,8 @@
    ],
    "emits": [],
    "connects": [
-    "row.pressed"
+    "row.pressed",
+    "dropdown.item_selected"
    ],
    "node_paths": [
     "%RowList",
@@ -617,7 +635,7 @@
     "settle"
    ],
    "groups_queried": [],
-   "lines": 95
+   "lines": 123
   },
   "res://scripts/ui/pause_menu.gd": {
    "path": "res://scripts/ui/pause_menu.gd",
@@ -720,7 +738,7 @@
    "node_paths": [],
    "groups_joined": [],
    "groups_queried": [],
-   "lines": 118
+   "lines": 124
   },
   "res://scripts/ui/volume_sliders.gd": {
    "path": "res://scripts/ui/volume_sliders.gd",
@@ -1040,14 +1058,16 @@
     "test_zero_is_mute_not_negative_infinity",
     "test_save_is_debounced_then_written",
     "test_a_quit_inside_the_debounce_still_writes",
-    "test_ui_event_with_no_sound_is_silence"
+    "test_ui_event_with_no_sound_is_silence",
+    "test_a_sound_family_never_repeats_itself_and_a_bare_stream_still_plays",
+    "test_a_bus_missing_from_the_settings_file_is_left_alone"
    ],
    "emits": [],
    "connects": [],
    "node_paths": [],
    "groups_joined": [],
    "groups_queried": [],
-   "lines": 61
+   "lines": 96
   },
   "res://tests/test_cmdline.gd": {
    "path": "res://tests/test_cmdline.gd",
@@ -1278,14 +1298,21 @@
     "test_parse_binding_text",
     "test_describe_uses_friendly_names_for_odd_os_names",
     "test_a_catalog_pad_button_lands_in_the_secondary_slot",
-    "test_joy_bindings_round_trip_as_text"
+    "test_joy_bindings_round_trip_as_text",
+    "test_an_axis_half_is_a_binding_like_a_key",
+    "test_an_axis_conflicts_like_a_key_and_the_holder_is_named",
+    "test_capture_binds_the_next_key_and_tells_pollers",
+    "test_capture_refuses_a_taken_key_and_names_the_holder",
+    "test_capture_escape_and_a_click_cancel_backspace_clears_the_wheel_waits"
    ],
    "emits": [],
-   "connects": [],
+   "connects": [
+    "Keybinds.capture_ended"
+   ],
    "node_paths": [],
    "groups_joined": [],
    "groups_queried": [],
-   "lines": 97
+   "lines": 189
   },
   "res://tests/test_kit_utils.gd": {
    "path": "res://tests/test_kit_utils.gd",
@@ -1526,7 +1553,7 @@
    "node_paths": [],
    "groups_joined": [],
    "groups_queried": [],
-   "lines": 63
+   "lines": 64
   },
   "res://tools/seeds/dev_driver.gd": {
    "path": "res://tools/seeds/dev_driver.gd",
@@ -1570,7 +1597,7 @@
    "node_paths": [],
    "groups_joined": [],
    "groups_queried": [],
-   "lines": 53
+   "lines": 57
   }
  },
  "resources": {

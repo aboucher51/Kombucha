@@ -12,7 +12,7 @@ Features: 4.7, GL Compatibility.
 |---|---|---|---|
 | EventBus | `scripts/autoloads/event_bus.gd` |  | score_changed, settings_changed |
 | SaveManager | `scripts/autoloads/save_manager.gd` |  |  |
-| Keybinds | `scripts/autoloads/keybinds.gd` |  | bindings_changed |
+| Keybinds | `scripts/autoloads/keybinds.gd` |  | bindings_changed, capture_ended |
 | Pads | `scripts/autoloads/pads.gd` |  |  |
 | AudioManager | `scripts/autoloads/audio_manager.gd` |  |  |
 | GameManager | `scripts/autoloads/game_manager.gd` |  | scene_changed, game_paused |
@@ -27,6 +27,7 @@ Every `signal` a project script declares that something listens to, or that anot
 | Signal | Declared in | Emitted in | Connected in code | Connected in scenes |
 |---|---|---|---|---|
 | EventBus.settings_changed | `scripts/autoloads/event_bus.gd` | `scripts/autoloads/save_manager.gd` | `scripts/autoloads/pads.gd` | — |
+| Keybinds.capture_ended | `scripts/autoloads/keybinds.gd` | — | `tests/test_keybinds.gd` | — |
 
 ## Scenes
 
@@ -104,18 +105,18 @@ Membership from scenes and `add_to_group`; queries are `get_nodes_in_group`, `ca
 
 | Script | extends | class_name | attached in / used by | signals | funcs |
 |---|---|---|---|---|---|
-| `scripts/autoloads/audio_manager.gd` | Node |  | AudioManager, scripts/autoloads/game_manager.gd, scripts/dev/debug_console.gd, scripts/dev/screenshot_harness.gd, +3 more, 3 tests | 0 | 13 |
+| `scripts/autoloads/audio_manager.gd` | Node |  | AudioManager, scripts/autoloads/game_manager.gd, scripts/dev/debug_console.gd, scripts/dev/screenshot_harness.gd, +3 more, 3 tests | 0 | 14 |
 | `scripts/autoloads/event_bus.gd` | Node |  | EventBus, scripts/autoloads/pads.gd, scripts/autoloads/save_manager.gd, 2 tests | 2 | 0 |
 | `scripts/autoloads/game_manager.gd` | Node |  | GameManager, scripts/dev/dev_hooks.gd, scripts/ui/pause_menu.gd, 2 tests | 2 | 9 |
-| `scripts/autoloads/keybinds.gd` | Node |  | Keybinds, scripts/autoloads/pads.gd, scripts/dev/debug_console.gd, scripts/dev/screenshot_harness.gd, 3 tests | 1 | 19 |
+| `scripts/autoloads/keybinds.gd` | Node |  | Keybinds, scripts/autoloads/pads.gd, scripts/dev/debug_console.gd, scripts/dev/screenshot_harness.gd, 3 tests | 2 | 25 |
 | `scripts/autoloads/pads.gd` | Node |  | Pads, 1 test | 0 | 7 |
 | `scripts/autoloads/save_manager.gd` | Node |  | SaveManager, scripts/autoloads/audio_manager.gd, scripts/autoloads/game_manager.gd, scripts/autoloads/keybinds.gd, +6 more, 7 tests | 0 | 13 |
 | `scripts/dev/bug_report.gd` | RefCounted | BugReport | scripts/dev/debug_console.gd, 1 test | 0 | 3 |
 | `scripts/dev/debug_console.gd` | Node |  | DebugConsole, scripts/dev/screenshot_harness.gd, 5 tests | 0 | 23 |
 | `scripts/dev/dev_hooks.gd` | Node |  | scripts/dev/debug_console.gd, 1 test | 0 | 3 |
-| `scripts/dev/screenshot_harness.gd` | Node |  | ScreenshotHarness, 2 tests | 0 | 32 |
+| `scripts/dev/screenshot_harness.gd` | Node |  | ScreenshotHarness, 2 tests | 0 | 37 |
 | `scripts/dev/selftest_driver.gd` | Node |  | SelftestDriver, 1 test | 0 | 2 |
-| `scripts/main.gd` | Control |  | scenes/main.tscn, 1 test | 0 | 9 |
+| `scripts/main.gd` | Control |  | scenes/main.tscn, 1 test | 0 | 10 |
 | `scripts/ui/pause_menu.gd` | Control | PauseMenu | scenes/main.tscn, 1 test | 0 | 4 |
 | `scripts/ui/ui_focus.gd` | RefCounted | UIFocus | scripts/ui/pause_menu.gd, 2 tests | 0 | 2 |
 | `scripts/ui/ui_scale_root.gd` | Node | UiScaleRoot | 2 tests | 0 | 8 |

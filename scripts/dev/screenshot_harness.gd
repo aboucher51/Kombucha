@@ -34,6 +34,19 @@ extends Node
 ##     assert_visible <NodeName>   fail unless the named Control is visible
 ##     assert_onscreen <NodeName>  fail if it escapes the visible viewport
 ##                             (Control, or Node3D through the live camera)
+##     assert_zone <NodeName> <top|bottom|left|right>  fail unless the whole
+##                             rect lies in that zone of the viewport (top =
+##                             upper half, bottom = lower third, left/right =
+##                             that half): a layout rule a scenario enforces
+##     select <Dropdown> <id-or-label>  pick an OptionButton item by its
+##                             metadata id, then by its text, as a click
+##                             would (item_selected fires); a disabled item
+##                             is refused, naming its tooltip. A click only
+##                             OPENS a dropdown, so this is the seam.
+##     select_assert <Dropdown> <id-or-label>  fail unless that is selected
+##     window                  print "window WxH", the size the window
+##                             manager actually granted (a launch size can
+##                             be refused; a check reads this to say so)
 ##     assert_tooltip <NodeName> <text>  fail unless its tooltip contains text
 ##     frame_budget <ms> [n]   fail if the average frame over n exceeds ms
 ##     expect_shot <name> [tolerance]  compare the frame against the committed
@@ -383,6 +396,18 @@ func _execute(line: String) -> String:
 			return ""
 		"assert_onscreen":
 			return _assert_onscreen(parts)
+		"assert_zone":
+			return _assert_zone(parts)
+		"select":
+			return _select(parts)
+		"select_assert":
+			return _select_assert(parts)
+		"window":
+			# The WINDOW's pixels, not the viewport's visible rect: below
+			# the design size the stretch keeps the canvas at design size
+			# and the visible rect said 1280x720 for a 960x540 window.
+			var size := get_window().size
+			return "window %dx%d" % [size.x, size.y]
 		"assert_tooltip":
 			return _assert_tooltip(parts)
 		"frame_budget":
@@ -618,6 +643,13 @@ func _click(parts: PackedStringArray) -> String:
 ## pixels, so under any stretch other than the design resolution every
 ## synthetic click lands somewhere else (found at Steam Deck resolution,
 ## where every scenario click missed).
+##
+## The press and the release go in the SAME frame, no await between them.
+## Shards share the ONE real cursor: with a frame between the two, the
+## other process warps it across this window mid-press, the button sees
+## the pointer leave and does not emit on the release. "The second click
+## of a confirm button fails only in the batch" was this, five times in
+## one project, written off as load each time.
 func _click_point(at: Vector2) -> String:
 	_warp_cursor(at)
 	for pressed in [true, false]:
@@ -627,7 +659,6 @@ func _click_point(at: Vector2) -> String:
 		event.position = at
 		event.global_position = at
 		get_viewport().push_input(event, true)
-		await get_tree().process_frame
 	for i in DEFAULT_SETTLE_FRAMES:
 		await get_tree().process_frame
 	return ""
@@ -710,6 +741,92 @@ func _hover(parts: PackedStringArray) -> String:
 	if hovered != target and not target.is_ancestor_of(hovered):
 		return "ERROR: hover landed on '%s', wanted '%s' at %s" % [hovered.name, parts[1], at]
 	return ""
+
+
+## A layout RULE as a line: the whole rect of the named visible Control in
+## one zone of the viewport. "Information top and left, interaction bottom
+## and right" is enforceable this way and by eye otherwise; a HUD bar that
+## fit at 1280 was off the right edge the moment a button was added, and
+## only a named zone at a named size caught it.
+func _assert_zone(parts: PackedStringArray) -> String:
+	if parts.size() < 3:
+		return "ERROR: usage: assert_zone <NodeName> <top|bottom|left|right>"
+	var target := _find_control(parts[1])
+	if target == null:
+		return _lookup_error
+	if not target.is_visible_in_tree():
+		return "ERROR: '%s' is not visible" % parts[1]
+	var rect := target.get_global_rect()
+	var view := get_viewport().get_visible_rect().size
+	var inside := false
+	match parts[2]:
+		"top": inside = rect.end.y <= view.y * 0.5
+		"bottom": inside = rect.position.y >= view.y * (2.0 / 3.0)
+		"left": inside = rect.end.x <= view.x * 0.5
+		"right": inside = rect.position.x >= view.x * 0.5
+		_: return "ERROR: zone must be top, bottom, left or right, not '%s'" % parts[2]
+	if inside:
+		return ""
+	return "ERROR: '%s' at %s is not in the %s zone of %s" % [parts[1], rect, parts[2], view]
+
+
+## A click on an OptionButton only opens its popup, so a scenario cannot
+## pick from a dropdown by clicking: this is the seam. By metadata id
+## first, then by text; emits item_selected the way a pick does.
+func _select(parts: PackedStringArray) -> String:
+	if parts.size() < 3:
+		return "ERROR: usage: select <Dropdown> <id-or-label>"
+	var dropdown := _find_dropdown(parts[1])
+	if dropdown == null:
+		return _lookup_error
+	var wanted := " ".join(parts.slice(2))
+	var index := _dropdown_index(dropdown, wanted)
+	if index < 0:
+		return "ERROR: %s has no item '%s'" % [parts[1], wanted]
+	if dropdown.is_item_disabled(index):
+		var why := dropdown.get_popup().get_item_tooltip(index)
+		return "ERROR: '%s' is disabled in %s%s" % [wanted, parts[1], (": " + why) if not why.is_empty() else ""]
+	dropdown.select(index)
+	dropdown.item_selected.emit(index)
+	return ""
+
+
+func _select_assert(parts: PackedStringArray) -> String:
+	if parts.size() < 3:
+		return "ERROR: usage: select_assert <Dropdown> <id-or-label>"
+	var dropdown := _find_dropdown(parts[1])
+	if dropdown == null:
+		return _lookup_error
+	var wanted := " ".join(parts.slice(2))
+	var index := dropdown.selected
+	if index >= 0 and (str(dropdown.get_item_metadata(index)) == wanted or dropdown.get_item_text(index) == wanted):
+		return ""
+	var current := "nothing" if index < 0 else "'%s' (%s)" % [
+		dropdown.get_item_text(index), str(dropdown.get_item_metadata(index))]
+	return "ERROR: %s has %s selected, expected '%s'" % [parts[1], current, wanted]
+
+
+func _find_dropdown(node_name: String) -> OptionButton:
+	var target := _find_control(node_name)
+	if target == null:
+		return null
+	var dropdown := target as OptionButton
+	if dropdown == null:
+		_lookup_error = "ERROR: '%s' is not an OptionButton" % node_name
+	elif not dropdown.is_visible_in_tree():
+		_lookup_error = "ERROR: '%s' is not visible" % node_name
+		return null
+	return dropdown
+
+
+static func _dropdown_index(dropdown: OptionButton, wanted: String) -> int:
+	for i in dropdown.item_count:
+		if str(dropdown.get_item_metadata(i)) == wanted:
+			return i
+	for i in dropdown.item_count:
+		if dropdown.get_item_text(i) == wanted:
+			return i
+	return -1
 
 
 ## Reads the tooltip the Control would show, without waiting for the

@@ -17,6 +17,8 @@ const BUSES: Array[StringName] = [&"Master", &"Music", &"SFX"]
 ## main.gd: AudioManager.ui_sounds["click"] = preload(...)). A missing event
 ## is silence, never an error — see "Missing assets degrade" in CLAUDE.md.
 var ui_sounds: Dictionary = {}
+## kind -> the list index played last, so a family never repeats itself.
+var _last_pick: Dictionary = {}
 
 var _sfx_players: Array[AudioStreamPlayer] = []
 var _next_sfx := 0
@@ -63,7 +65,27 @@ func play_sfx(stream: AudioStream, volume_db: float = 0.0, pitch_variance: float
 ## Semantic UI event -> ui_sounds map -> stream, so sounds are re-skinnable
 ## without touching call sites.
 func ui_event(event_name: String) -> void:
-	play_sfx(ui_sounds.get(event_name))
+	play_sfx(pick(event_name))
+
+
+## The stream a kind plays next. A kind is one stream, or a FAMILY (an
+## Array of streams) picked at random and never the same index twice in a
+## row; an unknown kind is silence with no error, which also makes "none"
+## a kind a button can be bound to on purpose (a confirm button that says
+## "select" when it arms and "confirm" when it fires wants no click sound
+## on top). Public so a test can ask without playing.
+func pick(kind: String) -> AudioStream:
+	var entry: Variant = ui_sounds.get(kind)
+	if entry is AudioStream:
+		return entry
+	if not (entry is Array) or (entry as Array).is_empty():
+		return null
+	var family: Array = entry
+	var index := randi() % family.size()
+	if family.size() > 1 and index == int(_last_pick.get(kind, -1)):
+		index = (index + 1 + randi() % (family.size() - 1)) % family.size()
+	_last_pick[kind] = index
+	return family[index] as AudioStream
 
 
 ## Wires click + hover sounds to any button in one line.
@@ -144,10 +166,13 @@ func get_bus_volume(bus_name: StringName) -> float:
 	return db_to_linear(AudioServer.get_bus_volume_db(index))
 
 
+## A sentinel default, not null: ConfigFile logs an ENGINE ERROR for a
+## missing key when no default is given, so the first bus added after the
+## settings file existed erred on every boot (one project's "Ambience").
 func apply_saved_volumes() -> void:
 	for bus_name in BUSES:
-		var saved: Variant = SaveManager.get_setting(SETTINGS_SECTION, bus_name)
-		if saved == null:
+		var saved: Variant = SaveManager.get_setting(SETTINGS_SECTION, bus_name, -1.0)
+		if float(saved) < 0.0:
 			continue
 		var index := AudioServer.get_bus_index(bus_name)
 		if index < 0:

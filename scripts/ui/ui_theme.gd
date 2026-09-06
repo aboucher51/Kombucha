@@ -90,10 +90,16 @@ static func _pop_in_deferred(control_id: int) -> void:
 	tween.set_parallel(true)
 	tween.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	tween.tween_property(control, "modulate:a", 1.0, 0.16)
-	if control.size != Vector2.ZERO:
-		control.pivot_offset = control.size / 2.0
-		control.scale = Vector2(0.94, 0.94)
-		tween.tween_property(control, "scale", Vector2.ONE, 0.22)
+	# Motion on the VISUAL-ONLY offset transform, never `scale` or
+	# `position`: a container lays its children out every frame, and a
+	# tween on the laid-out properties fights it (a toast slid to the left
+	# edge because its rest position was captured before the stack had
+	# placed it). The offset transform is what the engine draws, not what
+	# the layout reads.
+	control.offset_transform_enabled = true
+	control.offset_transform_pivot_ratio = Vector2(0.5, 0.5)
+	control.offset_transform_scale = Vector2(0.94, 0.94)
+	tween.tween_property(control, "offset_transform_scale", Vector2.ONE, 0.22)
 
 
 static func _flat(color: Color, corner_radius: int, border: Color = Color.TRANSPARENT) -> StyleBoxFlat:

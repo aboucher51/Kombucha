@@ -191,7 +191,10 @@ forces llvmpipe, which the virtual display (CI) always uses.
 Scenarios are plain-text files in `scenarios/`, one command per line. Write a
 new scenario for whatever you are working on rather than editing an existing
 one. Needs a display (WSLg, `DISPLAY=:0`) — **not** `--headless`, which has
-no renderer and captures blank frames. PNGs land in `shots/` (gitignored).
+no renderer and captures blank frames. PNGs land in `shots/` (gitignored),
+and **every run wipes `shots/` first** (`SHOOT_KEEP=1` keeps them): a shot
+from an earlier run is gone after the next, so read a shot right after the
+run that made it.
 
 Built-in commands (`scripts/dev/screenshot_harness.gd`): `shot <name> [x y w
 h]`, `wait <frames>`, `ticks <n>` (physics frames: game time), `sleep
@@ -202,7 +205,13 @@ you need to prove is that the *player's* path works, not that a handler
 does), `click_at <x> <y>` (viewport coordinates, for Node2D boards),
 `scroll_to <NodeName>`, `hover <NodeName>`, `press <action>`,
 `assert_visible`, `assert_onscreen` (Control, or Node3D through the live
-camera), `assert_tooltip <NodeName> <text>`, `frame_budget <ms> [frames]`,
+camera), `assert_zone <NodeName> <top|bottom|left|right>` (the whole rect
+in that zone of the viewport: a layout rule a scenario enforces instead of
+an eye), `select <Dropdown> <id-or-label>` and `select_assert` (a click
+only OPENS an OptionButton, so this is how a scenario picks; a disabled
+item is refused naming its tooltip), `window` (prints the size the window
+manager actually granted, for a check at a named size),
+`assert_tooltip <NodeName> <text>`, `frame_budget <ms> [frames]`,
 `expect_shot <name> [tolerance]`, `mask <x> <y> <w> <h>`, `expect_fail`,
 `reset`, and `#` comments. Project-specific commands go in
 `scripts/dev/dev_hooks.gd`'s `scenario_command()` — return `""` on success,
@@ -296,6 +305,19 @@ Rules that keep the harness useful:
   run first and two `shoot.sh` runs cannot collide. Measured: two shards
   164 s against 204 s for a 36-scenario suite. `SHOOT_JOBS=1` keeps the
   order given, which is how an order-dependent pair is proven on purpose.
+  The timings file is MERGED, so a single-scenario run updates one row and
+  never leaves the next batch to deal blind. **The shards share the ONE
+  real cursor**: the harness pushes a click's press and release in the
+  same frame for that reason (a frame between them, and the other shard's
+  warp made the button see the pointer leave mid-press: "the second click
+  of a confirm button fails only in the batch"), and a scenario that
+  proves hover or tooltips wants `SHOOT_JOBS=1`.
+- **A layout rule belongs at a named size.** `SHOOT_RESOLUTION=WxH` runs
+  the batch in that window, `assert_zone` lines state the rule, and the
+  scenario's `window` reply says what the window manager actually gave
+  (WSLg refuses sizes above its virtual screen), so a project's
+  `check.local.sh` can run its target screens and report a refused size
+  as `--`, never as a pass. The seed carries the loop, commented.
 - **Between scenarios the harness returns to the BOOT scene**
   (`application/run/main_scene`), never a reload of wherever the last
   scenario navigated: one project's first scenario that pressed Play left
@@ -309,7 +331,13 @@ Rules that keep the harness useful:
   (~400 fps), and `--fixed-fps` makes heavy scenes SLOWER on a software
   renderer because game time falls behind wall time (measured, rejected).
 - Scenarios run in a batch and the harness reloads the scene between
-  them — but **anything global survives that reload**. When introducing new
+  them — but **anything global survives that reload**, and so does
+  anything APPLIED from a setting: the redirected settings file lives for
+  the whole process, and a frame cap, vsync, a window mode, a UI scale
+  or a rebuilt palette is engine state, not scene state (one scenario's
+  150% UI scale poisoned six after it; the failures pointed at clicks).
+  The project's `sandbox()` must write the defaults AND re-apply them
+  through the path a boot uses. When introducing new
   global state (autoload fields, static vars, write-through files), reset it
   in `sandbox()` in `scripts/dev/dev_hooks.gd` (the harness's own
   `_sandbox()` is synced over and only knows the kit's autoloads), or a
@@ -326,7 +354,11 @@ did this scenario do and where did the time go" with `grep` or `jq`,
 without the engine log. The merged JUnit report is the same idea for the
 suite. Both exist because a log is read once and a file is asked again.
 
-The engine's own exit line `N resources still in use at exit` is NOT
+**Every engine `ERROR:` line fails the boot and the batch**, not only
+`SCRIPT ERROR`s: a freed lambda capture and a ConfigFile key read with no
+default are plain engine errors, and one project logged 738 of them under
+an all-green check before they were counted. The one exception is the
+engine's own exit line `N resources still in use at exit`, which is NOT
 counted as an error: it names a resource a `const preload` still holds
 while the tree is torn down (`--verbose` says which), the count varies
 between identical runs, and a gate on it would be a coin toss. A leak

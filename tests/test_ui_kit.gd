@@ -59,4 +59,5 @@ func test_pop_in_lands_at_full_alpha() -> void:
 	UITheme.pop_in(panel)
 	await wait_seconds(0.4)
 	assert_almost_eq(panel.modulate.a, 1.0, 0.01)
-	assert_almost_eq(panel.scale.x, 1.0, 0.01)
+	assert_almost_eq(panel.offset_transform_scale.x, 1.0, 0.01)
+	assert_eq(panel.scale, Vector2.ONE, "motion is on the offset transform, never the laid-out scale")

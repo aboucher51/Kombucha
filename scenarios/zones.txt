@@ -1,0 +1,15 @@
+# Layout rules as lines: `assert_zone` places a whole rect in a zone of the
+# viewport, whatever size the window manager granted (`window` prints it,
+# so a check at a named size can tell a refused size from a pass).
+wait 5
+window
+assert_zone RowList bottom
+assert_zone RowList left
+assert_zone TwinA top
+assert_zone TwinA right
+assert_zone QualityDropdown right
+expect_fail assert_zone TitleLabel top
+expect_fail assert_zone TitleLabel left
+expect_fail assert_zone RowList right
+expect_fail assert_zone TwinA middle
+expect_fail assert_zone ResumeButton top

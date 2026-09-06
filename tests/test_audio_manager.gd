@@ -58,3 +58,38 @@ func test_ui_event_with_no_sound_is_silence() -> void:
 	# No error, no crash — a missing UI sound is a normal state.
 	AudioManager.ui_event("nonexistent_event")
 	pass_test("silence, not an error")
+
+
+func test_a_sound_family_never_repeats_itself_and_a_bare_stream_still_plays() -> void:
+	var a := AudioStreamWAV.new()
+	var b := AudioStreamWAV.new()
+	var c := AudioStreamWAV.new()
+	AudioManager.ui_sounds["probe_family"] = [a, b, c]
+	AudioManager.ui_sounds["probe_single"] = a
+	AudioManager.ui_sounds["probe_empty"] = []
+	var previous: AudioStream = null
+	for i in 40:
+		var chosen := AudioManager.pick("probe_family")
+		assert_true(chosen in [a, b, c])
+		assert_ne(chosen, previous, "never the same variant twice in a row")
+		previous = chosen
+	assert_eq(AudioManager.pick("probe_single"), a, "a single stream is accepted as is")
+	assert_null(AudioManager.pick("probe_empty"), "an empty family is silence")
+	assert_null(AudioManager.pick("none"), "and so is a kind nobody registered")
+	AudioManager.ui_sounds.erase("probe_family")
+	AudioManager.ui_sounds.erase("probe_single")
+	AudioManager.ui_sounds.erase("probe_empty")
+
+
+func test_a_bus_missing_from_the_settings_file_is_left_alone() -> void:
+	# The file exists (Music was written) but SFX was never stored — the
+	# shape of a bus added after the player's settings file existed. The
+	# read must not log an engine error and must not touch the SFX bus.
+	DirAccess.remove_absolute(SCRATCH_CONFIG)
+	SaveManager.set_setting(AudioManager.SETTINGS_SECTION, "Music", 0.5)
+	AudioManager.set_bus_volume(&"SFX", 0.25)   # live only: the debounce has not fired
+	AudioManager.set_bus_volume(&"Music", 1.0)
+	AudioManager.apply_saved_volumes()
+	assert_almost_eq(AudioManager.get_bus_volume(&"Music"), 0.5, 0.01, "the stored bus is re-applied")
+	assert_almost_eq(AudioManager.get_bus_volume(&"SFX"), 0.25, 0.01, "the missing bus keeps its live value")
+	AudioManager.set_bus_volume(&"SFX", 1.0)

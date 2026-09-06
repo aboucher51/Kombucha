@@ -18,7 +18,11 @@ extends Node
 ## The shared sandbox wipes SAVES but not SETTINGS: the redirected settings
 ## file survives the whole batch, so anything a console command can write
 ## there must be re-defaulted HERE, after the redirect (never before, or
-## you write the player's real file). Shapes that have leaked in real
+## you write the player's real file) — and re-APPLIED, not only rewritten:
+## a frame cap, vsync, a window mode, a UI scale, a rebuilt palette are
+## engine state a scene reload does not touch (one scenario's 150% UI
+## scale poisoned six after it, and the failures pointed at clicks).
+## Shapes that have leaked in real
 ## projects: a renderer setting, a zoom level, campaign progress, the
 ## editor's last-opened mod, a match config held in statics, an AI policy
 ## held in a static, a "watching" flag on ambient NPCs, a weather state.

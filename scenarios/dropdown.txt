@@ -1,0 +1,16 @@
+# The harness's `select`: a click only opens a dropdown, so this is how a
+# scenario picks from one. By id, by text, a disabled item refused with its
+# tooltip, an unknown item refused; state asserted after each action.
+wait 5
+select_assert QualityDropdown medium
+select QualityDropdown high
+select_assert QualityDropdown High
+assert quality high
+select QualityDropdown Low
+assert quality low
+expect_fail select QualityDropdown ultra
+assert quality low
+expect_fail select QualityDropdown nope
+expect_fail select_assert QualityDropdown high
+expect_fail select TitleLabel high
+shot dropdown

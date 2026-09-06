@@ -231,21 +231,29 @@ if [[ $JOBS -gt 1 ]]; then
 fi
 
 # Per-scenario seconds for the NEXT run's deal, only from a run that
-# finished everything.
+# finished everything — MERGED over what the file already knows, so a
+# single-scenario run updates one row instead of wiping the rest and
+# leaving the next batch to deal blind.
 if [[ $STATUS -eq 0 ]]; then
 	mkdir -p "$(dirname "$TIMINGS")"
+	touch "$TIMINGS"
 	grep -h '^scenario ok:' "$WORK"/shard.*.log \
-		| sed -nE 's/^scenario ok: (.*) \(([0-9.]+)s\)$/\1\t\2/p' > "$TIMINGS.new" && mv "$TIMINGS.new" "$TIMINGS"
+		| sed -nE 's/^scenario ok: (.*) \(([0-9.]+)s\)$/\1\t\2/p' \
+		| awk -F'\t' 'NR == FNR { seen[$1] = 1; print; next } !seen[$1]' - "$TIMINGS" > "$TIMINGS.new" \
+		&& mv "$TIMINGS.new" "$TIMINGS"
 fi
 
 # The harness only knows about failures its commands report back, so an
 # engine-level error (a bad type, a null call, a shader that will not
 # compile) would otherwise let a run pass while the game was visibly
-# broken behind the screenshots.
-ENGINE_ERRORS=$(cat "$WORK"/shard.*.log | grep -cE "SCRIPT ERROR|Parse Error|shader")
+# broken behind the screenshots. Plain `ERROR:` lines count too — a freed
+# lambda capture, a ConfigFile key with no default — minus the exit-time
+# "resources still in use" line, whose count is a coin toss.
+ERROR_PATTERN="SCRIPT ERROR|Parse Error|shader|^ERROR:"
+ENGINE_ERRORS=$(cat "$WORK"/shard.*.log | grep -vE "resources still in use at exit" | grep -cE "$ERROR_PATTERN")
 if [[ $ENGINE_ERRORS -gt 0 ]]; then
 	echo "shoot: $ENGINE_ERRORS engine error(s) — a green scenario does not mean a clean run" >&2
-	cat "$WORK"/shard.*.log | grep -E "SCRIPT ERROR|Parse Error|shader" | sort -u | head -5 >&2
+	cat "$WORK"/shard.*.log | grep -vE "resources still in use at exit" | grep -E "$ERROR_PATTERN" | sort -u | head -5 >&2
 	[[ $STATUS -eq 0 ]] && STATUS=1
 fi
 

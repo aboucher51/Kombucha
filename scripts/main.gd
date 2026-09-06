@@ -24,6 +24,8 @@ var _busy_until := 0
 var last_click := Vector2(-1, -1)
 ## The last row button pressed in the scrolling list.
 var last_row := ""
+## The dropdown's chosen id (the harness's `select` seam).
+var quality := "medium"
 
 
 func _ready() -> void:
@@ -33,6 +35,7 @@ func _ready() -> void:
 	add_to_group("state")
 	add_to_group("settle")
 	_build_rows()
+	_build_dropdown()
 
 
 ## A long list whose tail is below the fold: the harness's scroll_to seam.
@@ -48,6 +51,30 @@ func _build_rows() -> void:
 		row.pressed.connect(func() -> void: last_row = str(row.name))
 		rows.add_child(row)
 	%RowList.add_child(rows)
+
+
+## A dropdown: a click only opens its popup, so the harness's `select` is
+## the only way a scenario picks from it. Items carry a metadata id, and
+## one is disabled with a tooltip that says why.
+func _build_dropdown() -> void:
+	var dropdown := OptionButton.new()
+	dropdown.name = "QualityDropdown"
+	for entry in [["low", "Low"], ["medium", "Medium"], ["high", "High"], ["ultra", "Ultra"]]:
+		dropdown.add_item(entry[1])
+		dropdown.set_item_metadata(dropdown.item_count - 1, entry[0])
+	dropdown.set_item_disabled(3, true)
+	dropdown.get_popup().set_item_tooltip(3, "needs a GPU")
+	dropdown.select(1)
+	dropdown.item_selected.connect(func(index: int) -> void:
+		quality = str(dropdown.get_item_metadata(index)))
+	# Top-right, under the twins; anchor-and-offset in one call, or a fresh
+	# control anchored in _ready() stays 0x0 (see CLAUDE.md).
+	dropdown.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+	dropdown.offset_left = -136
+	dropdown.offset_top = 80
+	dropdown.offset_right = -16
+	dropdown.offset_bottom = 108
+	add_child(dropdown)
 
 
 func _input(event: InputEvent) -> void:
@@ -67,9 +94,9 @@ func is_busy() -> bool:
 
 
 func state_text() -> String:
-	return "title=%s paused=%s busy=%s last_click=%s last_row=%s" % [
+	return "title=%s paused=%s busy=%s last_click=%s last_row=%s quality=%s" % [
 		%TitleLabel.text, _yes_no(get_tree().paused), _yes_no(is_busy()),
-		_point(last_click), last_row]
+		_point(last_click), last_row, quality]
 
 
 func assert_key(key: String, value: String) -> String:
@@ -80,6 +107,7 @@ func assert_key(key: String, value: String) -> String:
 		"busy": actual = _yes_no(is_busy())
 		"last_click": actual = _point(last_click)
 		"last_row": actual = last_row
+		"quality": actual = quality
 		_: return "ERROR: unknown key '%s'" % key
 	if actual != value:
 		return "ERROR: %s is '%s', expected '%s'" % [key, actual, value]
