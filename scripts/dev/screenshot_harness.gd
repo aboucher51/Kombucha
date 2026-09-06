@@ -605,7 +605,7 @@ func _click(parts: PackedStringArray) -> String:
 ## synthetic click lands somewhere else (found at Steam Deck resolution,
 ## where every scenario click missed).
 func _click_point(at: Vector2) -> String:
-	Input.warp_mouse(at)
+	_warp_cursor(at)
 	for pressed in [true, false]:
 		var event := InputEventMouseButton.new()
 		event.button_index = MOUSE_BUTTON_LEFT
@@ -617,6 +617,16 @@ func _click_point(at: Vector2) -> String:
 	for i in DEFAULT_SETTLE_FRAMES:
 		await get_tree().process_frame
 	return ""
+
+
+## The REAL cursor takes window pixels, the synthetic event canvas
+## coordinates, and under any stretch the two differ: a warp given canvas
+## coordinates at a window below the design size parked the cursor over
+## a different control, and the click that followed missed (every
+## NavalWar scenario at the Steam Deck's 1280x800, its design being
+## 1600x900). The screen transform is the one mapping.
+func _warp_cursor(canvas_point: Vector2) -> void:
+	Input.warp_mouse(get_viewport().get_screen_transform() * canvas_point)
 
 
 ## A row below the fold of a long list is visible but NOT clickable: the
@@ -673,7 +683,7 @@ func _hover(parts: PackedStringArray) -> String:
 	if not target.is_visible_in_tree():
 		return "ERROR: '%s' is not visible" % parts[1]
 	var at := target.get_global_transform_with_canvas() * (target.size / 2.0)
-	Input.warp_mouse(at)
+	_warp_cursor(at)
 	var motion := InputEventMouseMotion.new()
 	motion.position = at
 	motion.global_position = at

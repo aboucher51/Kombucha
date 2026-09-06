@@ -60,6 +60,17 @@ PY
 	else
 		printf '  FAIL  scenario trace shots/example.jsonl missing or incomplete\n'; MISSING=1
 	fi
+	# Clicks must land at a window size BELOW the design size (fractional
+	# shrink) and ABOVE it (integer snap), not only at 1280x720: the real
+	# cursor is warped in window pixels while the event is in canvas
+	# coordinates, and the two only agree at the design size.
+	for res in 960x540 1280x800; do
+		if SHOOT_RESOLUTION=$res SHOOT_JOBS=1 SHOOT_KEEP=1 tools/shoot.sh scenarios/pause_menu.txt scenarios/tooltip.txt >/dev/null 2>&1; then
+			printf '  ok    clicks and hovers land at %s\n' "$res"
+		else
+			printf '  FAIL  clicks or hovers miss at %s\n' "$res"; MISSING=1
+		fi
+	done
 	# Serve mode: one engine, commands as files, verdict per command. A
 	# passing run, a failing line (the gate's own red), and a clean stop.
 	if tools/serve.sh start >/dev/null 2>&1 \

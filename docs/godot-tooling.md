@@ -215,7 +215,13 @@ Rules that keep the harness useful:
   `Input.parse_input_event`, which treats the position as window pixels:
   under any stretch other than the design resolution every click lands
   somewhere else (found at Steam Deck resolution, where every scenario
-  click missed). `click`, `click_at` and `hover` all use it.
+  click missed). `click`, `click_at` and `hover` all use it. **The real
+  cursor is the other way round**: `Input.warp_mouse` takes window
+  pixels, so the warp before a click goes through the viewport's screen
+  transform; given canvas coordinates it parked the cursor over another
+  control at any window below the design size, and the click missed
+  (found again, at 1280x800 in a 1600x900 game, after the warp was
+  added). The local check clicks at 960x540 and 1280x800 for that.
 - **A row below the fold is visible but not clickable**: `click` lands where
   the rect is, outside the viewport. `scroll_to` it first. A menu whose only
   seam is a clickable button is not fully scriptable once it scrolls; every
