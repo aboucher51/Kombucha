@@ -20,6 +20,8 @@ tools/check.sh              # ...plus every scenario through the harness
 tools/check.sh --ci         # the same on a virtual display (Xvfb), for CI
 tools/shoot.sh              # screenshot scenarios only, dealt across
                             # SHOOT_JOBS processes; finds or starts a display
+SHOOT_BASELINES=update tools/shoot.sh <scenario>
+                            # (re)write the expect_shot baselines it names
 tools/export.sh             # Linux + Windows builds, smoke-tested
 ```
 
@@ -61,7 +63,9 @@ those are in `tools/seeds/`.
   the fixture's.
 - `tests/`, `.gutconfig.json`, `addons/gut` — GUT 9.7.1 and the fixture's
   suite.
-- `scenarios/` — plain-text harness scripts, one command per line.
+- `scenarios/` — plain-text harness scripts, one command per line;
+  `scenarios/baselines/<renderer>/` holds the committed `expect_shot`
+  reference frames.
 - `scripts/autoloads/`, `scripts/ui/`, `scripts/util/`, `scenes/` — the
   fixture game.
 - `docs/research/` — surveys of prior art, the sibling projects' test

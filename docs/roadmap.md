@@ -33,6 +33,24 @@ own status at the top.
   PadRouter, Keybinds pad slots), friendly key names, translated slider
   labels, the rules for all of it.
 
+## Landed 2026-09-06
+
+- **The execute bit**: every script was committed 100644 and the Linux
+  move made `check.sh` itself "Permission denied" while a non-executable
+  `check.local.sh` read as "no local checks". Bits recorded, a `scripts`
+  section in check.sh, a loud FAIL for the local file, sync sets the bit.
+- **CI verified on a real push** (former item 3): green first time on the
+  Xvfb + llvmpipe path, whole job under a minute, renderer LLVM 20 on the
+  runner against 21 here. Repo renamed to Kombucha on GitHub.
+- **Visual regression** (former item 4): `expect_shot <name> [tolerance]`
+  and `mask`, baselines per rasterizer under `scenarios/baselines/`,
+  written with `SHOOT_BASELINES=update`, diff images on failure.
+- **JUnit surfaced** (half of former item 7): shards merged into
+  `.godot/test-results.xml`, kept by CI as `test-results`. The JSONL
+  scenario trace is still open.
+- Docs: the update-template skill routes tooling to Kombucha and kit to
+  the Template; ownership headers say KOMBUCHA; `sleep` has a scenario.
+
 ## Next
 
 0. **Move projects to the Linux filesystem**
@@ -47,20 +65,16 @@ own status at the top.
 2. **Kit adoption by siblings**: a `--kit` report mode for
    `sync-tooling.sh` listing kit files that differ and the Template commit
    that last touched each, so a project can cherry-pick.
-3. **Verify the CI path** on a real push: the Xvfb branch of `shoot.sh` is
-   exercised only by CI (xvfb is not installed locally). Set `SHOOT_SLOW`
-   from the measured runner time.
-4. **Visual regression**: `expect_shot <name> [tolerance]` against a
-   checked-in baseline with mask rects. Feasible now that reruns are
-   pixel-identical on llvmpipe; baselines are per rasterizer.
-5. **Long-lived game process** fed by a command queue (file-based, or the
+3. **Long-lived game process** fed by a command queue (file-based, or the
    native debugger port via `EngineDebugger.register_message_capture`), so
    iterating on one scenario costs zero boots.
-6. **Windows binary through interop** (`GODOT=...console.exe`, `wslpath`,
+4. **Windows binary through interop** (`GODOT=...console.exe`, `wslpath`,
    `taskkill` on timeout) once a Windows Godot build is installed; the
    /mnt boot cost makes it worth measuring.
-7. **JUnit XML surfaced** from `test.sh` (it is already written per shard)
-   and a JSONL trace per scenario beside the PNGs.
+5. **A JSONL trace per scenario** beside the PNGs (the JUnit half landed).
+6. **`SHOOT_SLOW`** from the measured runner time: CI's scenario half ran
+   in seconds, so the default 3x is generous; revisit when a real suite
+   runs there.
 
 ## Not planned
 

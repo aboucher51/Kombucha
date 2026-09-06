@@ -374,6 +374,11 @@ load failure and counts the scripts that ran against the files on disk, and
 broken test file. A falling count is a file not loading, not fewer tests
 passing.
 
+**The JUnit report is merged across shards** into
+`.godot/test-results.xml` (`TEST_JUNIT` moves it, empty skips it); CI
+keeps it as the `test-results` artifact beside the shots, so a red run
+can be read per test without the log.
+
 **A slow test is usually a sleeping one.** Anything that waits out a real
 timer belongs behind a seam a test can shorten; profile with the per-script
 times in `.godot/test-timings`.
@@ -428,7 +433,8 @@ does), `click_at <x> <y>` (viewport coordinates, for Node2D boards),
 `scroll_to <NodeName>`, `hover <NodeName>`, `press <action>`,
 `assert_visible`, `assert_onscreen` (Control, or Node3D through the live
 camera), `assert_tooltip <NodeName> <text>`, `frame_budget <ms> [frames]`,
-`expect_fail`, and `#` comments. Project-specific commands go in
+`expect_shot <name> [tolerance]`, `mask <x> <y> <w> <h>`, `expect_fail`,
+and `#` comments. Project-specific commands go in
 `scripts/dev/dev_hooks.gd`'s `scenario_command()` — return `""` on success,
 `"ERROR: ..."` on failure, `null` to hand the line to the console. **The
 harness only fails on error-shaped replies**, so an assertion command must
@@ -466,6 +472,20 @@ Rules that keep the harness useful:
   the rect is, outside the viewport. `scroll_to` it first. A menu whose only
   seam is a clickable button is not fully scriptable once it scrolls; every
   menu action also needs a non-click seam.
+- **`expect_shot` is the visual regression gate, and baselines are per
+  rasterizer.** It compares the frame against
+  `scenarios/baselines/<renderer>/<stem>-<name>.png` (committed; the
+  directory is `.gdignore`d so the editor never imports it) and fails on
+  ANY differing pixel by default, saving the actual frame and a
+  red-on-dim diff beside the shots. Reruns on one machine are
+  pixel-identical, so a difference is a change to look at, not noise; a
+  moving element gets a `mask` line, because a tolerance wide enough to
+  hide a clock also hides a real regression. `SHOOT_BASELINES=update
+  tools/shoot.sh <scenario>` writes the baselines (the first frame per
+  name; `expect_fail` never writes). The `<renderer>` directory is the
+  adapter family (`llvmpipe`, `nvidia`): a GPU and a software rasterizer
+  do not agree pixel for pixel, and a missing baseline for the machine's
+  renderer is an ERROR that names the path, never a silent pass.
 - **`frame_budget` is a regression tripwire, not a device target.** It
   turns vsync off for the measurement (with vsync on every scene reads
   16.7 ms and the gate can never fail) and prints the number on pass, so

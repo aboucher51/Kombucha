@@ -1,11 +1,13 @@
-# settle waits for the group to go idle and FAILS when it does not;
-# ticks waits physics frames.
+# The three waits: settle waits for the group to go idle and FAILS when it
+# does not; ticks waits physics frames; sleep waits WALL-CLOCK seconds
+# (for anything on an OS timer, deliberately ignoring Engine.time_scale).
 wait 5
 busy 30
 assert busy yes
 settle 2
 assert busy no
 ticks 3
+sleep 0.1
 busy 100000
 expect_fail settle 0.2
 busy 0

@@ -1,0 +1,15 @@
+# expect_shot is the visual regression gate: the frame against a committed
+# baseline for this rasterizer (scenarios/baselines/<renderer>/). A missing
+# baseline is an ERROR that names the path; a mismatch saves the actual
+# frame and a red-on-dim diff beside the shots. `mask` excludes a rect
+# from the NEXT comparison only.
+wait 10
+expect_shot boot
+expect_fail expect_shot no_such_baseline
+press pause
+assert_visible PausedLabel
+# The pause menu changes the frame: the same baseline must now fail...
+expect_fail expect_shot boot
+# ...and pass again when the changed region is masked out.
+mask 0 0 1280 720
+expect_shot boot

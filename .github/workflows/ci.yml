@@ -65,3 +65,14 @@ jobs:
           path: shots/*.png
           if-no-files-found: ignore
           retention-days: 7
+
+      # The merged JUnit report test.sh writes: what a PR checks tab or an
+      # editor's test explorer reads, and the per-test times behind the deal.
+      - name: Keep the test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: .godot/test-results.xml
+          if-no-files-found: ignore
+          retention-days: 7

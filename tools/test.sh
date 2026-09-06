@@ -10,6 +10,9 @@
 #   TEST_JOBS=8                      more shards (default 4, capped by the
 #                                    script count and by nproc)
 #   TEST_TIMEOUT=180                 seconds a shard may take
+#   TEST_JUNIT=.godot/test-results.xml
+#                                    where the merged JUnit report lands
+#                                    (CI keeps it as an artifact; "" skips)
 #   GODOT=/path/to/binary            the engine to run
 #
 # Why shards: a Godot test run is CPU-bound and single-threaded, and the
@@ -36,6 +39,7 @@ cd "$ROOT" || exit 2
 
 TIMEOUT="${TEST_TIMEOUT:-180}"
 TIMINGS="$ROOT/.godot/test-timings"
+JUNIT="${TEST_JUNIT-$ROOT/.godot/test-results.xml}"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
@@ -48,8 +52,10 @@ load_fails() { grep -c 'Failed to load script' "$1" || true; }
 if [[ $# -gt 0 ]]; then
 	MATCH="$(basename "$1" .gd)"
 	LOG="$WORK/single.log"
+	JUNIT_ARGS=()
+	[[ -n "$JUNIT" ]] && { mkdir -p "$(dirname "$JUNIT")"; JUNIT_ARGS=("-gjunit_xml_file=$JUNIT"); }
 	timeout "$TIMEOUT" "$GODOT" --headless --path "$ROOT" \
-		-s addons/gut/gut_cmdln.gd "-gselect=${MATCH}" >"$LOG" 2>&1
+		-s addons/gut/gut_cmdln.gd "-gselect=${MATCH}" "${JUNIT_ARGS[@]}" >"$LOG" 2>&1
 	STATUS=$?
 	paint "$LOG"
 	[[ $STATUS -eq 124 ]] && echo "test: timed out — a test is probably awaiting something that never comes" >&2
@@ -173,6 +179,23 @@ if [[ $(find "$WORK" -name 'shard.*.xml' | wc -l) -eq $JOBS ]]; then
 	grep -ho '<testsuite [^>]*>' "$WORK"/shard.*.xml \
 		| sed -nE 's/.*name="(res:\/\/)?([^"]*tests\/[^"]*)".*time="([0-9.]+)".*/\2\t\3/p' \
 		> "$TIMINGS.new" && mv "$TIMINGS.new" "$TIMINGS"
+fi
+
+# The per-shard JUnit files, merged into ONE report a CI system or an
+# editor can read: every <testsuite> under a single <testsuites>, with the
+# totals re-summed. Written whatever the verdict — a red run is exactly
+# when the report is wanted.
+if [[ -n "$JUNIT" ]] && compgen -G "$WORK/shard.*.xml" >/dev/null; then
+	mkdir -p "$(dirname "$JUNIT")"
+	{
+		echo '<?xml version="1.0" encoding="UTF-8"?>'
+		printf '<testsuites name="GutTests" tests="%s" failures="%s">\n' \
+			"$(grep -ho '<testsuites [^>]*>' "$WORK"/shard.*.xml | sed -nE 's/.* tests="([0-9]+)".*/\1/p' | paste -sd+ - | bc)" \
+			"$(grep -ho '<testsuites [^>]*>' "$WORK"/shard.*.xml | sed -nE 's/.* failures="([0-9]+)".*/\1/p' | paste -sd+ - | bc)"
+		cat "$WORK"/shard.*.xml | grep -vE '^<\?xml|^<testsuites |^</testsuites>'
+		echo '</testsuites>'
+	} > "$JUNIT"
+	echo "junit: ${JUNIT#"$ROOT"/}"
 fi
 
 # One summary in the shape every caller greps for, whatever the shard count.

@@ -12,6 +12,9 @@
 #   SHOOT_TIMEOUT=<n>           seconds before giving up (default scales
 #                               with the batch: 30 + 10 per scenario)
 #   SHOOT_KEEP=1                keep existing shots instead of clearing
+#   SHOOT_BASELINES=update      expect_shot WRITES its baselines (into
+#                               scenarios/baselines/<renderer>/) instead of
+#                               comparing; look at them, then commit them
 #   SHOOT_JOBS=auto             processes to split the batch across: auto
 #                               (default) is 2 for four or more scenarios
 #                               on a machine with four or more cores, else
@@ -107,6 +110,10 @@ if [[ ${#RUNNER[@]} -gt 0 ]]; then
 fi
 SEED_ARGS=()
 [[ -n "${SHOOT_SEED:-}" ]] && SEED_ARGS+=(--seed "$SHOOT_SEED")
+if [[ "${SHOOT_BASELINES:-}" == "update" ]]; then
+	SEED_ARGS+=(--update-baselines)
+	echo "shoot: writing expect_shot baselines (SHOOT_BASELINES=update)"
+fi
 
 # ── deal the batch across processes ──────────────────────────────────────
 CORES="$( (nproc 2>/dev/null || echo 4) )"

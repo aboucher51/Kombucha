@@ -36,6 +36,18 @@ extends Node
 ##                             (Control, or Node3D through the live camera)
 ##     assert_tooltip <NodeName> <text>  fail unless its tooltip contains text
 ##     frame_budget <ms> [n]   fail if the average frame over n exceeds ms
+##     expect_shot <name> [tolerance]  compare the frame against the committed
+##                             baseline scenarios/baselines/<renderer>/<stem>-
+##                             <name>.png; ERROR when more than the tolerance
+##                             (fraction of pixels, default 0) differs, with the
+##                             actual frame and a red-on-dim diff saved beside
+##                             the shots. No baseline is an ERROR that names
+##                             the path; SHOOT_BASELINES=update tools/shoot.sh
+##                             <scenario> writes it. Baselines are per
+##                             rasterizer (the <renderer> directory): a GPU and
+##                             llvmpipe do not agree pixel for pixel.
+##     mask <x> <y> <w> <h>    exclude a rect from the NEXT expect_shot only
+##                             (a clock, a frame counter, anything that moves)
 ##     expect_fail <command>   fail unless the wrapped command fails
 ##     # comment               ignored, as are blank lines
 ##
@@ -54,6 +66,8 @@ extends Node
 ## controls a stable `name`: an auto-named `@Button@3` cannot be clicked.
 
 const SHOT_DIR := "res://shots"
+## Committed, per rasterizer; .gdignore'd so the editor never imports them.
+const BASELINE_DIR := "res://scenarios/baselines"
 const SANDBOX_SAVE_ROOT := "user://sandbox_saves"
 ## Frames given to layout/tweens after a click before the next command.
 const DEFAULT_SETTLE_FRAMES := 8
@@ -68,6 +82,13 @@ var _fixed_seed := -1
 var _scenario_stem := ""
 ## The locale the game booted with, restored between scenarios.
 var _boot_locale := "en"
+## Rects the next expect_shot ignores; consumed by it.
+var _masks: Array[Rect2i] = []
+## --update-baselines: expect_shot WRITES baselines instead of comparing.
+var _update_baselines := false
+## Baselines written so far this scenario: a name met twice compares the
+## second time, so the FIRST frame is the reference, not the last.
+var _written_baselines: Dictionary = {}
 
 
 func _ready() -> void:
@@ -84,6 +105,7 @@ func _ready() -> void:
 	# Before the first await, so it lands ahead of the main scene's _ready —
 	# autoloads are readied before the main scene, which is the only reason
 	# this ordering is available.
+	_update_baselines = Cmdline.has_flag("--update-baselines")
 	var seed_arg := Cmdline.value("--seed")
 	if not seed_arg.is_empty():
 		_fixed_seed = int(seed_arg)
@@ -111,6 +133,8 @@ func _ready() -> void:
 			await _reset_between_scenarios()
 		_failures = 0
 		_shot_index = 0
+		_masks.clear()
+		_written_baselines.clear()
 		await _run(scenario_paths[index])
 		if _failures > 0:
 			failed.append(scenario_paths[index])
@@ -275,10 +299,26 @@ func _execute(line: String) -> String:
 			return _assert_tooltip(parts)
 		"frame_budget":
 			return await _frame_budget(parts)
+		"expect_shot":
+			return await _expect_shot(parts)
+		"mask":
+			if parts.size() < 5:
+				return "ERROR: usage: mask <x> <y> <w> <h>"
+			var rect := Rect2i(int(parts[1]), int(parts[2]), int(parts[3]), int(parts[4]))
+			if not rect.has_area():
+				return "ERROR: mask rect has no area"
+			_masks.append(rect)
+			return ""
 		"expect_fail":
 			if parts.size() < 2:
 				return "ERROR: usage: expect_fail <command>"
+			# A command expected to fail must not WRITE a baseline while
+			# updating: `expect_fail expect_shot missing` would create the
+			# very file whose absence it asserts.
+			var updating := _update_baselines
+			_update_baselines = false
 			var inner := await _execute(" ".join(parts.slice(1)))
+			_update_baselines = updating
 			if _is_error(inner):
 				return ""
 			return "ERROR: expected failure but got: '%s'" % inner
@@ -346,6 +386,113 @@ static func capture(viewport: Viewport) -> Image:
 	if texture == null:
 		return null
 	return texture.get_image()
+
+
+## Visual regression: the frame against a committed baseline for THIS
+## rasterizer. Reruns on one machine are pixel-identical (measured on
+## llvmpipe), so the default tolerance is zero and any drift is a diff to
+## look at; a moving element gets a `mask` line before the comparison, not a
+## tolerance that would also hide a real change. On a mismatch the actual
+## frame and a diff (differing pixels red over a dimmed frame) land beside
+## the shots, so the failure can be SEEN without rerunning anything.
+func _expect_shot(parts: PackedStringArray) -> String:
+	if parts.size() < 2:
+		return "ERROR: usage: expect_shot <name> [tolerance]"
+	var tolerance := float(parts[2]) if parts.size() > 2 else 0.0
+	var masks := _masks.duplicate()
+	_masks.clear()
+	for i in DEFAULT_SETTLE_FRAMES:
+		await get_tree().process_frame
+	var image := capture(get_viewport())
+	if image == null:
+		return "ERROR: no rendered frame — this display driver has no rasterizer (--headless?)"
+	var baseline_path := "%s/%s/%s-%s.png" % [BASELINE_DIR,
+		renderer_slug(RenderingServer.get_video_adapter_name()), _scenario_stem, parts[1]]
+	if _update_baselines and not _written_baselines.has(baseline_path):
+		_written_baselines[baseline_path] = true
+		DirAccess.make_dir_recursive_absolute(baseline_path.get_base_dir())
+		var err := image.save_png(baseline_path)
+		if err != OK:
+			return "ERROR: could not write baseline %s (%d)" % [baseline_path, err]
+		print("baseline: wrote %s" % baseline_path)
+		return ""
+	var baseline := load_png(baseline_path)
+	if baseline == null:
+		return "ERROR: no baseline %s — SHOOT_BASELINES=update tools/shoot.sh <scenario> writes it; commit it" % baseline_path
+	var result := compare(image, baseline, masks)
+	if result.has("error"):
+		return str(result["error"])
+	var differing := int(result["differing"])
+	var total := int(result["total"])
+	var fraction := float(differing) / float(total)
+	if fraction > tolerance:
+		DirAccess.make_dir_recursive_absolute(SHOT_DIR)
+		var actual_path := "%s/%s-diff-%s-actual.png" % [SHOT_DIR, _scenario_stem, parts[1]]
+		var diff_path := "%s/%s-diff-%s.png" % [SHOT_DIR, _scenario_stem, parts[1]]
+		image.save_png(actual_path)
+		(result["diff"] as Image).save_png(diff_path)
+		return "ERROR: %d of %d pixels (%.3f%%) differ from %s, tolerance %.3f%% — see %s" % [
+			differing, total, fraction * 100.0, baseline_path, tolerance * 100.0, diff_path]
+	print("expect_shot: %s matches %s (%d pixel(s) differ)" % [parts[1], baseline_path, differing])
+	return ""
+
+
+## The baseline directory for an adapter: its first word, lower-case, so
+## "llvmpipe (LLVM 21.1.8, 256 bits)" and "NVIDIA GeForce RTX 3080/PCIe/SSE2"
+## become "llvmpipe" and "nvidia". Per rasterizer family, not per driver
+## version: a version bump that changes pixels is a diff worth seeing.
+static func renderer_slug(adapter: String) -> String:
+	var word := adapter.strip_edges().split(" ", false)[0] if not adapter.strip_edges().is_empty() else "unknown"
+	var slug := ""
+	for ch in word.to_lower():
+		slug += ch if ch.is_valid_identifier() or ch.is_valid_int() else "-"
+	return slug.strip_edges().trim_prefix("-").trim_suffix("-")
+
+
+## A PNG from res:// or user:// as an Image, or null. Decoded from bytes:
+## Image.load() on a res:// path logs "loaded resource as image file",
+## which counts as an engine error and fails the suite.
+static func load_png(path: String) -> Image:
+	var bytes := FileAccess.get_file_as_bytes(path)
+	if bytes.is_empty():
+		return null
+	var image := Image.new()
+	if image.load_png_from_buffer(bytes) != OK:
+		return null
+	return image
+
+
+## Pixel comparison after the masks are painted over both images. Answers
+## {differing, total, diff} or {error}. The equal case is one buffer
+## compare; only a mismatch pays for the per-pixel walk that builds the
+## diff image. Static and renderer-free so a headless GUT test can pin it.
+static func compare(actual: Image, baseline: Image, masks: Array[Rect2i]) -> Dictionary:
+	if actual.get_size() != baseline.get_size():
+		return {"error": "ERROR: frame is %s but the baseline is %s" % [
+			actual.get_size(), baseline.get_size()]}
+	var a := actual.duplicate() as Image
+	var b := baseline.duplicate() as Image
+	a.convert(Image.FORMAT_RGBA8)
+	b.convert(Image.FORMAT_RGBA8)
+	for mask in masks:
+		a.fill_rect(mask, Color.BLACK)
+		b.fill_rect(mask, Color.BLACK)
+	var width := a.get_width()
+	var height := a.get_height()
+	var total := width * height
+	if a.get_data() == b.get_data():
+		return {"differing": 0, "total": total, "diff": null}
+	var diff := Image.create_empty(width, height, false, Image.FORMAT_RGBA8)
+	var differing := 0
+	for y in height:
+		for x in width:
+			var pa := a.get_pixel(x, y)
+			if pa == b.get_pixel(x, y):
+				diff.set_pixel(x, y, pa.darkened(0.7))
+			else:
+				differing += 1
+				diff.set_pixel(x, y, Color.RED)
+	return {"differing": differing, "total": total, "diff": diff}
 
 
 ## Synthesises a real press+release at the centre of the named Control, so
