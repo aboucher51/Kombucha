@@ -20,6 +20,11 @@
 #                               on a machine with four or more cores, else
 #                               1. Measured on a 36-scenario suite: two
 #                               shards 164 s against 204 s in one.
+#                               SHOOT_JOBS=1 runs the scenarios IN THE
+#                               ORDER GIVEN (one process has nothing to
+#                               balance): how an order-dependent pair, such
+#                               as "this scenario leaves the boot scene and
+#                               the next one must start on it", is proven.
 #   SHOOT_DISPLAY=auto          auto (default): a real display if one is
 #                               reachable, else a virtual one via xvfb-run;
 #                               real: fail without one; xvfb: force the
@@ -129,8 +134,13 @@ WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 # Longest-first from the last run's per-scenario seconds, unknown priced at
 # the average (so a new scenario is not assumed free); one boot per shard
-# is the fixed cost the deal is balancing against.
-printf '%s\n' "${SCENARIOS[@]}" | awk -v jobs="$JOBS" -v work="$WORK" -v timings="$TIMINGS" '
+# is the fixed cost the deal is balancing against. One shard keeps the
+# given order instead: there is nothing to balance, and the order is then
+# a promise a scenario pair can rely on.
+if [[ $JOBS -eq 1 ]]; then
+	printf '%s\n' "${SCENARIOS[@]}" > "$WORK/list.0"
+fi
+[[ $JOBS -gt 1 ]] && printf '%s\n' "${SCENARIOS[@]}" | awk -v jobs="$JOBS" -v work="$WORK" -v timings="$TIMINGS" '
 	BEGIN {
 		known = 0; sum = 0
 		while ((getline line < timings) > 0) {

@@ -510,7 +510,14 @@ Rules that keep the harness useful:
   (`SHOOT_JOBS`, longest-first from `.godot/shoot-timings`), each process
   with its own `XDG_DATA_HOME`, so no scenario may depend on another having
   run first and two `shoot.sh` runs cannot collide. Measured: two shards
-  164 s against 204 s for a 36-scenario suite.
+  164 s against 204 s for a 36-scenario suite. `SHOOT_JOBS=1` keeps the
+  order given, which is how an order-dependent pair is proven on purpose.
+- **Between scenarios the harness returns to the BOOT scene**
+  (`application/run/main_scene`), never a reload of wherever the last
+  scenario navigated: one project's first scenario that pressed Play left
+  every scenario after it starting inside the arena, and every `click
+  PlayButton` failed with "no node named". A scenario is free to leave the
+  boot scene; the next one starts on it.
 - **Where the project lives is the biggest cost.** Through WSL's `/mnt/c`
   bridge a real project boots in ~11 s per process, from the Linux
   filesystem in under a second; `check.sh` says so when it notices. Pacing

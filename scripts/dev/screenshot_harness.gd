@@ -214,7 +214,11 @@ func _reset_between_scenarios() -> void:
 	_sandbox()
 	if _fixed_seed >= 0:
 		seed(_fixed_seed)
-	get_tree().reload_current_scene()
+	# Back to the BOOT scene, not a reload of wherever the last scenario
+	# navigated: one project's first scenario that pressed Play left every
+	# scenario after it starting inside the arena instead of on the title.
+	var boot: String = ProjectSettings.get_setting("application/run/main_scene")
+	get_tree().change_scene_to_file(boot)
 	await get_tree().process_frame
 	await get_tree().process_frame
 

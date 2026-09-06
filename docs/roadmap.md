@@ -50,6 +50,17 @@ own status at the top.
   scenario trace is still open.
 - Docs: the update-template skill routes tooling to Kombucha and kit to
   the Template; ownership headers say KOMBUCHA; `sleep` has a scenario.
+- **Digit migrated** (first of former item 1): six console handlers moved
+  to `dev_hooks.gd`, tooling synced and stamped, CLAUDE.md sections
+  reconciled, full check green. Its one in-file harness fix (return to
+  the BOOT scene between scenarios) is now Kombucha's, with an ordered
+  scenario pair in `check.local.sh` proving it (`SHOOT_JOBS=1` keeps the
+  given order). Lesson for the rest: diff the WHOLE owned file against
+  the Kombucha commit the project was scaffolded from, not just the seams.
+- **NavalWar scoped, not migrated**: 552 non-comment lines of console
+  handlers (about 90 commands), 55 in the harness, 85 in its own sharded
+  `test.sh`, a check.sh lock, and an uncommitted working tree. It needs
+  its own session, started from a clean tree.
 
 ## Next
 
@@ -57,11 +68,12 @@ own status at the top.
    (`docs/plans/2026-09-05-linux-move.md`): Monmon trialled, boot 15.0 s
    to 0.8 s, full check 395 s to 217 s, identical results. Cut-over and the
    remaining projects are the user's call.
-1. **Migrate the siblings** (`docs/plans/2026-09-05-absorb-sibling-tooling.md`,
-   last section): per project, `/sync-godot-tooling --check`, move in-file
-   customisations into the seams, sync, full check. Order: Digit, Tandem,
-   Zoofle, Orbit, procedural-factory, BossFights, Monmon, FrogGame,
-   NavalWar. Carry the JsonLines line-base fix to Monmon.
+1. **Migrate the remaining siblings** (`docs/plans/2026-09-05-absorb-sibling-tooling.md`,
+   last section): per project, whole-file diff of every owned path against
+   the scaffold commit, move in-file customisations into the seams (and
+   generic fixes into Kombucha), sync, full check. Order: Tandem, Zoofle,
+   Orbit, procedural-factory, BossFights, Monmon, FrogGame, NavalWar
+   (scoped above). Carry the JsonLines line-base fix to Monmon.
 2. **Kit adoption by siblings**: a `--kit` report mode for
    `sync-tooling.sh` listing kit files that differ and the Template commit
    that last touched each, so a project can cherry-pick.

@@ -35,6 +35,18 @@ else
 	printf '  ok    selftest driver goes red on demand\n'
 fi
 
+# Between scenarios the harness must return to the BOOT scene, not reload
+# wherever the last scenario navigated: run an ordered pair in one process
+# (SHOOT_JOBS=1 keeps the order) — the first leaves the boot scene, the
+# second asserts it is back on it. Needs a display, like every scenario.
+if [[ "${QUICK:-0}" -eq 0 ]]; then
+	if SHOOT_JOBS=1 SHOOT_KEEP=1 tools/shoot.sh scenarios/leave_boot.txt scenarios/example.txt >/dev/null 2>&1; then
+		printf '  ok    harness returns to the boot scene between scenarios\n'
+	else
+		printf '  FAIL  harness did not return to the boot scene between scenarios\n'; MISSING=1
+	fi
+fi
+
 # The runner's own guards, proven against a scratch copy (see selftest.sh).
 tools/selftest.sh || MISSING=1
 exit $MISSING

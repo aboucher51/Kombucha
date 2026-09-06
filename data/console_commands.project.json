@@ -28,5 +28,17 @@
 				"required": true
 			}
 		]
+	},
+	{
+		"id": "goto",
+		"handler": "goto",
+		"usage": "goto <scene_path>   (leave the boot scene; the harness must return to it)",
+		"args": [
+			{
+				"name": "scene_path",
+				"kind": "string",
+				"required": true
+			}
+		]
 	}
 ]

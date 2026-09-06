@@ -43,4 +43,13 @@ func console_dispatch(handler: String, args: Dictionary) -> Variant:
 			return "Noted."
 		"notes":
 			return "No notes." if notes.is_empty() else "\n".join(notes)
+		"goto":
+			# Leaves the boot scene, the way a game's Play button does; the
+			# harness must bring the NEXT scenario back to it (see
+			# scenarios/leave_boot.txt and check.local.sh's ordered pair).
+			var path := str(args["scene_path"])
+			if not ResourceLoader.exists(path):
+				return "ERROR: no scene at '%s'" % path
+			GameManager.change_scene(path)
+			return "Going to %s." % path
 	return null

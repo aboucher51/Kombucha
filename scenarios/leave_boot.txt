@@ -1,0 +1,11 @@
+# Leaves the boot scene, as a game's Play button does. Between scenarios
+# the harness returns to the BOOT scene (application/run/main_scene), not
+# a reload of the scene this one ended on; check.local.sh runs this and
+# example.txt as an ordered pair in one process to prove it. One project's
+# first scenario that pressed Play left every later one inside the arena.
+wait 5
+goto res://scenes/second.tscn
+wait 5
+assert_visible SecondLabel
+expect_fail assert_visible TitleLabel
+shot second
