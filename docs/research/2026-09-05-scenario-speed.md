@@ -88,3 +88,23 @@ Windows binary through interop (none installed), resolution 640x360
   scenes), resolution changes.
 - Recommendation for every project on this machine: clone under the Linux
   filesystem for the loop, or point `GODOT` at a Windows binary.
+
+
+## Addendum 2026-09-06: the GPU is a lever after all
+
+The d3d12 passthrough was never selected because Mesa picks llvmpipe for
+GL under Xwayland unless told otherwise; `GALLIUM_DRIVER=d3d12` selects
+it and the renderer line reads `D3D12 (NVIDIA GeForce RTX 3080)`.
+
+| FrogGame, 36 scenarios, `SHOOT_JOBS=1` | wall | shots | failed |
+|---|---|---|---|
+| llvmpipe (LLVM 21.1.8) | 207.7 s | 145 | 0 |
+| d3d12 (RTX 3080) | 105.0 s | 145 | 0 |
+
+Determinism: the fixture's boot frame is byte-identical between GPU
+reruns and between llvmpipe reruns, and differs between the two
+rasterizers (baselines stay per rasterizer). The pause-menu and
+pseudo-locale shots differ between reruns on BOTH rasterizers: they are
+captured eight frames after a `pop_in` tween that runs on wall time, so
+the frame count does not pin the animation phase. `shoot.sh` now uses
+the GPU by default (`SHOOT_GPU=0` for llvmpipe); CI stays on llvmpipe.

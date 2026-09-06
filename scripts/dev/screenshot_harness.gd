@@ -49,7 +49,20 @@ extends Node
 ##     mask <x> <y> <w> <h>    exclude a rect from the NEXT expect_shot only
 ##                             (a clock, a frame counter, anything that moves)
 ##     expect_fail <command>   fail unless the wrapped command fails
+##     reset                   back to the boot scene with a fresh sandbox,
+##                             exactly what happens between scenarios
 ##     # comment               ignored, as are blank lines
+##
+## SERVE MODE keeps one engine alive and feeds it scenario files as they
+## appear, so iterating on a scenario costs no boots:
+##
+##     godot4 --path . -- --serve <dir>
+##
+## Every `<dir>/*.cmd` (a scenario file, taken in name order) is run
+## against the LIVE state — no reset between them unless a line says
+## `reset` — then answered with `<name>.done` holding "ok" or "fail <n>"
+## and removed. A file named `quit` ends the process. tools/serve.sh
+## wraps start / run / say / stop.
 ##
 ## Beside the PNGs, every scenario leaves shots/<stem>.jsonl: one line per
 ## executed command with its reply and milliseconds, then a summary line.
@@ -98,7 +111,8 @@ var _written_baselines: Dictionary = {}
 
 func _ready() -> void:
 	var scenario_paths := Cmdline.values("--scenario")
-	if scenario_paths.is_empty():
+	var serve_dir := Cmdline.value("--serve")
+	if scenario_paths.is_empty() and serve_dir.is_empty():
 		queue_free()
 		return
 
@@ -129,6 +143,10 @@ func _ready() -> void:
 	print("harness: renderer %s / %s" % [RenderingServer.get_video_adapter_name(),
 		RenderingServer.get_current_rendering_driver_name()])
 
+	if not serve_dir.is_empty():
+		await _serve(serve_dir)
+		return
+
 	# Every scenario in ONE process: booting Godot costs seconds, a scenario
 	# well under one. Anything that leaks across the reload between scenarios
 	# is a real bug worth finding, not a reason to pay for fresh processes.
@@ -151,6 +169,41 @@ func _ready() -> void:
 		for path in failed:
 			print("  FAILED %s" % path)
 	get_tree().quit(1 if not failed.is_empty() else 0)
+
+
+## One engine, many scenarios over time. Commands arrive as files because
+## a file is the seam every shell already has: no socket, no protocol, and
+## the reply is a file too. Polled once a frame; a scenario runs to its end
+## before the next is looked at, so replies are in order.
+func _serve(dir_path: String) -> void:
+	DirAccess.make_dir_recursive_absolute(dir_path)
+	print("harness: serving %s" % dir_path)
+	while true:
+		await get_tree().process_frame
+		var dir := DirAccess.open(dir_path)
+		if dir == null:
+			continue
+		if dir.file_exists("quit"):
+			dir.remove("quit")
+			break
+		var pending: Array[String] = []
+		for file_name in dir.get_files():
+			if file_name.ends_with(".cmd"):
+				pending.append(file_name)
+		pending.sort()
+		for file_name in pending:
+			var path := dir_path.path_join(file_name)
+			_failures = 0
+			_shot_index = 0
+			_masks.clear()
+			_written_baselines.clear()
+			await _run(path)
+			var done := FileAccess.open(dir_path.path_join(file_name.get_basename() + ".done"), FileAccess.WRITE)
+			if done != null:
+				done.store_string("ok\n" if _failures == 0 else "fail %d\n" % _failures)
+			dir.remove(file_name)
+	_restore()
+	get_tree().quit(0)
 
 
 ## The state every scenario starts from. This resets what every project has
@@ -329,6 +382,9 @@ func _execute(line: String) -> String:
 				return "ERROR: mask rect has no area"
 			_masks.append(rect)
 			return ""
+		"reset":
+			await _reset_between_scenarios()
+			return ""
 		"expect_fail":
 			if parts.size() < 2:
 				return "ERROR: usage: expect_fail <command>"
@@ -459,10 +515,15 @@ func _expect_shot(parts: PackedStringArray) -> String:
 
 ## The baseline directory for an adapter: its first word, lower-case, so
 ## "llvmpipe (LLVM 21.1.8, 256 bits)" and "NVIDIA GeForce RTX 3080/PCIe/SSE2"
-## become "llvmpipe" and "nvidia". Per rasterizer family, not per driver
-## version: a version bump that changes pixels is a diff worth seeing.
+## become "llvmpipe" and "nvidia"; Mesa's "D3D12 (NVIDIA GeForce ...)"
+## wrapper is unwrapped to the GPU vendor inside it. Per rasterizer
+## family, not per driver version: a version bump that changes pixels is
+## a diff worth seeing.
 static func renderer_slug(adapter: String) -> String:
-	var word := adapter.strip_edges().split(" ", false)[0] if not adapter.strip_edges().is_empty() else "unknown"
+	var name := adapter.strip_edges()
+	if name.to_lower().begins_with("d3d12 (") and name.ends_with(")"):
+		name = name.substr(7, name.length() - 8).strip_edges()
+	var word := name.split(" ", false)[0] if not name.is_empty() else "unknown"
 	var slug := ""
 	for ch in word.to_lower():
 		slug += ch if ch.is_valid_identifier() or ch.is_valid_int() else "-"

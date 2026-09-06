@@ -60,6 +60,18 @@ PY
 	else
 		printf '  FAIL  scenario trace shots/example.jsonl missing or incomplete\n'; MISSING=1
 	fi
+	# Serve mode: one engine, commands as files, verdict per command. A
+	# passing run, a failing line (the gate's own red), and a clean stop.
+	if tools/serve.sh start >/dev/null 2>&1 \
+			&& tools/serve.sh run scenarios/example.txt 2>&1 | grep -q '^scenario ok' \
+			&& ! tools/serve.sh say "assert_visible NoSuchNode" >/dev/null 2>&1 \
+			&& tools/serve.sh say "assert_visible TitleLabel" >/dev/null 2>&1 \
+			&& tools/serve.sh stop >/dev/null 2>&1 && ! tools/serve.sh status >/dev/null 2>&1; then
+		printf '  ok    serve mode runs, fails a bad line, stops\n'
+	else
+		printf '  FAIL  serve mode (tools/serve.sh) — see .godot/serve/engine.log\n'; MISSING=1
+		tools/serve.sh stop >/dev/null 2>&1
+	fi
 	# The CI path (virtual display, software GL) exercised HERE when the
 	# package is present, so the branch cannot rot between pushes.
 	if command -v xvfb-run >/dev/null; then

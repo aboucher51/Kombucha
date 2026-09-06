@@ -88,6 +88,18 @@ own status at the top.
   virtual display when `xvfb-run` exists and prints a `--` line until it
   is installed (`sudo apt install xvfb`, needs the user's password).
 
+- **The GPU** (former "not a lever" verdict revised): WSLg's Mesa d3d12
+  driver renders FrogGame's 36 scenarios in 105 s against 208 s on
+  llvmpipe, same 145 shots, and a settled frame is pixel-identical
+  between GPU reruns. `shoot.sh` uses it by default (`SHOOT_GPU=0` for
+  llvmpipe, which CI keeps); `expect_shot` baselines are per rasterizer,
+  the fixture commits both. Found on the way: a frame captured mid-tween
+  varies run to run on either rasterizer.
+- **The long-lived engine** (former item 3): `--serve <dir>` in the
+  harness and `tools/serve.sh start|run|say|stop`; commands are files,
+  replies are files, verdict per command, `reset` returns to the boot
+  scene. Proven in `check.local.sh` (runs, fails a bad line, stops).
+
 ## Next
 
 0. **Move projects to the Linux filesystem**
@@ -103,14 +115,10 @@ own status at the top.
 2. **Kit adoption by siblings**: a `--kit` report mode for
    `sync-tooling.sh` listing kit files that differ and the Template commit
    that last touched each, so a project can cherry-pick.
-3. **Long-lived game process** fed by a command queue (file-based, or the
-   native debugger port via `EngineDebugger.register_message_capture`), so
-   iterating on one scenario costs zero boots.
-4. **Windows binary through interop** (`GODOT=...console.exe`, `wslpath`,
+3. **Windows binary through interop** (`GODOT=...console.exe`, `wslpath`,
    `taskkill` on timeout) once a Windows Godot build is installed; the
    /mnt boot cost makes it worth measuring.
-5. **A JSONL trace per scenario** beside the PNGs (the JUnit half landed).
-6. **`SHOOT_SLOW`** from the measured runner time: CI's scenario half ran
+4. **`SHOOT_SLOW`** from the measured runner time: CI's scenario half ran
    in seconds, so the default 3x is generous; revisit when a real suite
    runs there.
 

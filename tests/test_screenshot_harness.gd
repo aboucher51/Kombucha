@@ -69,6 +69,8 @@ func test_renderer_slug_is_the_adapter_family() -> void:
 	assert_eq(Harness.renderer_slug("NVIDIA GeForce RTX 3080/PCIe/SSE2"), "nvidia")
 	assert_eq(Harness.renderer_slug("AMD Radeon RX 6800 XT (RADV NAVI21)"), "amd")
 	assert_eq(Harness.renderer_slug(""), "unknown")
+	assert_eq(Harness.renderer_slug("D3D12 (NVIDIA GeForce RTX 3080)"), "nvidia",
+		"Mesa's d3d12 wrapper names the GPU inside it")
 
 
 func test_a_missing_baseline_loads_as_null_without_an_engine_error() -> void:

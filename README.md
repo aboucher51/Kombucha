@@ -22,6 +22,9 @@ tools/shoot.sh              # screenshot scenarios only, dealt across
                             # SHOOT_JOBS processes; finds or starts a display
 SHOOT_BASELINES=update tools/shoot.sh <scenario>
                             # (re)write the expect_shot baselines it names
+tools/serve.sh start|run|say|stop
+                            # one engine kept alive; scenarios and lines
+                            # against its live state, no boot per try
 tools/export.sh             # Linux + Windows builds, smoke-tested
 ```
 

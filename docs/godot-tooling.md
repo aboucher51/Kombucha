@@ -139,7 +139,23 @@ For anything visual, do not ask the user what it looks like — capture it:
 ```bash
 tools/shoot.sh                        # every scenario, one Godot process
 tools/shoot.sh scenarios/example.txt  # just one
+tools/serve.sh start                  # one engine kept alive; then
+tools/serve.sh run scenarios/x.txt    #   a scenario against the LIVE state
+tools/serve.sh say "click PlayButton" #   one line; `say reset` = boot scene
+tools/serve.sh stop
 ```
+
+**Iterating on one scenario wants `serve`, proving wants `shoot`.** Serve
+mode keeps one engine on the display and feeds it scenario files as they
+appear, answering each with its printed lines and a verdict in under a
+tenth of a second; state carries over between commands unless a line says
+`reset`. Nothing about it is a gate: `check.sh` runs `shoot.sh`, which
+boots fresh, deals the batch, and is what CI runs.
+
+**Rendering is on the GPU when WSLg offers one** (`SHOOT_GPU=auto`, Mesa's
+d3d12 driver): measured twice as fast on a 36-scenario suite, same shots,
+and a settled frame is pixel-identical between GPU reruns. `SHOOT_GPU=0`
+forces llvmpipe, which the virtual display (CI) always uses.
 
 Scenarios are plain-text files in `scenarios/`, one command per line. Write a
 new scenario for whatever you are working on rather than editing an existing
@@ -157,7 +173,7 @@ does), `click_at <x> <y>` (viewport coordinates, for Node2D boards),
 `assert_visible`, `assert_onscreen` (Control, or Node3D through the live
 camera), `assert_tooltip <NodeName> <text>`, `frame_budget <ms> [frames]`,
 `expect_shot <name> [tolerance]`, `mask <x> <y> <w> <h>`, `expect_fail`,
-and `#` comments. Project-specific commands go in
+`reset`, and `#` comments. Project-specific commands go in
 `scripts/dev/dev_hooks.gd`'s `scenario_command()` — return `""` on success,
 `"ERROR: ..."` on failure, `null` to hand the line to the console. **The
 harness only fails on error-shaped replies**, so an assertion command must
@@ -208,7 +224,12 @@ Rules that keep the harness useful:
   name; `expect_fail` never writes). The `<renderer>` directory is the
   adapter family (`llvmpipe`, `nvidia`): a GPU and a software rasterizer
   do not agree pixel for pixel, and a missing baseline for the machine's
-  renderer is an ERROR that names the path, never a silent pass.
+  renderer is an ERROR that names the path, never a silent pass. A
+  project therefore commits one baseline per rasterizer it checks on:
+  the GPU's (the default here) and `llvmpipe` for CI, written with
+  `SHOOT_GPU=0 SHOOT_BASELINES=update`. **A frame captured mid-tween is
+  not the same twice** on any rasterizer (`pop_in` was measured to vary
+  run to run): `settle` or `wait` past the animation before `expect_shot`.
 - **`frame_budget` is a regression tripwire, not a device target.** It
   turns vsync off for the measurement (with vsync on every scene reads
   16.7 ms and the gate can never fail) and prints the number on pass, so

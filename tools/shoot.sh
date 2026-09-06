@@ -31,6 +31,15 @@
 #                               virtual display (how the CI path is
 #                               exercised on a machine with WSLg)
 #   SHOOT_SLOW=3                timeout multiplier under the virtual display
+#   SHOOT_GPU=auto              auto (default): render on the GPU through
+#                               Mesa's d3d12 driver when WSLg offers one
+#                               (GALLIUM_DRIVER=d3d12) and a real display
+#                               is in use; 0 forces llvmpipe (what CI
+#                               renders with, so its expect_shot baselines
+#                               can be made here). Measured on a 36-
+#                               scenario suite: 208 s llvmpipe, 105 s GPU,
+#                               same shots, and static frames are
+#                               pixel-identical between GPU reruns.
 #   GODOT=/path/to/binary       the engine to run (see check.sh)
 #
 # Every process gets its OWN XDG_DATA_HOME: user:// (saves, the sandboxed
@@ -103,7 +112,15 @@ case "${SHOOT_DISPLAY:-auto}" in
 		fi ;;
 	*) echo "shoot: SHOOT_DISPLAY must be auto, real or xvfb" >&2; exit 2 ;;
 esac
-[[ -z "${SHOOT_KEEP:-}" ]] && rm -f "$ROOT"/shots/*.png 2>/dev/null
+[[ -z "${SHOOT_KEEP:-}" ]] && rm -f "$ROOT"/shots/*.png "$ROOT"/shots/*.jsonl 2>/dev/null
+
+# The GPU is twice as fast and just as deterministic for a settled frame;
+# llvmpipe stays the rasterizer of the virtual display (CI) and of any
+# run that must match it.
+gpu_available() { [[ -z "${GALLIUM_DRIVER:-}" && -e /usr/lib/x86_64-linux-gnu/dri/d3d12_dri.so ]]; }
+if [[ ${#RUNNER[@]} -eq 0 && "${SHOOT_GPU:-auto}" != "0" ]] && gpu_available; then
+	export GALLIUM_DRIVER=d3d12
+fi
 
 GODOT_ARGS=(--path "$ROOT")
 [[ -n "${SHOOT_RESOLUTION:-}" ]] && GODOT_ARGS+=(--resolution "$SHOOT_RESOLUTION")
