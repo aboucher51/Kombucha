@@ -180,15 +180,49 @@ TOOLING_SRC="${GODOT_TOOLING:-}"
 if [[ -z "$TOOLING_SRC" && -f tools/TOOLING_VERSION ]]; then
 	TOOLING_SRC="$(sed -n '2s/^synced .* from //p' tools/TOOLING_VERSION)"
 fi
+# An installed plugin is a checkout without .git: its commit is the sha
+# Claude Code recorded at install, and a newer install lives at a new
+# path, so the stamped path may be gone. installed_plugins.json answers
+# both (the file is overridable for Kombucha's self-test).
+plugin_install() { # prints "<sha> <path>" for the kombucha plugin, or nothing
+	python3 - "${1:-}" "${INSTALLED_PLUGINS_JSON:-$HOME/.claude/plugins/installed_plugins.json}" <<-'PY' 2>/dev/null
+		import json, os, sys
+		wanted = os.path.realpath(sys.argv[1]) if sys.argv[1] else ""
+		try:
+		    plugins = json.load(open(os.path.expanduser(sys.argv[2])))["plugins"]
+		except Exception:
+		    raise SystemExit
+		found = None
+		for key, installs in plugins.items():
+		    for inst in installs:
+		        path = inst.get("installPath", "")
+		        if wanted and os.path.realpath(path) == wanted:
+		            found = inst; break
+		        if key.startswith("kombucha@") and found is None:
+		            found = inst
+		if found and found.get("gitCommitSha"):
+		    print(found["gitCommitSha"], found.get("installPath", ""))
+	PY
+}
+if [[ -n "$TOOLING_SRC" && ! -d "$TOOLING_SRC" ]]; then
+	TOOLING_SRC="$(plugin_install | cut -d' ' -f2-)"
+fi
 if [[ -n "$TOOLING_SRC" && -f tools/TOOLING_VERSION && -f tools/tooling-manifest.txt \
-		&& -d "$TOOLING_SRC/.git" && "$ROOT" != "$TOOLING_SRC" ]]; then
+		&& -d "$TOOLING_SRC" && "$ROOT" != "$TOOLING_SRC" ]]; then
 	SYNCED="$(head -1 tools/TOOLING_VERSION)"
-	mapfile -t OWNED < <(grep -vE '^\s*(#|$)' tools/tooling-manifest.txt)
-	BEHIND="$(git -C "$TOOLING_SRC" rev-list --count "$SYNCED"..HEAD -- "${OWNED[@]}" 2>/dev/null || echo "?")"
-	if [[ "$BEHIND" == "?" ]]; then
-		echo "note: tools/TOOLING_VERSION names a commit Kombucha does not have"
-	elif [[ "$BEHIND" -gt 0 ]]; then
-		echo "note: tooling is $BEHIND Kombucha commit(s) behind — run /sync-godot-tooling"
+	if [[ -d "$TOOLING_SRC/.git" ]]; then
+		mapfile -t OWNED < <(grep -vE '^\s*(#|$)' tools/tooling-manifest.txt)
+		BEHIND="$(git -C "$TOOLING_SRC" rev-list --count "$SYNCED"..HEAD -- "${OWNED[@]}" 2>/dev/null || echo "?")"
+		if [[ "$BEHIND" == "?" ]]; then
+			echo "note: tools/TOOLING_VERSION names a commit Kombucha does not have"
+		elif [[ "$BEHIND" -gt 0 ]]; then
+			echo "note: tooling is $BEHIND Kombucha commit(s) behind — run /sync-godot-tooling"
+		fi
+	else
+		CURRENT="$(plugin_install "$TOOLING_SRC" | cut -d' ' -f1)"
+		if [[ -n "$CURRENT" && "$CURRENT" != "$SYNCED" ]]; then
+			echo "note: tooling copy is from ${SYNCED:0:12}, the installed plugin is at ${CURRENT:0:12} — run /sync-godot-tooling"
+		fi
 	fi
 fi
 

@@ -40,6 +40,14 @@ if ! git config user.email >/dev/null; then
 	git config user.email "$(git -C "$ROOT" config user.email)"
 fi
 godot4 --headless --path . --import >/dev/null 2>&1 || true
+# The template's committed project map describes the TEMPLATE; for the
+# new project it is stale, and check.sh fails on a stale map when the
+# tool is here. Regenerate it, or drop it so the check says "no map yet".
+if command -v godot-map >/dev/null 2>&1; then
+	godot-map . >/dev/null
+else
+	rm -rf PROJECT_MAP.md .godot-map
+fi
 tools/check.sh --quick
 git add -A
 git commit -qm "Scaffold from Template"

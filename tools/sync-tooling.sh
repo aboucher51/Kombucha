@@ -97,8 +97,29 @@ if [[ "$MODE" == "--kit" ]]; then
 	exit 0
 fi
 
+# The commit the source is at. A clone answers from git. An installed
+# plugin is a checkout WITHOUT .git, so the answer is the sha Claude Code
+# recorded when it installed it (installed_plugins.json, overridable for
+# the self-test), else the manifest's version: the stamp must always say
+# something a person can act on.
+source_commit() {
+	if [[ -d "$SRC/.git" ]]; then git -C "$SRC" rev-parse HEAD; return; fi
+	local sha
+	sha="$(python3 - "$SRC" "${INSTALLED_PLUGINS_JSON:-$HOME/.claude/plugins/installed_plugins.json}" <<-'PY' 2>/dev/null
+		import json, os, sys
+		src = os.path.realpath(sys.argv[1])
+		for installs in json.load(open(sys.argv[2]))["plugins"].values():
+		    for inst in installs:
+		        if os.path.realpath(inst.get("installPath", "")) == src and inst.get("gitCommitSha"):
+		            print(inst["gitCommitSha"]); raise SystemExit
+	PY
+	)"
+	if [[ -n "$sha" ]]; then echo "$sha"; return; fi
+	echo "plugin-$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1]))["version"])' "$SRC/.claude-plugin/plugin.json" 2>/dev/null || echo unknown)"
+}
+
 # A dirty source would stamp a commit the copied files do not match.
-if [[ "$MODE" != "--check" ]] && [[ -n "$(git -C "$SRC" status --porcelain -- "${OWNED[@]}")" ]]; then
+if [[ "$MODE" != "--check" && -d "$SRC/.git" ]] && [[ -n "$(git -C "$SRC" status --porcelain -- "${OWNED[@]}")" ]]; then
 	echo "sync-tooling: Kombucha has uncommitted changes to owned files — commit them first" >&2
 	exit 2
 fi
@@ -196,7 +217,7 @@ if [[ -f "$DEST/CLAUDE.md" ]] && ! grep -q '^@docs/godot-tooling.md' "$DEST/CLAU
 fi
 
 {
-	git -C "$SRC" rev-parse HEAD
+	source_commit
 	echo "synced $(date -u +%Y-%m-%dT%H:%M:%SZ) from $SRC"
 	echo "Owned paths are in tools/tooling-manifest.txt; refresh with /sync-godot-tooling."
 } > "$DEST/tools/TOOLING_VERSION"

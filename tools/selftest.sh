@@ -86,4 +86,16 @@ if "$SRC2/tools/sync-tooling.sh" "$DEST2" --no-check >/dev/null 2>&1; then
 else
 	say ok "sync refuses a dirty source"
 fi
+# 4. An installed plugin is the source without .git: the stamp must be
+#    the sha Claude Code recorded for that install, never "unknown".
+rm -rf "$SRC2/.git"
+PLUGINS_JSON="$(mktemp)"
+printf '{"version":2,"plugins":{"kombucha@kombucha":[{"installPath":"%s","gitCommitSha":"feedfacefeedfacefeedfacefeedfacefeedface"}]}}\n' "$SRC2" > "$PLUGINS_JSON"
+OUT="$(GODOT_TEMPLATE=/nonexistent INSTALLED_PLUGINS_JSON="$PLUGINS_JSON" "$SRC2/tools/sync-tooling.sh" "$DEST2" --no-check 2>&1)"; CODE=$?
+rm -f "$PLUGINS_JSON"
+if [[ $CODE -eq 0 && "$(head -1 "$DEST2/tools/TOOLING_VERSION")" == "feedfacefeedfacefeedfacefeedfacefeedface" ]]; then
+	say ok "a git-less plugin source stamps the installed sha"
+else
+	say FAIL "a git-less source stamped '$(head -1 "$DEST2/tools/TOOLING_VERSION" 2>/dev/null)' (exit $CODE): $(tail -2 <<<"$OUT")"; FAILED=1
+fi
 exit $FAILED
