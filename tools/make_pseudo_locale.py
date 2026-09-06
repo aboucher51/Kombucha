@@ -14,7 +14,7 @@ then re-import so game.xa.translation is rebuilt. A language dropdown must
 filter "xa" out — players never see it; scenarios/pseudo_locale.txt
 switches to it with the console's `locale xa`.
 
-OWNED BY MICROBIOME (tools/tooling-manifest.txt).
+OWNED BY KOMBUCHA (tools/tooling-manifest.txt).
 """
 import csv
 import re

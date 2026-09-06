@@ -63,6 +63,11 @@ for entry in "${OWNED[@]}"; do
 	fi
 done
 
+# The execute bit travels with the copy (cp -p, rsync -a), but a project
+# checked out on a mode-blind filesystem may have lost it on its own
+# scripts; every tool script must be runnable or check.sh cannot even start.
+find "$DEST/tools" -name '*.sh' -exec chmod +x {} +
+
 # Extension files: created once, never overwritten.
 seed() { # seed-file, destination
 	if [[ ! -e "$DEST/$2" ]]; then

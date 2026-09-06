@@ -28,7 +28,7 @@
 # whatever did load. Every log is grepped for the load failure, and the
 # scripts that ran are counted against the scripts on disk.
 #
-# OWNED BY MICROBIOME (tools/tooling-manifest.txt); do not edit in a project.
+# OWNED BY KOMBUCHA (tools/tooling-manifest.txt); do not edit in a project.
 set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 GODOT="${GODOT:-godot4}"

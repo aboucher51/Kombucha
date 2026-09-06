@@ -12,7 +12,7 @@
 # GODOT=/path/to/binary picks the engine (booting through WSL's /mnt/c
 # bridge costs seconds per process; a native or Windows binary does not).
 #
-# OWNED BY MICROBIOME (tools/tooling-manifest.txt) and overwritten by
+# OWNED BY KOMBUCHA (tools/tooling-manifest.txt) and overwritten by
 # /sync-godot-tooling. Project-specific checks go in tools/check.local.sh,
 # which runs between the boot and the scenarios and is never synced over.
 set -uo pipefail
@@ -44,6 +44,20 @@ FAILED=()
 pass_or_fail() { # name, status
 	if [[ $2 -eq 0 ]]; then printf '  ok    %s\n' "$1"; else printf '  FAIL  %s\n' "$1"; FAILED+=("$1"); fi
 }
+
+echo "── scripts ──"
+# Git records the execute bit, and a filesystem that does not honour modes
+# (WSL's /mnt/c, Git Bash) makes every file look executable, so a script
+# committed without the bit works everywhere until the checkout lands on a
+# real filesystem: then this very script is "Permission denied", and a
+# non-executable check.local.sh below would read as "no local checks".
+# Fix: chmod +x <file> && git update-index --chmod=+x <file>.
+NOEXEC=()
+for script in tools/*.sh; do
+	[[ -x "$script" ]] || NOEXEC+=("$script")
+done
+[[ ${#NOEXEC[@]} -eq 0 ]]
+pass_or_fail "tool scripts executable${NOEXEC[*]:+ (missing +x: ${NOEXEC[*]})}" $?
 
 echo "── tests ──"
 OUT="$(tools/test.sh 2>&1)"; STATUS=$?
@@ -89,10 +103,16 @@ fi
 # The project's own checks (sims, balance gates, linters). It prints lines
 # in the same shape and its exit code is the verdict; QUICK tells it whether
 # a display is available.
-if [[ -x tools/check.local.sh ]]; then
+# A present but non-executable file is a FAILURE, not "no local checks":
+# skipping it silently would drop the project's gates from the verdict.
+if [[ -f tools/check.local.sh ]]; then
 	echo "── local ──"
-	QUICK=$QUICK tools/check.local.sh
-	pass_or_fail "local checks (tools/check.local.sh)" $?
+	if [[ -x tools/check.local.sh ]]; then
+		QUICK=$QUICK tools/check.local.sh
+		pass_or_fail "local checks (tools/check.local.sh)" $?
+	else
+		pass_or_fail "local checks (tools/check.local.sh is not executable)" 1
+	fi
 fi
 
 if [[ $QUICK -eq 0 ]]; then

@@ -310,6 +310,13 @@ tools/export.sh         # Linux + Windows builds, then smoke-tests the binary
 ```
 
 Use check.sh before saying something works. It names whatever failed.
+**The execute bit is part of the commit**: git records it, and a
+filesystem that ignores modes (`/mnt/c`, Git Bash) makes every file look
+executable, so a script committed as 100644 works there and is
+"Permission denied" the day the checkout lands on a real filesystem, with
+a non-executable `check.local.sh` reading as "no local checks". check.sh's
+first section fails on any `tools/*.sh` without the bit; the fix is
+`chmod +x` plus `git update-index --chmod=+x`.
 Project-specific checks (sims, gates, linters) go in `tools/check.local.sh`,
 which check.sh runs between the boot and the scenarios with `QUICK` set;
 check.sh itself is synced over. When a project's copy of the tooling is

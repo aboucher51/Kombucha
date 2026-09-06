@@ -37,7 +37,7 @@
 # that means WSLg (DISPLAY=:0); anywhere else, Xvfb with Mesa's llvmpipe is
 # what Godot's own CI uses (`xvfb-run godot --audio-driver Dummy ...`).
 #
-# OWNED BY MICROBIOME (tools/tooling-manifest.txt); do not edit in a project.
+# OWNED BY KOMBUCHA (tools/tooling-manifest.txt); do not edit in a project.
 set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 GODOT="${GODOT:-godot4}"

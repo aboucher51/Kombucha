@@ -17,7 +17,7 @@ extends Node
 ## handler must return an error, never a "false" answer that passes
 ## silently.
 ##
-## The console (like the harness) is OWNED BY MICROBIOME and overwritten by
+## The console (like the harness) is OWNED BY KOMBUCHA and overwritten by
 ## /sync-godot-tooling. Project commands do not go in this file: their
 ## surface goes in data/console_commands.project.json and their behaviour in
 ## scripts/dev/dev_hooks.gd (`console_dispatch(handler, args)`), which this

@@ -45,7 +45,7 @@ extends Node
 ##
 ## Everything else goes to the project's dev hooks (scripts/dev/dev_hooks.gd,
 ## `scenario_command`) and then to the debug console. This file is OWNED BY
-## MICROBIOME and overwritten by /sync-godot-tooling — project commands and
+## KOMBUCHA and overwritten by /sync-godot-tooling — project commands and
 ## project sandbox resets live in dev_hooks.gd, never here. When adding UI,
 ## add an input-free seam alongside it (a method the harness can call), or
 ## the feature is unscreenshotable and untestable.
