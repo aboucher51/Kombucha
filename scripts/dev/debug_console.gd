@@ -119,32 +119,26 @@ func execute(line: String) -> String:
 	return _dispatch(command, parsed["args"])
 
 
-## A command line into tokens: spaces separate, DOUBLE QUOTES group, and
-## `""` is the EMPTY value. Without the quotes an assertion that a field
-## is UNSET cannot be written at all — a trailing space is trimmed and the
-## argument reads as missing — so one project asserted a neighbouring fact
-## instead, which is the weaker scenario. The harness splits scenario
-## lines the same way: scenario lines and console lines are one vocabulary.
+## A command line into tokens: spaces separate, and the token `""` is the
+## EMPTY value. Without it an assertion that a field is UNSET cannot be
+## written at all — a trailing space is trimmed and the argument reads as
+## missing — so one project asserted a neighbouring fact instead, which is
+## the weaker scenario.
+##
+## Every OTHER quote is left exactly where it is. A project's console
+## command may take JSON, where `ed_set name "Shore War"` needs its quotes
+## to reach the handler: a version of this that grouped quoted phrases and
+## stripped the quotes broke thirteen scenario files in one project on the
+## day it was tried. `""` is therefore reserved: a handler that wants a
+## literal JSON empty string cannot be given one this way.
+##
+## The harness splits scenario lines through here too, because scenario
+## lines and console lines are one vocabulary.
 static func tokenise(line: String) -> PackedStringArray:
-	var tokens := PackedStringArray()
-	var current := ""
-	var quoted := false
-	var started := false
-	for i in line.length():
-		var character := line[i]
-		if character == '"':
-			quoted = not quoted
-			started = true
-		elif character == " " and not quoted:
-			if started:
-				tokens.append(current)
-			current = ""
-			started = false
-		else:
-			current += character
-			started = true
-	if started:
-		tokens.append(current)
+	var tokens := line.split(" ", false)
+	for i in tokens.size():
+		if tokens[i] == '""':
+			tokens[i] = ""
 	return tokens
 
 

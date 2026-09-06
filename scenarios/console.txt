@@ -8,7 +8,8 @@ load scenario_probe
 delete_save scenario_probe
 expect_fail load scenario_probe
 expect_fail frobnicate
-# Double quotes group a phrase into one argument, spacing kept.
-note "two  spaces"
-assert_note "two  spaces"
+# Quotes are ordinary characters and reach the handler: a console command
+# that takes JSON depends on it. Only the token `""` is the empty value.
+note "Shore War"
+assert_note "Shore War"
 shot console-done

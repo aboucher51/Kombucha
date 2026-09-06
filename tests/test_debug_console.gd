@@ -118,8 +118,12 @@ func test_a_flag_may_precede_a_rest_argument() -> void:
 	assert_string_starts_with(DebugConsole.execute("note --nope=1 x"), "ERROR", "an unknown flag is refused")
 
 
-func test_quotes_group_a_phrase_and_survive_a_rest_argument() -> void:
-	assert_eq(DebugConsole.execute('note "two  spaces"'), "Noted.")
-	assert_string_contains(DebugConsole.execute("notes"), "two  spaces", "a quoted phrase is one token, spacing kept")
-	assert_eq(DebugConsole.execute('note --kind=todo "and a flag"'), "Noted.")
-	assert_string_contains(DebugConsole.execute("notes"), "todo: and a flag")
+func test_quotes_reach_the_handler_and_only_the_empty_token_is_special() -> void:
+	# A console command may take JSON, where the quotes ARE the value's
+	# type; stripping them broke thirteen scenario files in one project.
+	assert_eq(DebugConsole.execute('note "Shore War"'), "Noted.")
+	assert_string_contains(DebugConsole.execute("notes"), '"Shore War"', "the quotes reach the handler")
+	assert_eq(DebugConsole.tokenise('a "b c" d'), PackedStringArray(["a", '"b', 'c"', "d"]),
+		"spaces separate; quotes are ordinary characters")
+	assert_eq(DebugConsole.tokenise('assert key ""'), PackedStringArray(["assert", "key", ""]),
+		"except the empty token")

@@ -95,12 +95,15 @@ sync, which is why one project's 600 lines of in-file commands cannot be
 synced today.
 Failures must be returned as `"ERROR: ..."` — the harness fails a scenario
 on exactly that shape, so an assertion-like handler that answers `"false"`
-instead passes silently. **Double quotes group a phrase and `""` is the
-empty value**, in console lines and scenario lines alike (one tokeniser,
-`DebugConsole.tokenise`): asserting that a field is UNSET could not be
-written at all before, because a trailing space is trimmed and the
-argument read as missing, so one project asserted a neighbouring fact
-instead. **An assertion's value is `"kind": "rest"`**, as
+instead passes silently. **`""` is the empty value**, in console lines
+and scenario lines alike (one tokeniser, `DebugConsole.tokenise`):
+asserting that a field is UNSET could not be written at all before,
+because a trailing space is trimmed and the argument read as missing, so
+one project asserted a neighbouring fact instead. Every OTHER quote is
+left where it is — a console command that takes JSON needs
+`ed_set name "Shore War"` to reach its handler with the quotes on, and a
+version that stripped them broke thirteen scenario files in one project
+the day it was tried. **An assertion's value is `"kind": "rest"`**, as
 the core `assert` declares it: a `string` value stops at the first space,
 and every Vector2i prints with one, so a project's own `x_assert anchor
 (4, 3)` compared against `(4,`. **A named argument is a flag**

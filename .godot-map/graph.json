@@ -486,7 +486,7 @@
    "groups_queried": [
     "state"
    ],
-   "lines": 547
+   "lines": 541
   },
   "res://scripts/dev/dev_hooks.gd": {
    "path": "res://scripts/dev/dev_hooks.gd",
@@ -1200,14 +1200,14 @@
     "test_alias_resolves",
     "test_project_hooks_may_override_a_core_command",
     "test_a_flag_may_precede_a_rest_argument",
-    "test_quotes_group_a_phrase_and_survive_a_rest_argument"
+    "test_quotes_reach_the_handler_and_only_the_empty_token_is_special"
    ],
    "emits": [],
    "connects": [],
    "node_paths": [],
    "groups_joined": [],
    "groups_queried": [],
-   "lines": 126
+   "lines": 130
   },
   "res://tests/test_dev_hooks.gd": {
    "path": "res://tests/test_dev_hooks.gd",
