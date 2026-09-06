@@ -1,6 +1,7 @@
 # Third-party licences
 
-A running ledger of everything someone else owns and what we owe them.
+This repo itself is MIT (`LICENSE`). Below is a running ledger of
+everything someone else owns and what we owe them.
 **Anything third-party that enters the repo — an asset pack, an addon, a
 font, a shader — gets a row here in the same commit that adds it**, along
 with where its licence text lives. If something arrives with no licence,

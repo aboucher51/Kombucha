@@ -17,6 +17,12 @@ Rules that follow from that:
   untested tooling; extend the fixture in the same commit.
 - **`tools/check.sh` green is the bar for every commit**, the same as in a
   game project.
+- **This repo is also the Claude Code plugin** (`.claude-plugin/`,
+  `skills/`): a user installs it from the marketplace and the skills
+  find the tooling in the plugin checkout. Nothing under `tools/`,
+  `skills/` or the docs may name a path on one machine; `GODOT_TOOLING`
+  and `GODOT_TEMPLATE` are the overrides, `$HOME/godot-projects/` the
+  convention.
 - **The tooling is owned here and copied outward.** `tools/tooling-manifest.txt`
   lists the paths every project carries as a copy; `tools/sync-tooling.sh`
   (the `/sync-godot-tooling` skill) refreshes them and stamps

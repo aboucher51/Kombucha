@@ -1,0 +1,28 @@
+{
+  "name": "kombucha",
+  "owner": {
+    "name": "Alex",
+    "url": "https://github.com/aboucher51"
+  },
+  "metadata": {
+    "description": "Kombucha: the Godot-to-Claude verification loop as a plugin",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "kombucha",
+      "source": "./",
+      "description": "Headless tests, scripted screenshots, a debug console and a check script for Godot 4 projects, plus the skills that scaffold a project with them (/new-godot-project) and keep it current (/sync-godot-tooling).",
+      "version": "0.1.0",
+      "author": {
+        "name": "Alex"
+      },
+      "category": "development",
+      "keywords": [
+        "godot",
+        "gdscript",
+        "testing"
+      ]
+    }
+  ]
+}

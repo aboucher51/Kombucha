@@ -5,8 +5,9 @@ description: Backport an improvement from the current project into the shared Go
 
 # Backporting an improvement to the Template
 
-The shared template lives at `/home/alex/godot-projects/Template`
-(override with the `GODOT_TEMPLATE` environment variable if set). Every new
+The shared template is `$GODOT_TEMPLATE` if set, else
+`~/godot-projects/Template` (a clone of
+`https://github.com/aboucher51/Template`). Every new
 project is scaffolded from it, so an improvement backported once is
 inherited by every future project.
 
@@ -16,7 +17,7 @@ anything:
 | The improvement is… | It goes to | How |
 |---|---|---|
 | Kit: an autoload, `scripts/util`, `scripts/ui`, a convention, a test technique, a CLAUDE.md rule | the Template | this skill |
-| Tooling: `tools/*.sh`, the screenshot harness, the debug console core, `data/console_commands.json`, GUT, the CI workflows, anything in `tools/tooling-manifest.txt` | Kombucha (`/home/alex/godot-projects/Kombucha`) | change it there, prove it against the fixture, then `/sync-godot-tooling` outward |
+| Tooling: `tools/*.sh`, the screenshot harness, the debug console core, `data/console_commands.json`, GUT, the CI workflows, anything in `tools/tooling-manifest.txt` | Kombucha (`$GODOT_TOOLING`, else this plugin's checkout `${CLAUDE_PLUGIN_ROOT}`) | change it there, prove it against the fixture, then `/sync-godot-tooling` outward |
 
 The Template carries a **copy** of the tooling like every other project.
 Editing an owned file in the Template is drift that the next sync erases;

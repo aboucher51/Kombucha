@@ -1,87 +1,109 @@
 # Kombucha
 
-The home of the Godot-to-Claude workflow: the loop by which Claude Code
-edits a Godot project, proves the change headlessly, looks at it through
-scripted screenshots, and reads the result back. The loop is iterated here
-and backported to the `Template` repo, from which every real game project
-is scaffolded.
+A Claude Code plugin for Godot 4 projects: the loop by which Claude edits
+a project, proves the change headlessly, looks at it through scripted
+screenshots, and reads the result back, without a human at the keyboard.
 
-This is not a game. The main scene, autoloads, tests and scenarios in this
-repo are a **fixture**: the smallest working project the tooling needs in
-order to exercise itself. Keep it small. Anything that only a game would
-want goes in a game.
+You get, in every project scaffolded with it:
 
-## The loop
+- `tools/test.sh` — GUT 9.7.1, headless, dealt across parallel shards,
+  with the guard four projects each needed: a test file that fails to
+  parse is a failure, not a silent drop.
+- `tools/shoot.sh` and `scenarios/*.txt` — plain-text screenshot
+  scenarios (`click`, `press`, `shot`, `assert_visible`, `expect_shot`
+  against committed baselines, state readback), run on a display Claude
+  can find or start. `tools/serve.sh` keeps one engine alive to iterate
+  against.
+- A debug console (F12) whose `execute(line)` is the same vocabulary the
+  scenarios use, so every command is scriptable and assertable.
+- `tools/check.sh` — tests, a headless boot with a memory budget, your own
+  local checks, every scenario. Green is the bar for a commit.
+- `tools/export.sh` and CI workflows — Linux, Windows and Web builds,
+  smoke-tested.
+- `docs/godot-tooling.md`, imported into the project's `CLAUDE.md`: every
+  rule with what breaks without it, learned across ten projects.
+
+## Requirements
+
+- Linux, or Windows with WSL2 and WSLg (screenshots need a display; the
+  project should live on the Linux filesystem, not `/mnt/c`).
+- Godot 4.7 on the PATH as `godot4`.
+- `git`, `python3`, `curl`. Optional: `xvfb-run` for `check.sh --ci`;
+  [godot-map](https://github.com/aboucher51/godot-map) for the project
+  map `check.sh` reads when present.
+- Claude Code. The [GodotPrompter](https://github.com/jame581/GodotPrompter)
+  plugin pairs well: it decides *how* to build Godot systems, this decides
+  how to prove them.
+
+## Install
 
 ```bash
-tools/test.sh               # GUT suite, headless
-tools/check.sh --quick      # tests + headless boot with a memory budget
-tools/check.sh              # ...plus every scenario through the harness
-tools/check.sh --ci         # the same on a virtual display (Xvfb), for CI
-tools/shoot.sh              # screenshot scenarios only, dealt across
-                            # SHOOT_JOBS processes; finds or starts a display
-SHOOT_BASELINES=update tools/shoot.sh <scenario>
-                            # (re)write the expect_shot baselines it names
-tools/serve.sh start|run|say|stop
-                            # one engine kept alive; scenarios and lines
-                            # against its live state, no boot per try
-tools/export.sh             # Linux + Windows builds, smoke-tested
+claude plugin marketplace add aboucher51/Kombucha
+claude plugin install kombucha@kombucha
 ```
 
-Every scenario also leaves a `shots/<stem>.jsonl` trace and every test
-run a merged `.godot/test-results.xml`.
+Then, in Claude Code:
 
-`CLAUDE.md` is the contract: every rule in it names what breaks without
-it, and every tool above is what lets Claude say "this works" without a
-human at the keyboard.
+- `/new-godot-project <Name>` scaffolds a project from the
+  [Template](https://github.com/aboucher51/Template) repo, which carries
+  the kit the tooling assumes (autoloads for saves, keybinds, audio,
+  pads; a code-built UI theme) and a copy of this tooling. It clones the
+  Template next to your projects on first use.
+- `/sync-godot-tooling` in any such project refreshes its copy from the
+  plugin's version and says what the project had changed in an owned
+  file before overwriting it. `tools/check.sh` prints a note when the
+  copy is behind.
+- `/update-template` backports a kit improvement to the Template.
 
-## How other projects get it
+The tooling is not a drop-in for an arbitrary existing project: the
+harness and console name the Template's autoloads. Adopting it in an
+existing project means adopting the kit first.
 
-Every project carries a copy of the paths in `tools/tooling-manifest.txt`,
-stamped with the Kombucha commit in `tools/TOOLING_VERSION`. The global
-`/sync-godot-tooling` skill (which runs `tools/sync-tooling.sh`) refreshes
-the copy, and each project's `check.sh` says when it is behind;
-`--check --diff` shows what a project added to an owned file before a
-sync overwrites it, and `--kit` reports the Template kit files it could
-cherry-pick. The tooling rules themselves are one owned text,
-`docs/godot-tooling.md`, imported by every project's `CLAUDE.md`. Projects
-extend the tooling only through `scripts/dev/dev_hooks.gd`,
-`data/console_commands.project.json` and `tools/check.local.sh`; seeds for
-those are in `tools/seeds/`.
+## Extending it in a project
 
-## Working here
+A project never edits an owned file (the list is
+`tools/tooling-manifest.txt`; a sync overwrites them). It extends through
+three files a sync never touches, seeded on first sync:
 
-1. Read `docs/roadmap.md` for what is next and why.
-2. Change the tooling, then prove it against the fixture with
-   `tools/check.sh`. A tooling change that the fixture cannot exercise
-   needs the fixture extended in the same commit.
-3. Record what was learned in `CLAUDE.md` (rule plus failure mode) or
-   `docs/research/` (findings).
-4. Backport with the `/update-template` skill so new projects inherit it.
-   The Template remains the source for `tools/new-project.sh`; do not
-   scaffold games from this repo.
+| File | What goes there |
+|---|---|
+| `scripts/dev/dev_hooks.gd` | sandbox resets, project scenario commands, console handlers; asked before the shared ones, so a project may take a core command over |
+| `data/console_commands.project.json` | the surface (name, usage, args) of project console commands |
+| `tools/check.local.sh` | project checks: sims, balance gates, linters |
+
+## Developing the tooling
+
+This repo is the workshop and the fixture, not a game. The main scene,
+autoloads, tests and scenarios here are the smallest project the tooling
+needs in order to exercise itself; a tool change the fixture cannot
+exercise needs the fixture extended in the same commit.
+
+```bash
+tools/check.sh              # the bar: tests + boot + local checks + every scenario
+tools/check.sh --quick      # no display needed
+tools/selftest.sh           # the runner's guards and the sync script against scratch copies
+```
+
+`CLAUDE.md` is the contract, `docs/roadmap.md` the order of work,
+`docs/research/` the surveys the design came from. To work from a clone
+rather than the installed plugin, set `GODOT_TOOLING` to the clone.
 
 ## Layout
 
-- `tools/` — the runner scripts above, `sync-tooling.sh` and its manifest,
-  `seeds/` for a project's extension files, `check.local.sh` (the fixture's
-  own local check), and `new-project.sh` (the scaffolder, iterated here,
-  used from Template).
-- `scripts/dev/` — the screenshot harness, debug console, bug report, and
-  `dev_hooks.gd`, the fixture's project extension. `data/console_commands.json`
-  is the console's core command table; the `.project.json` beside it is
-  the fixture's.
-- `tests/`, `.gutconfig.json`, `addons/gut` — GUT 9.7.1 and the fixture's
-  suite.
-- `scenarios/` — plain-text harness scripts, one command per line;
-  `scenarios/baselines/<renderer>/` holds the committed `expect_shot`
-  reference frames.
+- `.claude-plugin/` — plugin and marketplace manifests. `skills/` — the
+  three skills above.
+- `tools/` — the scripts, `sync-tooling.sh` and its manifest, `seeds/`
+  for a project's extension files, `new-project.sh` (used from the
+  Template).
+- `scripts/dev/` — screenshot harness, debug console, bug report, and the
+  fixture's `dev_hooks.gd`. `data/console_commands.json` is the console's
+  core command table.
+- `tests/`, `.gutconfig.json`, `addons/gut/` — GUT and the fixture's suite.
+- `scenarios/` — harness scripts; `scenarios/baselines/<renderer>/` the
+  committed `expect_shot` frames, one set per rasterizer.
 - `scripts/autoloads/`, `scripts/ui/`, `scripts/util/`, `scenes/` — the
   fixture game.
-- `docs/research/` — surveys of prior art, the sibling projects' test
-  tooling, and PlayGodot. `docs/roadmap.md` — the iteration order they
-  produced.
-- `.claude/` — pre-approved permissions for the tools, and the
-  `update-template` skill.
-- `LICENSES.md` — third-party ledger. `claude-log.md` — gitignored
-  session memory appended by the global PostCompact hook.
+
+## License
+
+MIT (see `LICENSE`). Third-party pieces are listed in `LICENSES.md`.

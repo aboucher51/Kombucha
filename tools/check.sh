@@ -174,8 +174,13 @@ fi
 # a stale copy quietly misses the fixes every other project already has.
 # Only commits that touched an owned path count, so unrelated Kombucha
 # work does not nag.
-TOOLING_SRC="${GODOT_TOOLING:-/home/alex/godot-projects/Kombucha}"
-if [[ -f tools/TOOLING_VERSION && -f tools/tooling-manifest.txt \
+# Where the copy came from: GODOT_TOOLING, else the path the last sync
+# stamped ("synced <date> from <dir>", the plugin checkout as a rule).
+TOOLING_SRC="${GODOT_TOOLING:-}"
+if [[ -z "$TOOLING_SRC" && -f tools/TOOLING_VERSION ]]; then
+	TOOLING_SRC="$(sed -n '2s/^synced .* from //p' tools/TOOLING_VERSION)"
+fi
+if [[ -n "$TOOLING_SRC" && -f tools/TOOLING_VERSION && -f tools/tooling-manifest.txt \
 		&& -d "$TOOLING_SRC/.git" && "$ROOT" != "$TOOLING_SRC" ]]; then
 	SYNCED="$(head -1 tools/TOOLING_VERSION)"
 	mapfile -t OWNED < <(grep -vE '^\s*(#|$)' tools/tooling-manifest.txt)

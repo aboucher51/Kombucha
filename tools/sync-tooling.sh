@@ -44,7 +44,7 @@ if [[ -z "$DEST" || ! -f "$DEST/project.godot" ]]; then
 	echo "usage: tools/sync-tooling.sh <godot-project-dir> [--check [--diff]|--no-check]" >&2
 	exit 2
 fi
-TEMPLATE="${GODOT_TEMPLATE:-/home/alex/godot-projects/Template}"
+TEMPLATE="${GODOT_TEMPLATE:-$HOME/godot-projects/Template}"
 DEST="$(cd "$DEST" && pwd)"
 if [[ "$DEST" == "$SRC" ]]; then
 	echo "sync-tooling: '$DEST' is the source; nothing to sync" >&2

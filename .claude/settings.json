@@ -12,8 +12,7 @@
       "Bash(git log*)",
       "Bash(git add *)",
       "Bash(tools/sync-tooling.sh*)",
-      "Bash(tools/check.local.sh*)",
-      "Bash(/home/alex/godot-projects/Kombucha/tools/sync-tooling.sh*)"
+      "Bash(tools/check.local.sh*)"
     ]
   }
 }

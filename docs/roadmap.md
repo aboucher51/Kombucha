@@ -154,6 +154,19 @@ own status at the top.
    documented machine setup; consuming the project map from
    `~/godot-projects/godot-map` (read before grepping, `--check` in CI).
 
+## Shared as a plugin (2026-09-06)
+
+The repo is a Claude Code plugin and its own marketplace
+(`.claude-plugin/`, skills in `skills/`): `claude plugin marketplace add
+aboucher51/Kombucha` then `claude plugin install kombucha@kombucha`. The
+sync skill's source is the plugin checkout (`${CLAUDE_PLUGIN_ROOT}`, or
+`GODOT_TOOLING` for a clone); `check.sh` finds the source from the path
+the last sync stamped. The tooling assumes the Template kit, so the
+entry point for a stranger is `/new-godot-project`, which clones the
+Template; the Template repo must be public for that. Next: bump
+`version` in both manifests on a release, and an install-from-marketplace
+smoke in CI once the repo is public.
+
 ## Not planned
 
 - Any editor-bridge MCP server as a dependency: it needs the editor open,
