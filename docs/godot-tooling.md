@@ -204,10 +204,13 @@ Rules that keep the harness useful:
   exact-timed choreography (one project's ferry failed only in the batch);
   a timer-driven thing wants `sleep`. `settle` beats both when the thing
   you are waiting for can say it is busy.
-- **A name shared by two nodes is an ERROR, not a coin toss.** Every lookup
-  refuses an ambiguous name; assert on a uniquely named node instead. One
-  project's `assert_onscreen Cliffs` used to answer about whichever area
-  loaded first.
+- **A name shared by two VISIBLE nodes is an ERROR, not a coin toss.**
+  Every lookup refuses an ambiguous name; assert on a uniquely named node
+  instead. One project's `assert_onscreen Cliffs` used to answer about
+  whichever area loaded first. A hidden namesake does not count: a hub's
+  `SettingsButton` beside a closed pause menu's is the visible one, which
+  is what the line means (three of one project's scenarios went red on
+  the strict rule, for nodes a player could not have confused).
 - **Synthetic clicks go through `push_input` in canvas coordinates**, never
   `Input.parse_input_event`, which treats the position as window pixels:
   under any stretch other than the design resolution every click lands

@@ -69,9 +69,10 @@ extends Node
 ## It is the run as data — what a scenario did, how long each step took
 ## and where it failed — greppable without the engine log.
 ##
-## A name shared by two nodes is an ERROR, not a coin toss: every lookup
-## refuses an ambiguous name rather than answering about whichever loaded
-## first (that was a test decided by load order, once).
+## A name shared by two VISIBLE nodes is an ERROR, not a coin toss: every
+## lookup refuses an ambiguous name rather than answering about whichever
+## loaded first (that was a test decided by load order, once). A hidden
+## namesake does not count: the visible one is what the line means.
 ##
 ## The project's dev hooks (scripts/dev/dev_hooks.gd, `scenario_command`)
 ## are asked first and may claim any line, built-in or not; what nobody
@@ -806,17 +807,36 @@ func _find_all(from: Node, node_name: String) -> Array[Node]:
 	return found
 
 
-## The one node with this name, or null with _lookup_error set.
-func _find_named(node_name: String) -> Node:
-	var matches := _find_all(get_tree().root, node_name)
+## The one node with this name, or null with _lookup_error set. Among
+## several, the one VISIBLE in the tree wins when it is alone in that: a
+## hub's SettingsButton and a hidden pause menu's are the same scenario
+## intent, and refusing the name forced games to rename kit nodes. Two
+## visible ones, or none, stay an error — never a coin toss.
+static func pick_named(matches: Array[Node], node_name: String) -> Dictionary:
 	if matches.is_empty():
-		_lookup_error = "ERROR: no node named '%s'" % node_name
+		return {"error": "ERROR: no node named '%s'" % node_name}
+	if matches.size() == 1:
+		return {"node": matches[0]}
+	var shown: Array[Node] = []
+	for node in matches:
+		if (node is CanvasItem and (node as CanvasItem).is_visible_in_tree()) \
+				or (node is Node3D and (node as Node3D).is_visible_in_tree()):
+			shown.append(node)
+	if shown.size() == 1:
+		return {"node": shown[0]}
+	if shown.is_empty():
+		return {"error": "ERROR: '%s' is not visible — %d hidden nodes share that name" % [
+			node_name, matches.size()]}
+	return {"error": "ERROR: '%s' is ambiguous — %d visible nodes have that name" % [
+		node_name, shown.size()]}
+
+
+func _find_named(node_name: String) -> Node:
+	var picked := pick_named(_find_all(get_tree().root, node_name), node_name)
+	if picked.has("error"):
+		_lookup_error = str(picked["error"])
 		return null
-	if matches.size() > 1:
-		_lookup_error = "ERROR: '%s' is ambiguous — %d nodes have that name" % [
-			node_name, matches.size()]
-		return null
-	return matches[0]
+	return picked["node"]
 
 
 func _find_control(node_name: String) -> Control:

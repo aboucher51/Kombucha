@@ -109,3 +109,30 @@ func test_project_hooks_may_override_a_builtin_scenario_command() -> void:
 	assert_eq(await harness._execute("ticks 1"), "", "null from the hook falls through to the built-in")
 	DebugConsole.hooks = previous
 	mine.free()
+
+
+# ── name lookup: the visible namesake wins, two visible ones are an error ──
+
+func _named(node_name: String, shown: bool) -> Control:
+	var control := Control.new()
+	control.name = node_name
+	control.visible = shown
+	add_child_autofree(control)
+	return control
+
+
+func test_a_hidden_namesake_does_not_make_a_name_ambiguous() -> void:
+	var shown := _named("Twin", true)
+	_named("Twin", false)
+	var picked := Harness.pick_named([shown, get_child(get_child_count() - 1)] as Array[Node], "Twin")
+	assert_eq(picked.get("node"), shown)
+
+
+func test_two_visible_namesakes_are_ambiguous_and_none_is_not_visible() -> void:
+	var a := _named("Pair", true)
+	var b := _named("Pair", true)
+	assert_string_contains(str(Harness.pick_named([a, b] as Array[Node], "Pair").get("error", "")), "ambiguous")
+	a.visible = false
+	b.visible = false
+	assert_string_contains(str(Harness.pick_named([a, b] as Array[Node], "Pair").get("error", "")), "not visible")
+	assert_string_contains(str(Harness.pick_named([] as Array[Node], "Nobody").get("error", "")), "no node named")
