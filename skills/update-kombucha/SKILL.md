@@ -13,6 +13,17 @@ and the fixture that proves them. An improvement made once there reaches
 every future project, and existing ones by sync (tooling) or cherry-pick
 (kit).
 
+**Feedback is the lighter route.** When the improvement is not yet
+generalised, or the session only wants to say what it hit and what it
+wants, write a report instead of a backport: one file per session at
+`docs/feedback/<project>/session_<id>.md` in Kombucha, on a branch
+`feedback/<project>-session-<id>`, following `docs/feedback/README.md`
+there. Report from the project's side only: what happened, what it
+cost, what the project wants, which project file is the reference. Do
+not read Kombucha's code to assess what it already has or how it should
+change; a Kombucha session does that and appends its disposition to the
+same file.
+
 Backporting needs a **clone with history**, not the installed plugin
 (which has no `.git`): `$GODOT_TOOLING` must point at one. If it is
 unset or not a git checkout, stop and say so; do not edit the plugin

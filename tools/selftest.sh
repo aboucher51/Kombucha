@@ -117,7 +117,7 @@ OUT="$("$SRC2/tools/new-project.sh" "$DEST3" "Self Test" --no-check 2>&1)"; CODE
 if [[ $CODE -eq 0 && -f "$DEST3/tools/TOOLING_VERSION" && -f "$DEST3/scripts/dev/dev_hooks.gd" \
 		&& ! -e "$DEST3/skills" && ! -e "$DEST3/.claude-plugin" && ! -e "$DEST3/tools/selftest.sh" \
 		&& ! -e "$DEST3/tests/test_dev_hooks.gd" && ! -e "$DEST3/scenarios/hooks.txt" \
-		&& ! -e "$DEST3/docs/roadmap.md" ]] \
+		&& ! -e "$DEST3/docs/roadmap.md" && ! -e "$DEST3/docs/feedback" ]] \
 		&& ! grep -q 'What this repo is' "$DEST3/CLAUDE.md" && ! grep -q 'kombucha-only' "$DEST3/CLAUDE.md" \
 		&& grep -q 'docs/godot-tooling.md' "$DEST3/CLAUDE.md" && ! grep -q 'itself is MIT' "$DEST3/LICENSES.md" \
 		&& grep -q 'config/name="Self Test"' "$DEST3/project.godot" && ! grep -q SelftestDriver "$DEST3/project.godot" \

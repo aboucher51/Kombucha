@@ -41,6 +41,10 @@ Rules that follow from that:
 - **Lessons flow two ways.** Findings go in `docs/research/`; rules earn a
   place below as *the rule plus what breaks without it*, and every new
   project inherits them. Read `docs/roadmap.md` for the current order.
+  A project's own reports arrive under `docs/feedback/<project>/` on a
+  `feedback/` branch (`docs/feedback/README.md`): the project reports
+  what it hit, this repo assesses it and appends the disposition. A
+  project never reads this repo to write one.
 <!-- /kombucha-only -->
 
 ## GodotPrompter

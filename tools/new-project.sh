@@ -54,6 +54,7 @@ cat > "$EXCLUDES" <<'EOF'
 /docs/research
 /docs/plans
 /docs/roadmap.md
+/docs/feedback
 /tools/selftest.sh
 /tools/TOOLING_VERSION
 /scripts/dev/selftest_driver.gd
