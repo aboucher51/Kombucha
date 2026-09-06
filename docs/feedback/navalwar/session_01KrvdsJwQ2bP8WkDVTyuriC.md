@@ -216,3 +216,93 @@ Found while syncing NavalWar onto this (2026-09-06, second commit):
 - `test_toasts.gd test_no_host_is_no_error` failed in the sharded run
   and passes alone: a toast host left visible by a neighbouring test
   script in the same shard, a cross-test leak of NavalWar's own.
+
+## 11. `UIFocus.grab(control)` — the id-deferred grab for ONE known control (later the same day)
+
+The 34e17d3 fix made `UIFocus.first` safe, but a screen that knows
+which control it wants (a modal's Close, a dialogue's Advance, a
+pause sheet's Resume) still wrote `control.grab_focus.call_deferred()`
+directly — eight of them in NavalWar — and the dialogue scenario's one
+landed after teardown, the same `!is_inside_tree()` under a green
+batch. NavalWar's copy of `ui_focus.gd` gained
+`static func grab(control: Control)` (skip if queued for deletion,
+then `_grab_deferred.call_deferred(id)`), and the eight calls route
+through it. Worth lifting into the kit's `ui_focus.gd` beside `first`,
+with the CLAUDE.md rule: a deferred `grab_focus` is always by instance
+id, never on the control.
+
+## 12. An engine error under a green batch names no scenario
+
+The full check ended `66 scenario(s), 0 failed` and `shoot: 1 engine
+error(s)` with the bare line `Condition "!is_inside_tree()" is true` —
+and nothing said WHICH scenario raised it. The shard logs live in a
+`mktemp -d` that is gone when `shoot.sh` returns, so the only way to
+attribute it was to re-run the whole batch with the output captured and
+read backwards from the error to the nearest `── scenario:` header
+(four minutes to learn "dialogue.txt, after its last line"). Two cheap
+fixes, either one enough: print the scenario each counted error fell
+under (the header is already in the same stream), or keep the shard
+logs beside the shots (`shots/shard.N.log`) the way the JSONL traces
+are kept — a log is read once, a file is asked again.
+
+## 13. The harness tears a scene down under a pending await
+
+Between scenarios the harness returns to the boot scene, but a
+coroutine mid-`await` (the AI turn loop waiting out its pacing timer,
+a replay loop, anything sleeping on `create_timer`) resumes AFTER that
+teardown with `is_instance_valid(self)` still true and
+`is_inside_tree()` false. Anything it then does with the viewport —
+`get_viewport()`, `create_tween()`, a deferred `grab_focus` — is the
+`!is_inside_tree()` engine error, once per scenario that ended on that
+seat. Worth a line in the tooling text beside the "anything global
+survives the reload" rule: a resumed coroutine must check
+`is_inside_tree()` before it touches the scene, and a deferred focus
+is always by instance id (finding 11). NavalWar:
+`skirmish._follow_allowed`, `UIFocus.grab`.
+
+## 14. `settle` needs a word for animation that never ends
+
+The settle rule says any node that animates answers `is_busy()`. The
+first endless effect (a wounded hull smoking until it heals) hung every
+`settle` in the batch the moment it was in a layer's table, and the AI's
+own pacing (`_settle` awaiting `fx_settled`) with it. The fix is one
+flag — an entry with no end is excluded from `is_busy()` — but the rule
+should say so: `is_busy()` answers for work that will FINISH; a loop
+with no end is scenery and must not be counted, or the first ambient
+animation a project adds stops every scenario. NavalWar:
+`fx_layer.gd` (`endless`).
+
+## 15. A one-script test run buries its failing assertion
+
+`TEST_JOBS=1 tools/test.sh test_fx_layer` ends with `---- 1 failing
+tests ----` and the results path; the assertion text is a few hundred
+lines up in GUT's own stream, so the reflex is a second run piped
+through `grep Failed` (two tries here, the first pattern missed). The
+summary could repeat each failing test's name and its `[Failed]` lines,
+the way the JUnit report already has them per test — the log is right
+there, and `test.sh` already greps it for the load-failure guard.
+
+## Disposition, findings 11-15 (Kombucha, 2026-09-06)
+
+- **11, `UIFocus.grab(control)`** — done, in the kit's `ui_focus.gd`
+  beside `first()` (which now routes through it), with a test that a
+  freed control is refused. The CLAUDE.md rule says a deferred
+  `grab_focus` is always by instance id. NavalWar's eight call sites can
+  become `UIFocus.grab(...)` when it cherry-picks the kit file.
+- **12, an engine error names no scenario** — done, both halves: a
+  counted error now prints as `<scenario>: <error>` (the shard log
+  carries the headers in the same stream), and the shard logs are copied
+  to `shots/shard.*.log` after every run, so the batch does not have to
+  be re-run to read them. The self-test asserts the attribution.
+- **13, a coroutine resuming after teardown** — a rule in the tooling
+  text beside "anything global survives the reload": a resumed coroutine
+  checks `is_inside_tree()` before it touches the scene, and a deferred
+  focus goes through `UIFocus.grab()`.
+- **14, `settle` and animation that never ends** — a rule in the same
+  section: `is_busy()` answers for work that will FINISH, and a loop
+  with no end is scenery that must be excluded, or the first ambient
+  animation hangs every `settle` in the batch.
+- **15, a one-script run buries its failing assertion** — done: a red
+  run repeats them at the end under `── failing assertions ──`, script
+  and test named, in both the named and the sharded path. The self-test
+  plants a failing assertion and proves it comes back.

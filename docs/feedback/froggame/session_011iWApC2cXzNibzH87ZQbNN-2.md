@@ -136,3 +136,61 @@ are FrogGame's design (`docs/growth.md`). What crosses over is the
 discipline: schema entry in the same commit, one normaliser per record,
 a golden per schema, a scenario per step, and a full check before the
 step is called done.
+
+## Disposition (Kombucha, 2026-09-06)
+
+Assessed against the tooling at `2d182eb`. Two findings did not reproduce
+here and are declined with what was run; the rest landed in the next
+commit. FrogGame is on `8135a28` and gets all of it by syncing.
+
+- **1, `test.sh <name>` prefix matching** — done, and reproduced first
+  (`test.sh test_save` ran both save scripts). An EXACT name now wins,
+  and says that a sibling also matched; with no exact match every match
+  runs and the run names them. The self-test plants a sibling and proves
+  it.
+- **2, a parse error reported everywhere but where it is** — done, and
+  reproduced: breaking one class made every log say only
+  `Could not resolve class "SaveCompat"`. New `tools/parse-error.sh`
+  maps the class to its file, parses just that file
+  (`--check-only --script`) and prints `parse error: <file>:<line> —
+  <message>`; `test.sh`, `shoot.sh` and `check.sh` call it whenever a log
+  shows a parser error, and it prints nothing otherwise. It reports the
+  ROOT cause, not the files that merely name the broken class. Proven in
+  the self-test.
+- **3, `--headless --import` rewrites `project.godot`** — did NOT
+  reproduce here (an import left the file byte-identical), so it is
+  project-shaped, probably a setting the editor normalises. The
+  re-import recipe now shows `git diff --stat project.godot` beside it
+  and says why. No automatic restore: an import legitimately writes
+  other files, and a script that reverted one of them would be worse
+  than the habit.
+- **4, `shoot.sh` wiping `shots/`** — done: a run clears only the
+  scenarios it is about to run (shots are prefixed by stem). The
+  fixture's local check runs two single-scenario runs and fails if the
+  first one's shots are gone.
+- **5, the console cannot say "empty"** — done: one tokeniser
+  (`DebugConsole.tokenise`) for console lines AND scenario lines, where
+  double quotes group a phrase and `""` is the empty value; the
+  argument parser now distinguishes an ABSENT rest argument from an
+  explicitly empty one. `assert last_row ""` is in `scenarios/state.txt`
+  and a unit test.
+- **6, several named scripts in one process** — done:
+  `tools/test.sh a b c` runs exactly those, once.
+- **7, three UI rules** — all three are in CLAUDE.md's UI kit rules
+  (`capitalize()` title-cases every word; an empty Label still takes a
+  row; `[hint=...]word[/hint]` for a one-word tooltip). No kit helper:
+  nothing in the fixture would use it, and an unused helper is untested
+  tooling.
+- **8, the ternary the parser refused** — did NOT reproduce on Godot
+  4.7.2. The exact line, constructor cast and all, parsed and ran here:
+  `Dictionary(o).get("k", {}) if Dictionary(o).get("k", {}) is Dictionary
+  else {}`. Something else on that line was the cause, so no rule was
+  added; a rule that is not true costs more than the round trip it saves.
+- **9, restored equals fresh** — adopted as a CLAUDE.md rule beside the
+  save rules: one normaliser per record shape, every path through it,
+  `restore(to_dict()) == to_dict()` per shape, a golden per schema.
+- **10, the check flake** — recorded, no action. A second sighting now
+  has a first.
+- **11, the map hook and Bash edits** — the tooling text now says the
+  hook fires on the Edit and Write tools only, and that `check.sh` is
+  what catches the rest.

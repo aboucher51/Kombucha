@@ -2,7 +2,15 @@
 # Runs the GUT test suite headless.
 #
 #   tools/test.sh                    every test, split across processes
-#   tools/test.sh test_smoke         one script (name or path fragment)
+#   tools/test.sh test_smoke         one script: an EXACT name wins, so
+#                                    test_campaign does not also run
+#                                    test_campaign_flow; with no exact
+#                                    match every script containing the
+#                                    fragment runs and the run says so
+#   tools/test.sh a b c              several scripts, one process — closing
+#                                    a feature meant a dozen runs of one
+#                                    script each, and every one paid the
+#                                    engine's boot
 #   TEST_JOBS=1                      one process — the readable log, and
 #                                    what to reach for when a failure is
 #                                    confusing (shards interleave nothing,
@@ -52,19 +60,89 @@ paint() { sed -E 's/\x1b\[0m$//' "$1"; }
 
 load_fails() { grep -c 'Failed to load script' "$1" || true; }
 
-# ── one script: no point splitting it ────────────────────────────────────
+# GUT counts a failed assertion in its summary but prints the text far
+# above it; on a suite of any size that is hundreds of lines up, and the
+# reflex is a second run piped through grep. Repeat them at the end.
+report_failures() {
+	local out
+	out="$(awk '
+		/^res:\/\/tests\// { script = $0; next }
+		/^\* test_/ { name = substr($0, 3); next }
+		/\[Failed\]/ {
+			line = $0
+			gsub(/\033\[[0-9;]*m/, "", line)
+			sub(/^[ \t]+/, "", line)
+			printf "  %s %s\n    %s\n", script, name, line
+		}
+	' "$@" 2>/dev/null | head -40)"
+	[[ -n "$out" ]] && { echo "── failing assertions ──"; printf '%s\n' "$out"; }
+	return 0
+}
+
+# A class that will not parse is reported by the engine as an unresolved
+# class NAME, in every log, without ever naming the file or the line.
+report_parse_error() {
+	[[ -x "$ROOT/tools/parse-error.sh" ]] || return 0
+	grep -qE 'because of a parser error|Failed to load script' "$@" 2>/dev/null || return 0
+	local located
+	located="$("$ROOT/tools/parse-error.sh" "$@" 2>/dev/null)"
+	[[ -n "$located" ]] && printf '%s\n' "$located" >&2
+	return 0
+}
+
+# ── named scripts: exactly those, in one process ─────────────────────────
+# An EXACT name wins over a prefix: `test.sh test_campaign` used to run
+# test_campaign_flow.gd too and return the union of both verdicts, so a
+# green target read as red twice in one day, and a sibling's parse error
+# read as the target's.
 if [[ $# -gt 0 ]]; then
-	MATCH="$(basename "$1" .gd)"
-	LOG="$WORK/single.log"
-	JUNIT_ARGS=()
-	[[ -n "$JUNIT" ]] && { mkdir -p "$(dirname "$JUNIT")"; JUNIT_ARGS=("-gjunit_xml_file=$JUNIT"); }
+	shopt -s nullglob
+	ALL=(tests/test_*.gd)
+	shopt -u nullglob
+	SELECTED=()
+	for wanted_raw in "$@"; do
+		wanted="$(basename "$wanted_raw" .gd)"
+		exact=""
+		matches=()
+		for candidate in "${ALL[@]}"; do
+			stem="$(basename "$candidate" .gd)"
+			[[ "$stem" == "$wanted" ]] && exact="$candidate"
+			[[ "$stem" == *"$wanted"* ]] && matches+=("$candidate")
+		done
+		if [[ -n "$exact" ]]; then
+			SELECTED+=("$exact")
+			(( ${#matches[@]} > 1 )) && \
+				echo "test: '$wanted' also matches ${#matches[@]} scripts; running the exact one — name the others to include them" >&2
+		elif (( ${#matches[@]} == 0 )); then
+			echo "test: no test script matches '$wanted'" >&2
+			exit 2
+		else
+			SELECTED+=("${matches[@]}")
+			(( ${#matches[@]} > 1 )) && \
+				echo "test: '$wanted' matches ${#matches[@]} scripts: ${matches[*]#tests/}" >&2
+		fi
+	done
+	mapfile -t SELECTED < <(printf '%s\n' "${SELECTED[@]}" | awk '!seen[$0]++')
+	LOG="$WORK/named.log"
+	[[ -n "$JUNIT" ]] && mkdir -p "$(dirname "$JUNIT")"
+	{
+		printf '{"dirs": [], "include_subdirs": false, "log_level": 1,'
+		printf ' "should_exit": true, "should_maximize": false,'
+		[[ -n "$JUNIT" ]] && printf ' "junit_xml_file": "%s",' "$JUNIT"
+		printf ' "tests": ['
+		printf '"res://%s"\n' "${SELECTED[@]}" | paste -sd, -
+		printf ']}'
+	} > "$WORK/named.json"
 	timeout "$TIMEOUT" "$GODOT" --headless --path "$ROOT" \
-		-s addons/gut/gut_cmdln.gd "-gselect=${MATCH}" "${JUNIT_ARGS[@]}" >"$LOG" 2>&1
+		-s addons/gut/gut_cmdln.gd "-gconfig=$WORK/named.json" >"$LOG" 2>&1
 	STATUS=$?
 	paint "$LOG"
-	[[ $STATUS -eq 124 ]] && echo "test: timed out — a test is probably awaiting something that never comes" >&2
+	echo "Ran ${#SELECTED[@]} script(s): ${SELECTED[*]#tests/}"
+	[[ $STATUS -eq 124 ]] && echo "test: timed out after ${TIMEOUT}s — a test is probably awaiting something that never comes" >&2
+	[[ $STATUS -ne 0 ]] && report_failures "$LOG"
 	FAILS=$(load_fails "$LOG")
 	if [[ "$FAILS" -gt 0 ]]; then
+		report_parse_error "$LOG"
 		echo "test: $FAILS test script(s) failed to load (parse error above)" >&2
 		echo "Failing Tests         $FAILS (scripts that did not load)"
 		STATUS=1
@@ -185,10 +263,14 @@ if [[ $RAN -lt $COUNT ]]; then
 	else
 		echo "test: only $RAN of $COUNT test scripts ran — the rest failed to load" >&2
 		grep -hE 'Failed to load script' "$WORK"/shard.*.log | sed 's/^/  /' >&2
+		report_parse_error "$WORK"/shard.*.log
 		echo "Failing Tests         $((COUNT - RAN)) (scripts that did not load)"
 	fi
 	STATUS=1
 fi
+
+# The assertions behind a red run, repeated where they can be read.
+[[ $STATUS -ne 0 ]] && report_failures "$WORK"/shard.*.log
 
 # Per-script times for the NEXT run's deal. Written only when every shard
 # produced one, so a crashed run cannot poison the balance with a half table.

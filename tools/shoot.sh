@@ -11,7 +11,9 @@
 #                               same scenario are actually comparable
 #   SHOOT_TIMEOUT=<n>           seconds before giving up (default scales
 #                               with the batch: 30 + 10 per scenario)
-#   SHOOT_KEEP=1                keep existing shots instead of clearing
+#   SHOOT_KEEP=1                keep every existing shot (a run already
+#                               clears only the scenarios it is about to
+#                               run, so this is rarely needed now)
 #   SHOOT_BASELINES=update      expect_shot WRITES its baselines (into
 #                               scenarios/baselines/<renderer>/) instead of
 #                               comparing; look at them, then commit them
@@ -112,7 +114,18 @@ case "${SHOOT_DISPLAY:-auto}" in
 		fi ;;
 	*) echo "shoot: SHOOT_DISPLAY must be auto, real or xvfb" >&2; exit 2 ;;
 esac
-[[ -z "${SHOOT_KEEP:-}" ]] && rm -f "$ROOT"/shots/*.png "$ROOT"/shots/*.jsonl 2>/dev/null
+# Clear only what THIS run is about to replace. Wiping the whole
+# directory meant a single-scenario run destroyed the shots of the
+# single-scenario run before it — twice in one day, the second time
+# while they were being read.
+mkdir -p "$ROOT/shots"
+rm -f "$ROOT"/shots/shard.*.log 2>/dev/null
+if [[ -z "${SHOOT_KEEP:-}" ]]; then
+	for scenario in "${SCENARIOS[@]}"; do
+		stem="$(basename "$scenario" .txt)"
+		rm -f "$ROOT/shots/$stem"-*.png "$ROOT/shots/$stem.jsonl" 2>/dev/null
+	done
+fi
 
 # The GPU is twice as fast and just as deterministic for a settled frame;
 # llvmpipe stays the rasterizer of the virtual display (CI) and of any
@@ -260,9 +273,32 @@ EXIT_NOISE="resources still in use at exit|were leaked at exit|Texture with GL I
 ENGINE_ERRORS=$(cat "$WORK"/shard.*.log | grep -vE "$EXIT_NOISE|^ERROR: scenario " | grep -cE "$ERROR_PATTERN")
 if [[ $ENGINE_ERRORS -gt 0 ]]; then
 	echo "shoot: $ENGINE_ERRORS engine error(s) — a green scenario does not mean a clean run" >&2
-	cat "$WORK"/shard.*.log | grep -vE "$EXIT_NOISE|^ERROR: scenario " | grep -E "$ERROR_PATTERN" | sort -u | head -5 >&2
+	# Named by the scenario they fell under: the shard log carries the
+	# scenario headers in the same stream, and an unattributed
+	# `Condition "!is_inside_tree()" is true` under "0 failed" cost one
+	# project four minutes of re-running the batch to place it.
+	awk -v pat="$ERROR_PATTERN" -v noise="$EXIT_NOISE" '
+		/^── scenario: / { scenario = $3; next }
+		$0 ~ noise { next }
+		/^ERROR: scenario / { next }
+		$0 ~ pat {
+			printf "  %s: %s\n", (scenario == "" ? "(before the first scenario)" : scenario), $0
+		}
+	' "$WORK"/shard.*.log | sort -u | head -5 >&2
+	if grep -qE 'because of a parser error|Failed to load script' "$WORK"/shard.*.log 2>/dev/null \
+			&& [[ -x "$ROOT/tools/parse-error.sh" ]]; then
+		"$ROOT/tools/parse-error.sh" "$WORK"/shard.*.log >&2
+	fi
+	echo "  (the full logs are in $ROOT/shots/shard.*.log)" >&2
 	[[ $STATUS -eq 0 ]] && STATUS=1
 fi
+
+# The engine's own output, kept beside the shots: the shard logs live in
+# a temp directory that is gone when this script returns, so an error
+# under a green batch could only be attributed by re-running the whole
+# batch with the output captured. A log is read once; a file is asked
+# again.
+cp "$WORK"/shard.*.log "$ROOT/shots/" 2>/dev/null
 
 shopt -s nullglob
 SHOTS=("$ROOT"/shots/*.png)

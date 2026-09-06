@@ -111,6 +111,12 @@ fi
 # count varies between identical runs (see docs/godot-tooling.md).
 ERRORS=$(grep -vE "resources still in use at exit|were leaked at exit|Texture with GL ID of [0-9]+: leaked" "$LOG" | grep -cE "SCRIPT ERROR|Parse Error|shader|^ERROR:")
 [[ $BOOT -ne 124 || $ERRORS -ne 0 ]] && cat "$LOG"
+# A class that will not parse is reported as an unresolved class NAME, in
+# every log, naming neither the file nor the line.
+if [[ $ERRORS -ne 0 ]] && [[ -x tools/parse-error.sh ]] \
+		&& grep -qE 'because of a parser error|Failed to load script' "$LOG"; then
+	tools/parse-error.sh "$LOG"
+fi
 rm -f "$LOG" "$LOG.rss"
 [[ $BOOT -eq 124 && $ERRORS -eq 0 ]]
 pass_or_fail "headless boot (clean, $ERRORS engine errors)" $?

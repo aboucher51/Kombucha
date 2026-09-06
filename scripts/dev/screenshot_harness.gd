@@ -340,7 +340,9 @@ func _run(path: String) -> void:
 
 
 func _execute(line: String) -> String:
-	var parts := line.split(" ", false)
+	# Quote-aware, and the SAME split the console uses: `""` is the empty
+	# value and a quoted phrase is one argument.
+	var parts := DebugConsole.tokenise(line)
 	# The project's hooks are asked FIRST, so a project may take over a
 	# built-in (a `settle` that knows its own busy nodes, a `shot` that
 	# hides a debug overlay); null means "not mine".

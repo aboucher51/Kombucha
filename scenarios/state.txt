@@ -11,3 +11,9 @@ click_at 5 5
 assert last_click 5,5
 click_at 600 300
 assert last_click 600,300
+# `""` is the empty value: asserting a field is UNSET is a real assertion,
+# and could not be written before (a trailing space is trimmed away).
+assert last_row ""
+click Row03
+assert last_row Row03
+expect_fail assert last_row ""

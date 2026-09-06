@@ -74,3 +74,14 @@ func test_pop_in_lands_at_full_alpha() -> void:
 	assert_almost_eq(panel.modulate.a, 1.0, 0.01)
 	assert_almost_eq(panel.offset_transform_scale.x, 1.0, 0.01)
 	assert_eq(panel.scale, Vector2.ONE, "motion is on the offset transform, never the laid-out scale")
+
+
+func test_grab_defers_by_id_and_refuses_a_dead_control() -> void:
+	assert_false(UIFocus.grab(null), "nothing to focus")
+	var button := Button.new()
+	add_child(button)
+	assert_true(UIFocus.grab(button))
+	button.queue_free()
+	assert_false(UIFocus.grab(button), "a control on its way out is not focused")
+	await get_tree().process_frame
+	pass_test("the deferred grab found no live control and did nothing")

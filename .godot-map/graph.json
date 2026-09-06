@@ -457,6 +457,7 @@
     "_unhandled_input",
     "toggle",
     "execute",
+    "tokenise",
     "_dispatch",
     "_state_providers",
     "_handle_state",
@@ -485,7 +486,7 @@
    "groups_queried": [
     "state"
    ],
-   "lines": 513
+   "lines": 547
   },
   "res://scripts/dev/dev_hooks.gd": {
    "path": "res://scripts/dev/dev_hooks.gd",
@@ -572,7 +573,7 @@
    "node_paths": [],
    "groups_joined": [],
    "groups_queried": [],
-   "lines": 1049
+   "lines": 1051
   },
   "res://scripts/dev/selftest_driver.gd": {
    "path": "res://scripts/dev/selftest_driver.gd",
@@ -678,6 +679,7 @@
    "signals": [],
    "funcs": [
     "first",
+    "grab",
     "_grab_deferred",
     "pad_spin"
    ],
@@ -688,7 +690,7 @@
    "node_paths": [],
    "groups_joined": [],
    "groups_queried": [],
-   "lines": 56
+   "lines": 70
   },
   "res://scripts/ui/ui_scale_root.gd": {
    "path": "res://scripts/ui/ui_scale_root.gd",
@@ -1112,14 +1114,15 @@
     "test_state_reports_the_provider",
     "test_assert_matches_and_mismatches_are_error_shaped",
     "test_unknown_key_is_an_error_naming_the_key",
-    "test_missing_value_is_a_usage_error"
+    "test_missing_value_is_a_usage_error",
+    "test_the_empty_value_can_be_asserted"
    ],
    "emits": [],
    "connects": [],
    "node_paths": [],
    "groups_joined": [],
    "groups_queried": [],
-   "lines": 30
+   "lines": 39
   },
   "res://tests/test_content_db.gd": {
    "path": "res://tests/test_content_db.gd",
@@ -1196,14 +1199,15 @@
     "test_bind_and_refusal",
     "test_alias_resolves",
     "test_project_hooks_may_override_a_core_command",
-    "test_a_flag_may_precede_a_rest_argument"
+    "test_a_flag_may_precede_a_rest_argument",
+    "test_quotes_group_a_phrase_and_survive_a_rest_argument"
    ],
    "emits": [],
    "connects": [],
    "node_paths": [],
    "groups_joined": [],
    "groups_queried": [],
-   "lines": 119
+   "lines": 126
   },
   "res://tests/test_dev_hooks.gd": {
    "path": "res://tests/test_dev_hooks.gd",
@@ -1552,14 +1556,15 @@
     "test_first_focus_survives_the_screen_leaving_the_tree_first",
     "test_first_focus_with_nothing_focusable_is_false",
     "test_pop_in_survives_the_control_being_freed_first",
-    "test_pop_in_lands_at_full_alpha"
+    "test_pop_in_lands_at_full_alpha",
+    "test_grab_defers_by_id_and_refuses_a_dead_control"
    ],
    "emits": [],
    "connects": [],
    "node_paths": [],
    "groups_joined": [],
    "groups_queried": [],
-   "lines": 77
+   "lines": 88
   },
   "res://tools/seeds/dev_driver.gd": {
    "path": "res://tools/seeds/dev_driver.gd",

@@ -34,7 +34,14 @@ Re-import after adding a new `class_name`, autoload, or translation CSV:
 
 ```bash
 godot4 --headless --path . --import
+git diff --stat project.godot     # the import can rewrite it
 ```
+
+**The import may rewrite `project.godot`**, dropping a setting the editor
+normalises (one project lost a directional-shadow size on every import
+and had to `git checkout project.godot` after each one; it did not
+reproduce in this fixture, so treat it as project-shaped). Check the diff
+while the change is small, not at commit time.
 
 Smoke-test by running headless for a fixed duration:
 
@@ -88,7 +95,12 @@ sync, which is why one project's 600 lines of in-file commands cannot be
 synced today.
 Failures must be returned as `"ERROR: ..."` — the harness fails a scenario
 on exactly that shape, so an assertion-like handler that answers `"false"`
-instead passes silently. **An assertion's value is `"kind": "rest"`**, as
+instead passes silently. **Double quotes group a phrase and `""` is the
+empty value**, in console lines and scenario lines alike (one tokeniser,
+`DebugConsole.tokenise`): asserting that a field is UNSET could not be
+written at all before, because a trailing space is trimmed and the
+argument read as missing, so one project asserted a neighbouring fact
+instead. **An assertion's value is `"kind": "rest"`**, as
 the core `assert` declares it: a `string` value stops at the first space,
 and every Vector2i prints with one, so a project's own `x_assert anchor
 (4, 3)` compared against `(4,`. **A named argument is a flag**
@@ -106,10 +118,19 @@ the synced console, and the next sync erased it.
 ### Tests
 
 ```bash
-tools/test.sh               # all, across parallel shards
-tools/test.sh test_smoke    # one script
-TEST_JOBS=1 tools/test.sh   # one process — the readable log
+tools/test.sh                       # all, across parallel shards
+tools/test.sh test_smoke            # one script: an EXACT name wins
+tools/test.sh test_a test_b         # several, in ONE process
+TEST_JOBS=1 tools/test.sh           # one process — the readable log
 ```
+
+**An exact name wins over a prefix.** `test.sh test_campaign` used to run
+`test_campaign_flow.gd` as well and return the union of both verdicts, so
+a green target read as red twice in one day and a sibling's parse error
+read as the target's. With no exact match every script containing the
+fragment runs and the run names them. Several names run in one process,
+because closing a feature meant a dozen one-script runs and each paid the
+engine's boot.
 
 GUT 9.7.1, vendored in `addons/gut`, tests in `tests/`, config in
 `.gutconfig.json`. Everything in `tests/` is pure logic and runs headless —
@@ -126,6 +147,19 @@ the LAST run's JUnit timings in `.godot/test-timings`, dealt longest-first.
 only passed because an earlier one had left something set now fails; fix
 the dependency, never reorder the shards. When a sharded failure makes no
 sense, run `TEST_JOBS=1` and compare.
+
+**A red run repeats its failing assertions at the end**, under
+`── failing assertions ──`: GUT counts them in its summary but prints the
+text far above it, which on any real suite is hundreds of lines up.
+
+**A parse error is reported everywhere except where it is.** The engine
+answers a class that will not parse with `Could not resolve class "X",
+because of a parser error` — in every log, naming neither the file nor
+the line, while every autoload that touches it fails the same way. When a
+run sees that, `tools/parse-error.sh` maps the class to its file, asks the
+engine to parse just that file (`--check-only --script`), and prints
+`parse error: <file>:<line> — <message>`. `test.sh`, `shoot.sh` and
+`check.sh` all call it; it prints nothing when there is no parse error.
 
 **A test script that fails to parse is silently dropped and GUT exits 0.**
 Four projects each discovered this behind an all-green check; the only tell
@@ -205,10 +239,12 @@ forces llvmpipe, which the virtual display (CI) always uses.
 Scenarios are plain-text files in `scenarios/`, one command per line. Write a
 new scenario for whatever you are working on rather than editing an existing
 one. Needs a display (WSLg, `DISPLAY=:0`) — **not** `--headless`, which has
-no renderer and captures blank frames. PNGs land in `shots/` (gitignored),
-and **every run wipes `shots/` first** (`SHOOT_KEEP=1` keeps them): a shot
-from an earlier run is gone after the next, so read a shot right after the
-run that made it.
+no renderer and captures blank frames. PNGs land in `shots/` (gitignored).
+**A run clears only the scenarios it is about to run** (shots are prefixed
+by scenario stem), so a single-scenario run no longer destroys the shots
+of the one before it — that bit twice in one day, the second time while
+they were being read. `SHOOT_KEEP=1` keeps everything. The engine's own
+shard logs are copied to `shots/shard.*.log` after every run.
 
 Built-in commands (`scripts/dev/screenshot_harness.gd`): `shot <name> [x y w
 h]`, `wait <frames>`, `ticks <n>` (physics frames: game time), `sleep
@@ -252,7 +288,12 @@ Rules that keep the harness useful:
   physics frames (game time), `sleep` is wall-clock. Under a slow renderer
   physics falls behind wall time, so a wall-clock sleep under-waits
   exact-timed choreography (one project's ferry failed only in the batch);
-  a timer-driven thing wants `sleep`. `settle` beats both when the thing
+  a timer-driven thing wants `sleep`. **`is_busy()` answers for work that
+  will FINISH**: a loop with no end — a wounded hull smoking until it
+  heals, any ambient effect — is scenery and must be excluded from the
+  answer, or the first such animation a project adds hangs every `settle`
+  in the batch, and any pacing that awaits one with it. `settle` beats
+  both when the thing
   you are waiting for can say it is busy: **any node that animates joins
   the `settle` group and answers `is_busy()`** (the scaffold's main scene
   does, as the pattern), and one project replaced every `sleep 1.6` guess
@@ -357,6 +398,16 @@ Rules that keep the harness useful:
   flags are not a lever here: under WSLg the game already runs unthrottled
   (~400 fps), and `--fixed-fps` makes heavy scenes SLOWER on a software
   renderer because game time falls behind wall time (measured, rejected).
+- **A coroutine mid-`await` outlives the teardown between scenarios.**
+  Anything sleeping on a timer (an AI turn loop's pacing, a replay)
+  resumes AFTER the harness has returned to the boot scene, with
+  `is_instance_valid(self)` still true and `is_inside_tree()` false; what
+  it then does with the viewport — `get_viewport()`, `create_tween()`, a
+  deferred `grab_focus` — is an engine error under a green batch, once
+  per scenario that ended on that seat. A resumed coroutine checks
+  `is_inside_tree()` before it touches the scene, and a deferred focus
+  goes through `UIFocus.grab()` (by instance id), never
+  `control.grab_focus.call_deferred()`.
 - Scenarios run in a batch and the harness reloads the scene between
   them — but **anything global survives that reload**, and so does
   anything APPLIED from a setting: the redirected settings file lives for
@@ -380,6 +431,13 @@ last (`scenario`, `ok`, `failures`, `seconds`, `shots`). It answers "what
 did this scenario do and where did the time go" with `grep` or `jq`,
 without the engine log. The merged JUnit report is the same idea for the
 suite. Both exist because a log is read once and a file is asked again.
+
+**An engine error is named by the scenario it fell under.** The shard
+logs carry the scenario headers in the same stream, so a counted error
+prints as `<scenario>: <error>`; an unattributed `Condition
+"!is_inside_tree()" is true` under "0 failed" cost one project four
+minutes of re-running the batch to place it. The logs themselves stay in
+`shots/shard.*.log`, because a log is read once and a file is asked again.
 
 **Every engine `ERROR:` line fails the boot and the batch**, not only
 `SCRIPT ERROR`s: a freed lambda capture and a ConfigFile key read with no

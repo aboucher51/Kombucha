@@ -107,7 +107,9 @@ func execute(line: String) -> String:
 	var trimmed := line.strip_edges()
 	if trimmed.is_empty():
 		return ""
-	var tokens := trimmed.split(" ", false)
+	var tokens := tokenise(trimmed)
+	if tokens.is_empty():
+		return ""
 	var command := _find_command(tokens[0])
 	if command.is_empty():
 		return "ERROR: unknown command '%s'. Try 'help'." % tokens[0]
@@ -115,6 +117,35 @@ func execute(line: String) -> String:
 	if parsed.has("error"):
 		return "ERROR: %s\nUsage: %s" % [parsed["error"], command.get("usage", command["id"])]
 	return _dispatch(command, parsed["args"])
+
+
+## A command line into tokens: spaces separate, DOUBLE QUOTES group, and
+## `""` is the EMPTY value. Without the quotes an assertion that a field
+## is UNSET cannot be written at all — a trailing space is trimmed and the
+## argument reads as missing — so one project asserted a neighbouring fact
+## instead, which is the weaker scenario. The harness splits scenario
+## lines the same way: scenario lines and console lines are one vocabulary.
+static func tokenise(line: String) -> PackedStringArray:
+	var tokens := PackedStringArray()
+	var current := ""
+	var quoted := false
+	var started := false
+	for i in line.length():
+		var character := line[i]
+		if character == '"':
+			quoted = not quoted
+			started = true
+		elif character == " " and not quoted:
+			if started:
+				tokens.append(current)
+			current = ""
+			started = false
+		else:
+			current += character
+			started = true
+	if started:
+		tokens.append(current)
+	return tokens
 
 
 ## The handler registry — a closed match, so a typo in the JSON warns
@@ -349,7 +380,10 @@ func _parse_args(command: Dictionary, tokens: Array) -> Dictionary:
 
 		if kind == "rest":
 			var rest := " ".join(PackedStringArray(tokens.slice(i)))
-			if rest.is_empty() and spec.get("required", false):
+			# ABSENT, not empty: `assert key ""` is a legitimate assertion
+			# that a field is unset, and refusing it left one project
+			# asserting a neighbouring fact instead.
+			if i >= tokens.size() and spec.get("required", false):
 				return {"error": "Missing <%s>." % name}
 			args[name] = rest
 			return {"args": args}

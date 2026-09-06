@@ -129,6 +129,14 @@ saves, settings or mods.
   dictionaries go through one normaliser and a test compares against
   floats. A 64-bit `rng.state` stored as a number is silently truncated
   to a double: store it as a string.
+- **Restored equals fresh: one normaliser per record shape.** Every path
+  that builds a record — fresh, from a template, from a save — goes
+  through ONE function (`SimUnit.from_dict`, `Merit.normalise`) that
+  fixes key ORDER and TYPES, and one test per shape asserts
+  `restore(to_dict()) == to_dict()`. Migrations then reshape one field
+  and the normaliser does the rest, and a golden fixture per schema pins
+  the chain. Eight schema bumps in one afternoon held together on this;
+  without it every migration re-derives what a record looks like.
 - **Slots carry meta** (`saved_at`, `slot`, `version`, whatever the caller
   adds) at the top level, so `slot_meta()` and `list_slots()` describe a
   slot without parsing the payloads; numbered slots always list, anything
@@ -211,6 +219,15 @@ gating which pad may act is opt-in through the `pad_gate` group.
   offset transform is what the engine draws, not what the layout reads;
   `pop_in` is the reference. Also: `icon_alignment = CENTER` draws the
   icon UNDER centred text, not beside it.
+- **`String.capitalize()` title-cases every word**, so a refusal from a
+  sim ("needs troupe level 8") becomes "Needs Troupe Level 8" in a
+  tooltip. Sentence text wants its first letter raised and nothing else.
+- **An empty `Label` still takes a line in a `VBoxContainer`**: add the
+  row only when there is text, or a locked entry leaves a gap where its
+  explanation would be.
+- **A `RichTextLabel` gives ONE word a tooltip** with
+  `[hint=explanation with spaces]word[/hint]` — the way a card names a
+  thing and explains it on hover without a second control.
 - **Panels arrive with `UITheme.pop_in()`**, deferred by instance id so a
   control freed before the deferred call lands is not an error, and
   pause-mode process so it runs while the tree is paused.
@@ -301,6 +318,12 @@ right; several were found by two projects independently.
   top-left. Use `set_anchors_and_offsets_preset()`, or set anchors before
   `add_child()`. And `Control.position` on an anchored control is
   parent-relative: place with `offset_*`. (Two projects, independently.)
+- **A deferred `grab_focus` is deferred BY INSTANCE ID**, through
+  `UIFocus.first()` or `UIFocus.grab(control)`. A bare
+  `control.grab_focus.call_deferred()` lands after the scene it belongs
+  to is gone (the harness returns to the boot scene between scenarios)
+  and logs `Condition "!is_inside_tree()" is true` — an engine error
+  under a green batch, found twice, eight call sites the second time.
 - **A node reached by group must skip nodes on their way out.** A
   `queue_free`'d node stays in its group, visible, until the frame ends:
   a toast host picked by `get_first_node_in_group` found the previous

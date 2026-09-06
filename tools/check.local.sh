@@ -80,6 +80,19 @@ PY
 			printf '  FAIL  window reported %s at %s\n' "${got:-nothing}" "$res"; MISSING=1
 		fi
 	done
+	# A run clears only the scenarios it is about to run: a single-scenario
+	# run used to wipe the whole directory, and took the shots of the run
+	# before it while they were being read.
+	rm -f shots/*.png shots/*.jsonl 2>/dev/null
+	if SHOOT_JOBS=1 tools/shoot.sh scenarios/example.txt >/dev/null 2>&1 \
+			&& SHOOT_JOBS=1 tools/shoot.sh scenarios/dropdown.txt >/dev/null 2>&1 \
+			&& compgen -G "shots/example-*.png" >/dev/null \
+			&& compgen -G "shots/dropdown-*.png" >/dev/null; then
+		printf '  ok    a run clears only its own shots\n'
+	else
+		printf '  FAIL  a single-scenario run wiped another scenario shots\n'; MISSING=1
+	fi
+
 	# Serve mode: one engine, commands as files, verdict per command. A
 	# passing run, a failing line (the gate's own red), and a clean stop.
 	if tools/serve.sh start >/dev/null 2>&1 \

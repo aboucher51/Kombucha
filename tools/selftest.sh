@@ -48,6 +48,48 @@ else
 fi
 [[ -f "$SCRATCH/.godot/test-timings" ]] && say ok "timings written for the next deal" || { say FAIL "no .godot/test-timings after a full run"; FAILED=1; }
 
+# 2b. A named run is EXACTLY what was named — an exact name beats a
+#     prefix (`test_campaign` used to drag in `test_campaign_flow`, and
+#     the verdict was the union) — and several names run in one process.
+printf 'extends GutTest\nfunc test_sibling() -> void:\n\tassert_true(true)\n' > "$SCRATCH/tests/test_smoke_sibling.gd"
+OUT="$(cd "$SCRATCH" && tools/test.sh test_smoke 2>&1)"
+if grep -q '^Ran 1 script(s): test_smoke.gd$' <<<"$OUT"; then
+	say ok "an exact name runs one script, not its prefix siblings"
+else
+	say FAIL "a named run dragged in a sibling ($(grep -m1 '^Ran ' <<<"$OUT"))"; FAILED=1
+fi
+OUT="$(cd "$SCRATCH" && tools/test.sh test_smoke test_cmdline 2>&1)"
+if grep -q '^Ran 2 script(s):' <<<"$OUT" && grep -q 'test_cmdline.gd' <<<"$OUT"; then
+	say ok "several named scripts run in one process"
+else
+	say FAIL "several names did not run together"; FAILED=1
+fi
+rm -f "$SCRATCH/tests/test_smoke_sibling.gd"
+
+# 2c. A failing assertion is repeated where it can be read: GUT prints it
+#     hundreds of lines above its own summary.
+cp "$SCRATCH/tests/test_smoke.gd" "$SCRATCH/smoke.bak"
+printf '\n\nfunc test_planted_for_the_selftest() -> void:\n\tassert_eq(2 + 2, 5, "planted by the selftest")\n' >> "$SCRATCH/tests/test_smoke.gd"
+OUT="$(cd "$SCRATCH" && tools/test.sh test_smoke 2>&1)"
+if grep -q 'failing assertions' <<<"$OUT" && grep -q 'planted by the selftest' <<<"$OUT"; then
+	say ok "a red run repeats its failing assertion"
+else
+	say FAIL "a red run did not repeat its failing assertion"; FAILED=1
+fi
+mv "$SCRATCH/smoke.bak" "$SCRATCH/tests/test_smoke.gd"
+
+# 2d. A parse error is LOCATED. The engine names the class and never the
+#     file, in every log, and finding it cost a round trip per guess.
+cp "$SCRATCH/scripts/util/save_compat.gd" "$SCRATCH/save_compat.bak"
+printf '\n\nfunc _selftest_broken() -> void:\n\tvar x = 1 if true\n' >> "$SCRATCH/scripts/util/save_compat.gd"
+OUT="$(cd "$SCRATCH" && tools/test.sh test_smoke 2>&1)"
+if grep -qE 'parse error: scripts/util/save_compat\.gd:[0-9]+' <<<"$OUT"; then
+	say ok "a parse error is named by file and line"
+else
+	say FAIL "a parse error was not located past 'could not resolve class'"; FAILED=1
+fi
+mv "$SCRATCH/save_compat.bak" "$SCRATCH/scripts/util/save_compat.gd"
+
 # 4. A gate must be proven able to fail: plant one plain engine ERROR in
 #    the scratch copy's boot scene and watch both gates go red on it. The
 #    scratch's test runner and local check are stubbed for this run: the
@@ -63,11 +105,20 @@ else
 	say FAIL "boot gate stayed green on a plain engine ERROR line (exit $CODE)"; FAILED=1
 fi
 if [[ "${QUICK:-0}" -eq 0 ]]; then
-	OUT="$(cd "$SCRATCH" && SHOOT_JOBS=1 tools/shoot.sh scenarios/example.txt 2>&1)"; CODE=$?
+	# TWO scenarios: the boot error falls before the first header, so a
+	# one-scenario run cannot prove that an error is placed by scenario.
+	OUT="$(cd "$SCRATCH" && SHOOT_JOBS=1 tools/shoot.sh scenarios/example.txt scenarios/console.txt 2>&1)"; CODE=$?
 	if [[ $CODE -ne 0 ]] && grep -q 'engine error(s)' <<<"$OUT"; then
 		say ok "scenario gate is red on a plain engine ERROR line"
 	else
 		say FAIL "scenario gate stayed green on a plain engine ERROR line (exit $CODE)"; FAILED=1
+	fi
+	# ...and the error is placed: an unattributed one cost four minutes of
+	# re-running a batch to learn which scenario raised it.
+	if grep -qE '^  scenarios/[a-z_]+\.txt: ' <<<"$OUT"; then
+		say ok "an engine error is named by its scenario"
+	else
+		say FAIL "an engine error was reported without its scenario"; FAILED=1
 	fi
 else
 	say -- "scenario gate on an engine ERROR line (no display)"

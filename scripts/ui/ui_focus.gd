@@ -25,11 +25,25 @@ static func first(root: Node) -> bool:
 			var dead: bool = control is BaseButton and (control as BaseButton).disabled
 			if control.focus_mode == Control.FOCUS_ALL and control.visible \
 					and not dead and not control.is_queued_for_deletion():
-				_grab_deferred.call_deferred(control.get_instance_id())
-				return true
+				return grab(control)
 		if first(child):
 			return true
 	return false
+
+
+## Focus ONE control the caller already has, under the same rule as
+## first(): deferred BY INSTANCE ID. A screen that knows which control it
+## wants (a modal's Close, a dialogue's Advance, a pause sheet's Resume)
+## wrote `control.grab_focus.call_deferred()` directly — eight of them in
+## one project — and the one on a screen a scenario ended on landed after
+## the harness tore the scene down: `Condition "!is_inside_tree()" is
+## true`, an engine error under a green batch. Never defer grab_focus on
+## the control itself.
+static func grab(control: Control) -> bool:
+	if control == null or control.is_queued_for_deletion():
+		return false
+	_grab_deferred.call_deferred(control.get_instance_id())
+	return true
 
 
 static func _grab_deferred(control_id: int) -> void:

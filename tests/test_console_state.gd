@@ -27,3 +27,12 @@ func test_unknown_key_is_an_error_naming_the_key() -> void:
 
 func test_missing_value_is_a_usage_error() -> void:
 	assert_true(DebugConsole.execute("assert title").begins_with("ERROR:"))
+
+
+func test_the_empty_value_can_be_asserted() -> void:
+	# `""` is the empty value: an assertion that a field is UNSET could
+	# not be written at all before (a trailing space is trimmed and the
+	# argument read as missing).
+	assert_eq(DebugConsole.execute('assert last_row ""'), "", "nothing has been clicked yet")
+	assert_true(DebugConsole.execute('assert title ""').begins_with("ERROR:"), "and it is a real comparison")
+	assert_true(DebugConsole.execute("assert last_row").begins_with("ERROR:"), "an absent value is still missing")

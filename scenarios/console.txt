@@ -8,4 +8,7 @@ load scenario_probe
 delete_save scenario_probe
 expect_fail load scenario_probe
 expect_fail frobnicate
+# Double quotes group a phrase into one argument, spacing kept.
+note "two  spaces"
+assert_note "two  spaces"
 shot console-done
