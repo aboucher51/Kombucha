@@ -8,13 +8,22 @@ command that says green or names what broke.
 ## TL;DR
 
 ```bash
+curl -fsSL https://raw.githubusercontent.com/aboucher51/Kombucha/main/tools/setup.sh | bash
+```
+
+That installs Godot 4.7 as `godot4`, this plugin and the two it pairs
+with, and the setting Claude's GDScript language server needs; it is
+safe to re-run and says what it did (`--with-map` adds the project map
+tool). Then in Claude Code: `/new-godot-project MyGame` scaffolds a
+project that starts green. Work in it; `tools/check.sh` is the bar
+before any commit. `/sync-godot-tooling` keeps the tooling current.
+
+Or by hand:
+
+```bash
 claude plugin marketplace add aboucher51/Kombucha
 claude plugin install kombucha@kombucha
 ```
-
-Then in Claude Code: `/new-godot-project MyGame` scaffolds a project that
-starts green. Work in it; `tools/check.sh` is the bar before any commit.
-`/sync-godot-tooling` keeps the tooling current.
 
 ## Requirements
 
