@@ -1706,18 +1706,21 @@
    "res://scripts/ui/pause_menu.gd",
    "res://scripts/ui/volume_sliders.gd",
    "res://tests/test_audio_manager.gd",
-   "res://tests/test_debug_console.gd"
+   "res://tests/test_debug_console.gd",
+   "res://tests/test_localization.gd"
   ],
   "res://scripts/autoloads/event_bus.gd": [
    "autoload:EventBus",
    "res://scripts/autoloads/pads.gd",
    "res://scripts/autoloads/save_manager.gd",
+   "res://tests/test_localization.gd",
    "res://tests/test_save_manager.gd"
   ],
   "res://scripts/autoloads/game_manager.gd": [
    "autoload:GameManager",
    "res://scripts/dev/dev_hooks.gd",
    "res://scripts/ui/pause_menu.gd",
+   "res://tests/test_localization.gd",
    "res://tests/test_ui_kit.gd"
   ],
   "res://scripts/autoloads/keybinds.gd": [
@@ -1726,10 +1729,12 @@
    "res://scripts/dev/debug_console.gd",
    "res://scripts/dev/screenshot_harness.gd",
    "res://tests/test_debug_console.gd",
-   "res://tests/test_keybinds.gd"
+   "res://tests/test_keybinds.gd",
+   "res://tests/test_localization.gd"
   ],
   "res://scripts/autoloads/pads.gd": [
-   "autoload:Pads"
+   "autoload:Pads",
+   "res://tests/test_localization.gd"
   ],
   "res://scripts/autoloads/save_manager.gd": [
    "autoload:SaveManager",
@@ -1746,11 +1751,13 @@
    "res://tests/test_content_db.gd",
    "res://tests/test_debug_console.gd",
    "res://tests/test_keybinds.gd",
+   "res://tests/test_localization.gd",
    "res://tests/test_save_manager.gd",
    "res://tests/test_save_providers.gd"
   ],
   "res://scripts/dev/bug_report.gd": [
-   "res://scripts/dev/debug_console.gd"
+   "res://scripts/dev/debug_console.gd",
+   "res://tests/test_localization.gd"
   ],
   "res://scripts/dev/debug_console.gd": [
    "autoload:DebugConsole",
@@ -1758,86 +1765,108 @@
    "res://tests/test_console_state.gd",
    "res://tests/test_debug_console.gd",
    "res://tests/test_dev_hooks.gd",
+   "res://tests/test_localization.gd",
    "res://tests/test_screenshot_harness.gd"
   ],
   "res://scripts/dev/dev_hooks.gd": [
-   "res://scripts/dev/debug_console.gd"
+   "res://scripts/dev/debug_console.gd",
+   "res://tests/test_localization.gd"
   ],
   "res://scripts/dev/screenshot_harness.gd": [
    "autoload:ScreenshotHarness",
+   "res://tests/test_localization.gd",
    "res://tests/test_screenshot_harness.gd"
   ],
   "res://scripts/dev/selftest_driver.gd": [
-   "autoload:SelftestDriver"
+   "autoload:SelftestDriver",
+   "res://tests/test_localization.gd"
   ],
   "res://scripts/main.gd": [
-   "res://scenes/main.tscn"
+   "res://scenes/main.tscn",
+   "res://tests/test_localization.gd"
   ],
   "res://scripts/ui/pause_menu.gd": [
-   "res://scenes/main.tscn"
+   "res://scenes/main.tscn",
+   "res://tests/test_localization.gd"
   ],
   "res://scripts/ui/ui_focus.gd": [
    "res://scripts/ui/pause_menu.gd",
+   "res://tests/test_localization.gd",
    "res://tests/test_ui_kit.gd"
   ],
   "res://scripts/ui/ui_scale_root.gd": [
+   "res://tests/test_localization.gd",
    "res://tests/test_ui_kit.gd"
   ],
   "res://scripts/ui/ui_theme.gd": [
    "res://scripts/dev/debug_console.gd",
    "res://scripts/main.gd",
    "res://scripts/ui/pause_menu.gd",
+   "res://tests/test_localization.gd",
    "res://tests/test_ui_kit.gd"
   ],
   "res://scripts/ui/volume_sliders.gd": [
-   "res://scripts/ui/pause_menu.gd"
+   "res://scripts/ui/pause_menu.gd",
+   "res://tests/test_localization.gd"
   ],
   "res://scripts/util/bbcode.gd": [
-   "res://tests/test_kit_utils.gd"
+   "res://tests/test_kit_utils.gd",
+   "res://tests/test_localization.gd"
   ],
   "res://scripts/util/cmdline.gd": [
    "res://scripts/dev/screenshot_harness.gd",
    "res://scripts/dev/selftest_driver.gd",
    "res://tests/test_cmdline.gd",
+   "res://tests/test_localization.gd",
    "res://tools/seeds/dev_driver.gd"
   ],
   "res://scripts/util/content_db.gd": [
-   "res://tests/test_content_db.gd"
+   "res://tests/test_content_db.gd",
+   "res://tests/test_localization.gd"
   ],
   "res://scripts/util/data_merger.gd": [
    "res://scripts/util/content_db.gd",
-   "res://tests/test_data_merger.gd"
+   "res://tests/test_data_merger.gd",
+   "res://tests/test_localization.gd"
   ],
   "res://scripts/util/function_registry.gd": [
-   "res://tests/test_function_registry.gd"
+   "res://tests/test_function_registry.gd",
+   "res://tests/test_localization.gd"
   ],
   "res://scripts/util/json_lines.gd": [
-   "res://tests/test_json_lines.gd"
+   "res://tests/test_json_lines.gd",
+   "res://tests/test_localization.gd"
   ],
   "res://scripts/util/json_value.gd": [
-   "res://tests/test_kit_utils.gd"
+   "res://tests/test_kit_utils.gd",
+   "res://tests/test_localization.gd"
   ],
   "res://scripts/util/l10n.gd": [
    "res://scripts/ui/pause_menu.gd",
    "res://scripts/ui/volume_sliders.gd",
-   "res://tests/test_l10n.gd"
+   "res://tests/test_l10n.gd",
+   "res://tests/test_localization.gd"
   ],
   "res://scripts/util/pad_router.gd": [
    "res://scripts/autoloads/pads.gd",
+   "res://tests/test_localization.gd",
    "res://tests/test_pad_router.gd"
   ],
   "res://scripts/util/runtime_textures.gd": [
-   "res://tests/test_kit_utils.gd"
+   "res://tests/test_kit_utils.gd",
+   "res://tests/test_localization.gd"
   ],
   "res://scripts/util/save_compat.gd": [
    "res://scripts/autoloads/save_manager.gd",
    "res://tests/test_debug_console.gd",
+   "res://tests/test_localization.gd",
    "res://tests/test_save_providers.gd"
   ],
   "res://scripts/util/version_util.gd": [
    "res://scripts/autoloads/save_manager.gd",
    "res://scripts/util/save_compat.gd",
-   "res://tests/test_kit_utils.gd"
+   "res://tests/test_kit_utils.gd",
+   "res://tests/test_localization.gd"
   ],
   "res://shots": [
    "res://scripts/dev/screenshot_harness.gd"
