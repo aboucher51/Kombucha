@@ -139,7 +139,10 @@ func _ready() -> void:
 		return
 
 	# Scenarios need a real window to render into, but they have no business
-	# stealing the keyboard from whatever the developer is doing.
+	# stealing the keyboard from whatever the developer is doing. This keeps
+	# X focus off; it does not stop WSLg's Windows side from bringing the
+	# window to the foreground (measured), which is why shoot.sh prefers a
+	# virtual display.
 	DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_NO_FOCUS, true)
 
 	_boot_locale = TranslationServer.get_locale()

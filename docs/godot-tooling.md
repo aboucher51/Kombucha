@@ -234,15 +234,33 @@ tenth of a second; state carries over between commands unless a line says
 `reset`. Nothing about it is a gate: `check.sh` runs `shoot.sh`, which
 boots fresh, deals the batch, and is what CI runs.
 
+**The batch runs on a virtual display when Xvfb is installed** (`sudo apt
+install xvfb`; the `SHOOT_DISPLAY=auto` default): no window appears and
+nothing takes the keyboard. Without it the real display is used, and
+under WSLg Windows brings every new window to the foreground, whatever
+the engine says: the no-focus window flag keeps X focus off and the
+window comes to the front anyway, `--screen` only moves it to another
+monitor, and a hidden parent window (`--wid`) is mapped by the engine as
+a top-level of its own (all three measured from the Windows side by
+polling the foreground window during a run). So a batch of N processes
+interrupts whoever is typing N times. `SHOOT_DISPLAY=real` is for
+watching the window. Under WSLg `/tmp/.X11-unix` is a read-only mount,
+so the virtual server listens on TCP (`xvfb-run -l`) and the client
+finds it there by itself; `serve.sh` follows the same rule.
+
 **Rendering is on the GPU when WSLg offers one** (`SHOOT_GPU=auto`, Mesa's
-d3d12 driver): measured twice as fast on a 36-scenario suite, same shots,
-and a settled frame is pixel-identical between GPU reruns. `SHOOT_GPU=0`
-forces llvmpipe, which the virtual display (CI) always uses.
+d3d12 driver), on the real display and the virtual one alike: measured
+twice as fast on a 36-scenario suite, same shots, a settled frame is
+pixel-identical between GPU reruns, and the adapter name (so the
+`expect_shot` baseline directory) is the same on both displays.
+`SHOOT_GPU=0` forces llvmpipe, which CI always uses; `check.sh --ci`
+sets both, and the local gate proves the virtual display with each.
 
 Scenarios are plain-text files in `scenarios/`, one command per line. Write a
 new scenario for whatever you are working on rather than editing an existing
-one. Needs a display (WSLg, `DISPLAY=:0`) — **not** `--headless`, which has
-no renderer and captures blank frames. PNGs land in `shots/` (gitignored).
+one. Needs a display server (Xvfb, else WSLg's `DISPLAY=:0`) — **not**
+`--headless`, which has no renderer and captures blank frames. PNGs land
+in `shots/` (gitignored).
 **A run clears only the scenarios it is about to run** (shots are prefixed
 by scenario stem), so a single-scenario run no longer destroys the shots
 of the one before it — that bit twice in one day, the second time while
@@ -353,12 +371,14 @@ Rules that keep the harness useful:
 - **`frame_budget` is a regression tripwire, not a device target.** It
   turns vsync off for the measurement (with vsync on every scene reads
   16.7 ms and the gate can never fail) and prints the number on pass, so
-  the trend is visible before the gate goes red. Under WSLg the renderer
+  the trend is visible before the gate goes red. On CI the renderer
   is llvmpipe, software; what it catches is the same scene on the same
   machine becoming several times more expensive.
 - **The real cursor is global state.** `_sandbox()` parks it at (2, 2);
   left over a control it feeds hover and tooltips into every later
-  scenario.
+  scenario. On the virtual display each shard has its own X server and
+  so its own cursor; on the real display it is shared with the
+  developer and with every other shard.
 
 - **When adding UI, add the input-free seam alongside it.** Any interaction
   reachable only through an InputEvent cannot be screenshotted, scripted, or
@@ -377,9 +397,10 @@ Rules that keep the harness useful:
   164 s against 204 s for a 36-scenario suite. `SHOOT_JOBS=1` keeps the
   order given, which is how an order-dependent pair is proven on purpose.
   The timings file is MERGED, so a single-scenario run updates one row and
-  never leaves the next batch to deal blind. **The shards share the ONE
-  real cursor**: the harness pushes a click's press and release in the
-  same frame for that reason (a frame between them, and the other shard's
+  never leaves the next batch to deal blind. **On the real display the
+  shards share the ONE cursor** (a virtual server per shard has its own):
+  the harness pushes a click's press and release in the same frame for
+  that reason (a frame between them, and the other shard's
   warp made the button see the pointer leave mid-press: "the second click
   of a confirm button fails only in the batch"), and a scenario that
   proves hover or tooltips wants `SHOOT_JOBS=1`.

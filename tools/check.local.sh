@@ -106,12 +106,26 @@ PY
 		tools/serve.sh stop >/dev/null 2>&1
 	fi
 	# The CI path (virtual display, software GL) exercised HERE when the
-	# package is present, so the branch cannot rot between pushes.
+	# package is present, so the branch cannot rot between pushes — and the
+	# virtual display with the GPU, which is what every batch on a WSLg
+	# machine with xvfb installed runs on: the baseline scenario proves the
+	# expect_shot baselines made on the real display hold there.
 	if command -v xvfb-run >/dev/null; then
-		if SHOOT_DISPLAY=xvfb SHOOT_JOBS=1 SHOOT_KEEP=1 tools/shoot.sh scenarios/example.txt 2>&1 | grep -q 'renderer llvmpipe'; then
-			printf '  ok    Xvfb path renders with llvmpipe\n'
+		OUT="$(SHOOT_GPU=0 SHOOT_DISPLAY=xvfb SHOOT_JOBS=1 SHOOT_KEEP=1 tools/shoot.sh scenarios/example.txt 2>&1)"
+		if [[ $? -eq 0 ]] && grep -q 'renderer llvmpipe' <<<"$OUT"; then
+			printf '  ok    Xvfb path renders with llvmpipe (SHOOT_GPU=0)\n'
 		else
-			printf '  FAIL  Xvfb path did not render with llvmpipe\n'; MISSING=1
+			printf '  FAIL  Xvfb path did not render with llvmpipe (SHOOT_GPU=0)\n'; MISSING=1
+		fi
+		if [[ -e /usr/lib/x86_64-linux-gnu/dri/d3d12_dri.so ]]; then
+			OUT="$(SHOOT_DISPLAY=xvfb SHOOT_JOBS=1 SHOOT_KEEP=1 tools/shoot.sh scenarios/baseline.txt 2>&1)"
+			if [[ $? -eq 0 ]] && grep -q 'renderer D3D12' <<<"$OUT"; then
+				printf '  ok    Xvfb path renders on the GPU, same baselines as the real display\n'
+			else
+				printf '  FAIL  Xvfb path on the GPU (renderer or baseline) — SHOOT_DISPLAY=xvfb tools/shoot.sh scenarios/baseline.txt\n'; MISSING=1
+			fi
+		else
+			printf '  --    Xvfb path on the GPU (no d3d12 driver on this machine)\n'
 		fi
 	else
 		printf '  --    Xvfb path (xvfb-run not installed: sudo apt install xvfb)\n'

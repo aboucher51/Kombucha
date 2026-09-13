@@ -27,21 +27,30 @@
 #                               balance): how an order-dependent pair, such
 #                               as "this scenario leaves the boot scene and
 #                               the next one must start on it", is proven.
-#   SHOOT_DISPLAY=auto          auto (default): a real display if one is
-#                               reachable, else a virtual one via xvfb-run;
-#                               real: fail without one; xvfb: force the
-#                               virtual display (how the CI path is
-#                               exercised on a machine with WSLg)
-#   SHOOT_SLOW=3                timeout multiplier under the virtual display
+#   SHOOT_DISPLAY=auto          auto (default): a virtual display via
+#                               xvfb-run when it is installed, else the
+#                               real one; real: the real display (to watch
+#                               the window; fails without one); xvfb: the
+#                               virtual display (fails without xvfb-run).
+#                               Virtual is preferred because a window on
+#                               the real display takes the keyboard: under
+#                               WSLg, Windows brings every new window to
+#                               the foreground whatever the engine's
+#                               no-focus flag says (measured), so a batch
+#                               interrupts the developer once per process.
+#                               `sudo apt install xvfb` is the fix.
+#   SHOOT_SLOW=3                timeout multiplier under software rendering
 #   SHOOT_GPU=auto              auto (default): render on the GPU through
 #                               Mesa's d3d12 driver when WSLg offers one
-#                               (GALLIUM_DRIVER=d3d12) and a real display
-#                               is in use; 0 forces llvmpipe (what CI
-#                               renders with, so its expect_shot baselines
-#                               can be made here). Measured on a 36-
-#                               scenario suite: 208 s llvmpipe, 105 s GPU,
-#                               same shots, and static frames are
-#                               pixel-identical between GPU reruns.
+#                               (GALLIUM_DRIVER=d3d12), on the real and
+#                               the virtual display alike — same adapter
+#                               name, so the same expect_shot baselines;
+#                               0 forces llvmpipe (what CI renders with,
+#                               so its baselines can be made here).
+#                               Measured on a 36-scenario suite: 208 s
+#                               llvmpipe, 105 s GPU, same shots, and
+#                               static frames are pixel-identical between
+#                               GPU reruns.
 #   GODOT=/path/to/binary       the engine to run (see check.sh)
 #
 # Every process gets its OWN XDG_DATA_HOME: user:// (saves, the sandboxed
@@ -52,9 +61,13 @@
 # developer's saved ones. Only data moves; the shader cache stays shared.
 #
 # Needs a display SERVER, not a monitor or a GPU. --headless cannot be used:
-# it has no renderer, so the viewport texture comes back null. Under WSL
-# that means WSLg (DISPLAY=:0); anywhere else, Xvfb with Mesa's llvmpipe is
-# what Godot's own CI uses (`xvfb-run godot --audio-driver Dummy ...`).
+# it has no renderer, so the viewport texture comes back null. Xvfb is the
+# server of choice (what Godot's own CI uses: `xvfb-run godot --audio-driver
+# Dummy ...`): no window appears and nothing takes the keyboard. Under WSLg
+# /tmp/.X11-unix is a read-only mount, so Xvfb cannot bind a unix socket
+# and is told to listen on TCP instead (`xvfb-run -l`); the client falls
+# back to TCP on localhost by itself. Without Xvfb the real display (WSLg's
+# DISPLAY=:0) works, at the focus cost above.
 #
 # OWNED BY KOMBUCHA (tools/tooling-manifest.txt); do not edit in a project.
 set -uo pipefail
@@ -94,23 +107,39 @@ have_display() {
 }
 export DISPLAY="${DISPLAY:-:0}"
 RUNNER=()
+# A window on the real display takes the keyboard: under WSLg every new
+# window is brought to the foreground by Windows, and the engine's no-focus
+# flag only keeps X focus off (measured from the Windows side). So the
+# virtual display is preferred whenever xvfb-run is installed.
+virtual_display() {
+	# xvfb-run's default listener is a unix socket in /tmp/.X11-unix; under
+	# WSLg that directory is a read-only mount, so the server must listen
+	# on TCP instead, where the client finds it by itself (libxcb falls
+	# back to localhost TCP when the socket is missing).
+	local listen=()
+	[[ -w /tmp/.X11-unix ]] || listen=(-l)
+	RUNNER=(xvfb-run -a "${listen[@]}" -s "-screen 0 ${SHOOT_RESOLUTION:-1280x720}x24")
+}
 case "${SHOOT_DISPLAY:-auto}" in
 	real)
 		if ! have_display; then
 			echo "shoot: no display reachable at DISPLAY=$DISPLAY (SHOOT_DISPLAY=real)" >&2
 			exit 2
 		fi ;;
-	auto|xvfb)
-		if [[ "${SHOOT_DISPLAY:-auto}" == "xvfb" ]] || ! have_display; then
-			if ! command -v xvfb-run >/dev/null; then
-				echo "shoot: no display and no xvfb-run — install xvfb (sudo apt install xvfb) or run under WSLg" >&2
-				exit 2
-			fi
-			# Mesa's software rasterizer, explicitly, so the result is the same
-			# on a runner with no GPU as on one with a GPU nobody asked for.
-			export LIBGL_ALWAYS_SOFTWARE=1
-			RUNNER=(xvfb-run -a -s "-screen 0 ${SHOOT_RESOLUTION:-1280x720}x24")
-			echo "shoot: no real display — Xvfb + llvmpipe"
+	xvfb)
+		if ! command -v xvfb-run >/dev/null; then
+			echo "shoot: no xvfb-run — install xvfb (sudo apt install xvfb) (SHOOT_DISPLAY=xvfb)" >&2
+			exit 2
+		fi
+		virtual_display ;;
+	auto)
+		if command -v xvfb-run >/dev/null; then
+			virtual_display
+		elif have_display; then
+			echo "shoot: real display — the window takes focus; sudo apt install xvfb for a virtual one"
+		else
+			echo "shoot: no display and no xvfb-run — install xvfb (sudo apt install xvfb) or run under WSLg" >&2
+			exit 2
 		fi ;;
 	*) echo "shoot: SHOOT_DISPLAY must be auto, real or xvfb" >&2; exit 2 ;;
 esac
@@ -127,12 +156,18 @@ if [[ -z "${SHOOT_KEEP:-}" ]]; then
 	done
 fi
 
-# The GPU is twice as fast and just as deterministic for a settled frame;
-# llvmpipe stays the rasterizer of the virtual display (CI) and of any
-# run that must match it.
+# The GPU is twice as fast and just as deterministic for a settled frame,
+# on the real display and the virtual one alike: Mesa reaches d3d12 through
+# its software winsys either way, so the adapter name and the expect_shot
+# baselines are the same (proven by the baseline gate under Xvfb). Without
+# one, the virtual display gets Mesa's software rasterizer explicitly, so
+# the result is the same on a runner with no GPU as on one with a GPU
+# nobody asked for; SHOOT_GPU=0 is how CI's baselines are made here.
 gpu_available() { [[ -z "${GALLIUM_DRIVER:-}" && -e /usr/lib/x86_64-linux-gnu/dri/d3d12_dri.so ]]; }
-if [[ ${#RUNNER[@]} -eq 0 && "${SHOOT_GPU:-auto}" != "0" ]] && gpu_available; then
+if [[ "${SHOOT_GPU:-auto}" != "0" ]] && gpu_available; then
 	export GALLIUM_DRIVER=d3d12
+elif [[ ${#RUNNER[@]} -gt 0 && -z "${GALLIUM_DRIVER:-}" ]]; then
+	export LIBGL_ALWAYS_SOFTWARE=1
 fi
 
 GODOT_ARGS=(--path "$ROOT")
@@ -141,7 +176,12 @@ GODOT_ARGS=(--path "$ROOT")
 # is slower: scale the watchdog rather than let honest work time out.
 if [[ ${#RUNNER[@]} -gt 0 ]]; then
 	GODOT_ARGS+=(--audio-driver Dummy)
-	[[ -z "${SHOOT_TIMEOUT:-}" ]] && TIMEOUT=$(( TIMEOUT * ${SHOOT_SLOW:-3} ))
+	if [[ "${GALLIUM_DRIVER:-}" == "d3d12" ]]; then
+		echo "shoot: virtual display (Xvfb), GPU"
+	else
+		echo "shoot: virtual display (Xvfb), llvmpipe"
+		[[ -z "${SHOOT_TIMEOUT:-}" ]] && TIMEOUT=$(( TIMEOUT * ${SHOOT_SLOW:-3} ))
+	fi
 fi
 SEED_ARGS=()
 [[ -n "${SHOOT_SEED:-}" ]] && SEED_ARGS+=(--seed "$SHOOT_SEED")

@@ -14,9 +14,11 @@
 # The reply is what the harness printed for that command (shot paths,
 # FAIL lines, scenario ok), and the exit code is its verdict; shots and
 # the JSONL trace land in shots/ as usual. Same display and GPU rules as
-# shoot.sh (SHOOT_GPU, SHOOT_RESOLUTION, SHOOT_SEED, SHOOT_DISPLAY): a real
-# display when one is reachable, else Xvfb + llvmpipe for the life of the
-# engine (what CI has), so the serve gate in check.local.sh runs there too.
+# shoot.sh (SHOOT_GPU, SHOOT_RESOLUTION, SHOOT_SEED, SHOOT_DISPLAY): a
+# virtual display (Xvfb, held open for the life of the engine) when
+# xvfb-run is installed, because a window on the real display takes the
+# keyboard on every launch under WSLg; else the real display;
+# SHOOT_DISPLAY=real to watch the window. The GPU is used on either.
 #
 # OWNED BY KOMBUCHA (tools/tooling-manifest.txt); do not edit in a project.
 set -uo pipefail
@@ -60,26 +62,43 @@ case "${1:-}" in
 		mkdir -p "$SERVE/user"; rm -f "$SERVE"/*.cmd "$SERVE"/*.done "$SERVE/quit" "$SERVE/counter"; : > "$LOG"
 		ARGS=(--path "$ROOT")
 		[[ -n "${SHOOT_RESOLUTION:-}" ]] && ARGS+=(--resolution "$SHOOT_RESOLUTION")
-		if [[ -z "${GALLIUM_DRIVER:-}" && "${SHOOT_GPU:-auto}" != "0" && -e /usr/lib/x86_64-linux-gnu/dri/d3d12_dri.so ]]; then
-			export GALLIUM_DRIVER=d3d12
-		fi
 		SEED=(); [[ -n "${SHOOT_SEED:-}" ]] && SEED=(--seed "$SHOOT_SEED")
 		export DISPLAY="${DISPLAY:-:0}"
-		# A display is REACHABLE when its socket exists (DISPLAY alone
-		# proves nothing under WSLg or CI); otherwise a virtual one, held
-		# open by xvfb-run for exactly as long as the engine runs.
+		# The same display rule as shoot.sh: virtual when xvfb-run is
+		# installed (a window on the real display takes the keyboard on
+		# every launch under WSLg), else the real display when its socket
+		# exists (DISPLAY alone proves nothing under WSLg or CI). Under
+		# WSLg /tmp/.X11-unix is read-only, so Xvfb listens on TCP (-l).
 		RUNNER=()
 		n="${DISPLAY#*:}"; n="${n%%.*}"
-		if [[ "${SHOOT_DISPLAY:-auto}" == "xvfb" ]] || { [[ ! -S "/tmp/.X11-unix/X${n}" ]] \
-				&& [[ -z "${WAYLAND_DISPLAY:-}" || ! -S "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/${WAYLAND_DISPLAY:-}" ]]; }; then
-			if ! command -v xvfb-run >/dev/null; then
-				echo "serve: no display and no xvfb-run — install xvfb or run under WSLg" >&2; exit 2
+		have_real=0
+		{ [[ -S "/tmp/.X11-unix/X${n}" ]] || [[ -n "${WAYLAND_DISPLAY:-}" && -S "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/${WAYLAND_DISPLAY:-}" ]]; } && have_real=1
+		want="${SHOOT_DISPLAY:-auto}"
+		if [[ "$want" == "auto" ]]; then
+			if command -v xvfb-run >/dev/null; then want=xvfb; elif [[ $have_real -eq 1 ]]; then want=real; else
+				echo "serve: no display and no xvfb-run — install xvfb (sudo apt install xvfb) or run under WSLg" >&2; exit 2
 			fi
+		fi
+		case "$want" in
+			real) [[ $have_real -eq 1 ]] || { echo "serve: no display reachable at DISPLAY=$DISPLAY (SHOOT_DISPLAY=real)" >&2; exit 2; } ;;
+			xvfb)
+				command -v xvfb-run >/dev/null || { echo "serve: no xvfb-run — install xvfb (sudo apt install xvfb)" >&2; exit 2; }
+				listen=(); [[ -w /tmp/.X11-unix ]] || listen=(-l)
+				RUNNER=(xvfb-run -a "${listen[@]}" -s "-screen 0 ${SHOOT_RESOLUTION:-1280x720}x24")
+				ARGS+=(--audio-driver Dummy) ;;
+			*) echo "serve: SHOOT_DISPLAY must be auto, real or xvfb" >&2; exit 2 ;;
+		esac
+		# The GPU on either display when WSLg offers one (same adapter, same
+		# baselines); the virtual display gets llvmpipe explicitly without it.
+		if [[ -z "${GALLIUM_DRIVER:-}" && "${SHOOT_GPU:-auto}" != "0" && -e /usr/lib/x86_64-linux-gnu/dri/d3d12_dri.so ]]; then
+			export GALLIUM_DRIVER=d3d12
+		elif [[ ${#RUNNER[@]} -gt 0 && -z "${GALLIUM_DRIVER:-}" ]]; then
 			export LIBGL_ALWAYS_SOFTWARE=1
-			unset GALLIUM_DRIVER
-			RUNNER=(xvfb-run -a -s "-screen 0 ${SHOOT_RESOLUTION:-1280x720}x24")
-			ARGS+=(--audio-driver Dummy)
-			echo "serve: no real display — Xvfb + llvmpipe"
+		fi
+		if [[ ${#RUNNER[@]} -gt 0 ]]; then
+			[[ "${GALLIUM_DRIVER:-}" == "d3d12" ]] && echo "serve: virtual display (Xvfb), GPU" || echo "serve: virtual display (Xvfb), llvmpipe"
+		else
+			echo "serve: real display — the window takes focus; sudo apt install xvfb for a virtual one"
 		fi
 		XDG_DATA_HOME="$SERVE/user" nohup "${RUNNER[@]}" "$GODOT" "${ARGS[@]}" -- --serve "$SERVE" "${SEED[@]}" >"$LOG" 2>&1 &
 		echo $! > "$PIDFILE"

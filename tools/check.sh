@@ -3,12 +3,14 @@
 #
 #   tools/check.sh              tests + a plain boot + local checks + scenarios
 #   tools/check.sh --quick      everything that needs no display
-#   tools/check.sh --ci         everything, with scenarios on a virtual
-#                               display (SHOOT_DISPLAY=xvfb) and CHECK_CI=1
-#                               for check.local.sh
+#   tools/check.sh --ci         everything, with scenarios rendered the way
+#                               CI renders them (SHOOT_DISPLAY=xvfb
+#                               SHOOT_GPU=0: virtual display, llvmpipe) and
+#                               CHECK_CI=1 for check.local.sh
 #
 # Exits non-zero if anything fails, and prints a summary naming what did.
-# Scenarios need a display (WSLg); --quick is the headless-only subset.
+# Scenarios need a display server (Xvfb, else WSLg); --quick is the
+# headless-only subset.
 # GODOT=/path/to/binary picks the engine (booting through WSL's /mnt/c
 # bridge costs seconds per process; a native or Windows binary does not).
 #
@@ -26,7 +28,7 @@ CI_MODE=0
 for arg in "$@"; do
 	case "$arg" in
 		--quick) QUICK=1 ;;
-		--ci) CI_MODE=1; export SHOOT_DISPLAY=xvfb ;;
+		--ci) CI_MODE=1; export SHOOT_DISPLAY=xvfb SHOOT_GPU=0 ;;
 		*) echo "usage: tools/check.sh [--quick|--ci]" >&2; exit 2 ;;
 	esac
 done
