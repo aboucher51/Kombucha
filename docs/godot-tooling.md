@@ -139,10 +139,19 @@ GUT 9.7.1, vendored in `addons/gut`, tests in `tests/`, config in
 `.gutconfig.json`. Everything in `tests/` is pure logic and runs headless —
 anything needing a rendered frame belongs in a scenario instead.
 
-**The suite runs in shards** (4 by default): a Godot test run is CPU-bound
-and single-threaded while the suite is a pile of independent scripts. Each
+**The suite runs in shards** (one per thread of `nproc` by default, at
+most 16, capped by the script count; the suite is bound by total CPU and
+a thread pair is not one shard's worth: a 12-thread box ran a 159-script
+suite in 52 s on four shards, 41 s on six, 35 s on eight and 29 s on
+twelve, a few seconds over the floor its longest script sets; a 4-core
+CI runner keeps its four): a Godot test run is CPU-bound and
+single-threaded while the suite is a pile of independent scripts. Each
 shard gets its own `XDG_DATA_HOME` (every shard writes `user://`, and two
-sharing it fight over the same files); a shard's config says `dirs: []`
+sharing it fight over the same files), **and so does a named run**: it
+used to boot against the developer's real `user://`, so whatever a boot
+reads before a `before_each` redirects the config (a display zoom, a
+visibility scale) came from the developer's own settings file, and a
+test passed sharded and failed by name; a shard's config says `dirs: []`
 (GUT ADDS `-gtest` entries to whatever the config names); an empty shard is
 compacted away (GUT exits 1 on a config with no tests). Balance comes from
 the LAST run's JUnit timings in `.godot/test-timings`, dealt longest-first.
@@ -178,7 +187,8 @@ keeps it as the `test-results` artifact beside the shots, so a red run
 can be read per test without the log.
 
 **A shard's budget scales with how few there are.** The default 180 s is
-per shard for four; `TEST_JOBS=1` gets four times that, because one
+per shard for four or more (more shards each carry less); `TEST_JOBS=1`
+gets four times that, because one
 process carries the whole suite, and a shard that is killed reports as
 timed out with the scripts it never reached, never as scripts that
 "did not load" (that was the message once, on a 1,000-test suite).

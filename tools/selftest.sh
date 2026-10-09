@@ -9,6 +9,8 @@
 #   1. a test script that fails to PARSE makes the run red (GUT drops the
 #      file and exits 0 on its own);
 #   2. the sharded run and the single-process run count the same tests;
+#      a named run runs exactly what was named, in a private user://;
+#      the default shard count follows nproc (one per thread, at most 16);
 #   3. the sync script stamps, seeds, sets the execute bit, reports drift
 #      (with the project's own lines), notes a missing CLAUDE.md import,
 #      and refuses a dirty source — against a scratch source and project;
@@ -65,6 +67,39 @@ else
 	say FAIL "several names did not run together"; FAILED=1
 fi
 rm -f "$SCRATCH/tests/test_smoke_sibling.gd"
+
+# 2e. A NAMED run gets a private `user://` like a shard's. It used to boot
+#     against the developer's real data home, so whatever a boot reads
+#     before a before_each redirects the config (a display zoom, a
+#     visibility scale) came from the developer's own settings file, and
+#     a test passed sharded and failed by name.
+printf 'extends GutTest\nfunc test_where_user_lives() -> void:\n\tprint("USER_DATA_DIR=" + OS.get_user_data_dir())\n\tassert_true(true)\n' > "$SCRATCH/tests/test_zz_user_home.gd"
+REAL_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
+OUT="$(cd "$SCRATCH" && tools/test.sh test_zz_user_home 2>&1)"; CODE=$?
+USER_DIR="$(sed -nE 's/^USER_DATA_DIR=(.*)$/\1/p' <<<"$OUT" | head -1)"
+if [[ $CODE -eq 0 && -n "$USER_DIR" && "$USER_DIR" != "$REAL_HOME"/* ]]; then
+	say ok "a named run has a private user:// (not under $REAL_HOME)"
+else
+	say FAIL "a named run's user:// is '${USER_DIR:-unprinted}' (exit $CODE), the developer's own"; FAILED=1
+fi
+rm -f "$SCRATCH/tests/test_zz_user_home.gd" "$SCRATCH/tests/test_zz_user_home.gd.uid"
+
+# 2f. The default shard count follows the machine: one shard per thread
+#     of nproc, at most sixteen, never more than the script count. A
+#     twelve-thread box ran one project's suite in 29 s on twelve shards
+#     where four took 52 s; a four-core CI runner keeps its four.
+STUB="$(mktemp -d)"
+trap 'rm -rf "$SCRATCH" "$STUB"' EXIT
+for pair in "12:12" "2:2" "32:16"; do
+	THREADS="${pair%%:*}"; WANT="${pair##*:}"
+	printf '#!/usr/bin/env bash\necho %s\n' "$THREADS" > "$STUB/nproc"; chmod +x "$STUB/nproc"
+	OUT="$(cd "$SCRATCH" && env -u TEST_JOBS PATH="$STUB:$PATH" tools/test.sh 2>&1)"; CODE=$?
+	if [[ $CODE -eq 0 ]] && grep -q "^── $WANT shard(s)," <<<"$OUT"; then
+		say ok "nproc=$THREADS deals $WANT shards by default"
+	else
+		say FAIL "nproc=$THREADS dealt '$(grep -m1 '^── ' <<<"$OUT")', wanted $WANT (exit $CODE)"; FAILED=1
+	fi
+done
 
 # 2c. A failing assertion is repeated where it can be read: GUT prints it
 #     hundreds of lines above its own summary.
@@ -130,7 +165,7 @@ fi
 #    and seeds removed, an execute bit dropped, and a CLAUDE.md without
 #    the import).
 SRC2="$(mktemp -d)"; DEST2="$(mktemp -d)"
-trap 'rm -rf "$SCRATCH" "$SRC2" "$DEST2"' EXIT
+trap 'rm -rf "$SCRATCH" "$STUB" "$SRC2" "$DEST2"' EXIT
 rsync -a --exclude '.git' --exclude '.godot' --exclude 'shots/*.png' "$ROOT/" "$SRC2/"
 git -C "$SRC2" init -q -b main && git -C "$SRC2" -c user.name=selftest -c user.email=selftest@example.invalid add -A >/dev/null \
 	&& git -C "$SRC2" -c user.name=selftest -c user.email=selftest@example.invalid commit -qm scratch
@@ -163,7 +198,7 @@ fi
 #     behind, the fenced sections are gone, the project is named, stamped
 #     and committed once.
 DEST3="$(mktemp -d)/Scaffolded"
-trap 'rm -rf "$SCRATCH" "$SRC2" "$DEST2" "$(dirname "$DEST3")"' EXIT
+trap 'rm -rf "$SCRATCH" "$STUB" "$SRC2" "$DEST2" "$(dirname "$DEST3")"' EXIT
 OUT="$("$SRC2/tools/new-project.sh" "$DEST3" "Self Test" --no-check 2>&1)"; CODE=$?
 if [[ $CODE -eq 0 && -f "$DEST3/tools/TOOLING_VERSION" && -f "$DEST3/scripts/dev/dev_hooks.gd" \
 		&& ! -e "$DEST3/skills" && ! -e "$DEST3/.claude-plugin" && ! -e "$DEST3/tools/selftest.sh" \

@@ -15,12 +15,17 @@
 #                                    what to reach for when a failure is
 #                                    confusing (shards interleave nothing,
 #                                    but a green shard prints nothing)
-#   TEST_JOBS=8                      more shards (default 4, capped by the
-#                                    script count and by nproc)
+#   TEST_JOBS=8                      fewer or more shards (default auto: one
+#                                    per thread of nproc, at most 16, capped
+#                                    by the script count — on a 12-thread
+#                                    box twelve shards ran one suite in
+#                                    29 s where four took 52 s; a 4-core CI
+#                                    runner keeps the four it always had)
 #   TEST_TIMEOUT=180                 seconds a shard may take (the default
-#                                    is 180 for four shards and scales with
-#                                    4/TEST_JOBS: one process gets 720, since
-#                                    it carries the whole suite)
+#                                    is 180 for four shards or more and
+#                                    scales with 4/TEST_JOBS below that:
+#                                    one process gets 720, since it carries
+#                                    the whole suite)
 #   TEST_JUNIT=.godot/test-results.xml
 #                                    where the merged JUnit report lands
 #                                    (CI keeps it as an artifact; "" skips)
@@ -30,7 +35,11 @@
 # suite is a pile of independent scripts. Each shard is its own process with
 # its own XDG_DATA_HOME — every shard writes to `user://` (saves, settings,
 # scratch), and two sharing that directory would fight over the same files.
-# Shards share only the read-only `res://`.
+# Shards share only the read-only `res://`. The NAMED run gets a private
+# data home too: without one it booted against the developer's real
+# `user://`, so whatever a boot reads before a `before_each` redirects the
+# config (a display zoom, a visibility scale) came from the developer's
+# own settings file, and a test passed sharded and failed by name.
 #
 # Balance comes from the LAST run: each shard writes JUnit timings and they
 # are merged into .godot/test-timings, which the next run deals
@@ -133,7 +142,10 @@ if [[ $# -gt 0 ]]; then
 		printf '"res://%s"\n' "${SELECTED[@]}" | paste -sd, -
 		printf ']}'
 	} > "$WORK/named.json"
-	timeout "$TIMEOUT" "$GODOT" --headless --path "$ROOT" \
+	# A private `user://`, like a shard's: the developer's own settings must
+	# not reach a test, and a test's writes must not reach the developer.
+	mkdir -p "$WORK/user.named"
+	XDG_DATA_HOME="$WORK/user.named" timeout "$TIMEOUT" "$GODOT" --headless --path "$ROOT" \
 		-s addons/gut/gut_cmdln.gd "-gconfig=$WORK/named.json" >"$LOG" 2>&1
 	STATUS=$?
 	paint "$LOG"
@@ -158,14 +170,28 @@ if [[ ! -s "$WORK/all" ]]; then
 fi
 COUNT=$(wc -l < "$WORK/all")
 CORES="$( (nproc 2>/dev/null || echo 4) )"
-JOBS="${TEST_JOBS:-4}"
+JOBS="${TEST_JOBS:-auto}"
+# The suite is bound by total CPU, so the shard count follows the machine:
+# one shard per thread. Measured on a 159-script suite on a 12-thread
+# box: 4 shards 52 s, 6 41 s, 8 35 s, 12 29 s — still gaining at the last
+# step, and 29 s is a few seconds over the floor the longest script sets
+# (24 s), so a thread pair is NOT one shard's worth. Sixteen is the cap:
+# each shard boots an engine and holds the project in memory, the deal
+# cannot beat its longest script, and nothing past twelve was measured.
+# The caps below still apply, so a small CI runner keeps every core busy
+# and never oversubscribes.
+if [[ "$JOBS" == "auto" ]]; then
+	JOBS=$CORES
+	(( JOBS > 16 )) && JOBS=16
+fi
 (( JOBS > COUNT )) && JOBS=$COUNT
 (( JOBS > CORES )) && JOBS=$CORES
 (( JOBS < 1 )) && JOBS=1
 # The default budget is per shard for FOUR shards; fewer shards carry more
-# of the suite each. Without this, TEST_JOBS=1 on a suite that takes two
-# minutes per shard was killed at 180 s and reported "88 scripts did not
-# load" — a timeout wearing a parse error's message.
+# of the suite each, more carry less (so 180 s stays enough). Without this,
+# TEST_JOBS=1 on a suite that takes two minutes per shard was killed at
+# 180 s and reported "88 scripts did not load" — a timeout wearing a parse
+# error's message.
 [[ -z "${TEST_TIMEOUT:-}" ]] && (( JOBS < 4 )) && TIMEOUT=$(( DEFAULT_TIMEOUT * 4 / JOBS ))
 
 # Longest-processing-time first onto the emptiest shard. An unknown script

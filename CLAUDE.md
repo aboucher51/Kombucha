@@ -367,7 +367,8 @@ project imports here. Edit that file, never a project's copy.
 ### Kombucha-only checks
 
 `tools/selftest.sh` proves the runner's guards (a broken test file is red,
-shards agree with one process) and the sync script (stamps, seeds, sets
+shards agree with one process, a named run has a private `user://`, the
+default shard count follows `nproc`) and the sync script (stamps, seeds, sets
 the execute bit, reports drift, refuses a dirty source) against scratch
 copies; `tools/check.local.sh` here is the fixture's own gate and runs it,
 plus the manifest check, the driver skeleton both ways, and the ordered
