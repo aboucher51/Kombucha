@@ -44,6 +44,27 @@ func test_scenario_command_is_error_shaped_and_passes_through_unknowns() -> void
 	assert_eq(_hooks.scenario_command(PackedStringArray(["assert_note", "x"]), "assert_note x"), "")
 
 
+## The console's flag and quote rules need a command that declares a flag
+## and a rest argument; only the fixture's `note` does, so the pins live
+## here, not in test_debug_console.gd, which scaffolded projects carry.
+func test_a_flag_may_precede_a_rest_argument() -> void:
+	assert_eq(DebugConsole.execute("note --kind=todo buy milk"), "Noted.")
+	assert_string_contains(DebugConsole.execute("notes"), "todo: buy milk", "the flag is named, the rest is the text")
+	assert_eq(DebugConsole.execute("note buy --kind=todo eggs"), "Noted.", "anywhere on the line")
+	assert_string_contains(DebugConsole.execute("notes"), "todo: buy eggs")
+	assert_eq(DebugConsole.execute("note plain one"), "Noted.")
+	assert_string_contains(DebugConsole.execute("notes"), "\nplain one", "no flag: the default kind adds nothing")
+	assert_string_starts_with(DebugConsole.execute("note --kind=urgent x"), "ERROR", "a flag's value is checked like any argument")
+	assert_string_starts_with(DebugConsole.execute("note --nope=1 x"), "ERROR", "an unknown flag is refused")
+
+
+func test_quotes_reach_the_handler() -> void:
+	# A console command may take JSON, where the quotes ARE the value's
+	# type; the tokenise rule itself is pinned in test_debug_console.gd.
+	assert_eq(DebugConsole.execute('note "Shore War"'), "Noted.")
+	assert_string_contains(DebugConsole.execute("notes"), '"Shore War"', "the quotes reach the handler")
+
+
 func test_sandbox_hook_clears_project_state() -> void:
 	DebugConsole.execute("note leak")
 	_hooks.sandbox()

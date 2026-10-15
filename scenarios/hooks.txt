@@ -9,3 +9,9 @@ notes
 assert_note remember me
 expect_fail assert_note never written
 expect_fail assert_note
+# Quotes are ordinary characters and reach the handler: a console command
+# that takes JSON depends on it. Only the token `""` is the empty value.
+# This lives here, not in console.txt, because scaffolded projects carry
+# console.txt and have no `note` command.
+note "Shore War"
+assert_note "Shore War"

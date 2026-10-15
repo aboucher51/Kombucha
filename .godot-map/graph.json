@@ -1199,15 +1199,14 @@
     "test_bind_and_refusal",
     "test_alias_resolves",
     "test_project_hooks_may_override_a_core_command",
-    "test_a_flag_may_precede_a_rest_argument",
-    "test_quotes_reach_the_handler_and_only_the_empty_token_is_special"
+    "test_quotes_survive_tokenising_and_only_the_empty_token_is_special"
    ],
    "emits": [],
    "connects": [],
    "node_paths": [],
    "groups_joined": [],
    "groups_queried": [],
-   "lines": 130
+   "lines": 120
   },
   "res://tests/test_dev_hooks.gd": {
    "path": "res://tests/test_dev_hooks.gd",
@@ -1227,6 +1226,8 @@
     "test_project_handler_is_dispatched_through_hooks",
     "test_unknown_handler_is_still_an_error",
     "test_scenario_command_is_error_shaped_and_passes_through_unknowns",
+    "test_a_flag_may_precede_a_rest_argument",
+    "test_quotes_reach_the_handler",
     "test_sandbox_hook_clears_project_state"
    ],
    "emits": [],
@@ -1234,7 +1235,7 @@
    "node_paths": [],
    "groups_joined": [],
    "groups_queried": [],
-   "lines": 51
+   "lines": 72
   },
   "res://tests/test_function_registry.gd": {
    "path": "res://tests/test_function_registry.gd",

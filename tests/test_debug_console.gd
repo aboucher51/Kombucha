@@ -107,22 +107,12 @@ func test_project_hooks_may_override_a_core_command() -> void:
 	mine.free()
 
 
-func test_a_flag_may_precede_a_rest_argument() -> void:
-	assert_eq(DebugConsole.execute("note --kind=todo buy milk"), "Noted.")
-	assert_string_contains(DebugConsole.execute("notes"), "todo: buy milk", "the flag is named, the rest is the text")
-	assert_eq(DebugConsole.execute("note buy --kind=todo eggs"), "Noted.", "anywhere on the line")
-	assert_string_contains(DebugConsole.execute("notes"), "todo: buy eggs")
-	assert_eq(DebugConsole.execute("note plain one"), "Noted.")
-	assert_string_contains(DebugConsole.execute("notes"), "\nplain one", "no flag: the default kind adds nothing")
-	assert_string_starts_with(DebugConsole.execute("note --kind=urgent x"), "ERROR", "a flag's value is checked like any argument")
-	assert_string_starts_with(DebugConsole.execute("note --nope=1 x"), "ERROR", "an unknown flag is refused")
-
-
-func test_quotes_reach_the_handler_and_only_the_empty_token_is_special() -> void:
+func test_quotes_survive_tokenising_and_only_the_empty_token_is_special() -> void:
 	# A console command may take JSON, where the quotes ARE the value's
 	# type; stripping them broke thirteen scenario files in one project.
-	assert_eq(DebugConsole.execute('note "Shore War"'), "Noted.")
-	assert_string_contains(DebugConsole.execute("notes"), '"Shore War"', "the quotes reach the handler")
+	# (That the quotes then reach a real handler is pinned against the
+	# fixture's `note` command in Kombucha's test_dev_hooks.gd — this
+	# file travels to scaffolded projects, which have no `note`.)
 	assert_eq(DebugConsole.tokenise('a "b c" d'), PackedStringArray(["a", '"b', 'c"', "d"]),
 		"spaces separate; quotes are ordinary characters")
 	assert_eq(DebugConsole.tokenise('assert key ""'), PackedStringArray(["assert", "key", ""]),
