@@ -56,3 +56,16 @@ func console_dispatch(handler: String, args: Dictionary) -> Variant:
 			GameManager.change_scene(path)
 			return "Going to %s." % path
 	return null
+
+
+## Argument values for a `"complete": "<source>"` arg (`goto`'s scene
+## path): the console asks here first, null = "not mine".
+func console_complete(source: String, _prefix: String) -> Variant:
+	match source:
+		"scenes":
+			var out: Array[String] = []
+			for file in DirAccess.get_files_at("res://scenes"):
+				if file.ends_with(".tscn"):
+					out.append("res://scenes/" + file)
+			return out
+	return null

@@ -6,26 +6,37 @@
 			"?"
 		],
 		"usage": "help [command]",
+		"description": "Show the commands; help <command> shows how to type one.",
 		"args": [
 			{
 				"name": "command",
-				"kind": "string"
+				"kind": "string",
+				"complete": "commands"
 			}
 		]
 	},
 	{
 		"id": "clear",
 		"handler": "clear",
-		"usage": "clear"
+		"usage": "clear",
+		"description": "Clear the console's text."
+	},
+	{
+		"id": "copy_log",
+		"handler": "copy_log",
+		"usage": "copy_log",
+		"description": "Copy the console's text so you can paste it."
 	},
 	{
 		"id": "save",
 		"handler": "save",
 		"usage": "save [slot]",
+		"description": "Save the game into a slot.",
 		"args": [
 			{
 				"name": "slot",
-				"kind": "string"
+				"kind": "string",
+				"complete": "saves"
 			}
 		]
 	},
@@ -33,27 +44,32 @@
 		"id": "load",
 		"handler": "load",
 		"usage": "load [slot]",
+		"description": "Load a saved game from a slot.",
 		"args": [
 			{
 				"name": "slot",
-				"kind": "string"
+				"kind": "string",
+				"complete": "saves"
 			}
 		]
 	},
 	{
 		"id": "saves",
 		"handler": "saves",
-		"usage": "saves"
+		"usage": "saves",
+		"description": "List the saved games."
 	},
 	{
 		"id": "delete_save",
 		"handler": "delete_save",
 		"usage": "delete_save <slot>",
+		"description": "Delete a saved game.",
 		"args": [
 			{
 				"name": "slot",
 				"kind": "string",
-				"required": true
+				"required": true,
+				"complete": "saves"
 			}
 		]
 	},
@@ -61,6 +77,7 @@
 		"id": "volume",
 		"handler": "volume",
 		"usage": "volume <bus> <0-100>",
+		"description": "Set a sound bus's volume.",
 		"args": [
 			{
 				"name": "bus",
@@ -85,11 +102,13 @@
 		"id": "bind",
 		"handler": "bind",
 		"usage": "bind <action> <key-or-mouse:N> [slot]",
+		"description": "Bind a key to an action.",
 		"args": [
 			{
 				"name": "action",
 				"kind": "string",
-				"required": true
+				"required": true,
+				"complete": "actions"
 			},
 			{
 				"name": "key",
@@ -109,11 +128,13 @@
 		"id": "unbind",
 		"handler": "unbind",
 		"usage": "unbind <action> [slot]",
+		"description": "Clear an action's key.",
 		"args": [
 			{
 				"name": "action",
 				"kind": "string",
-				"required": true
+				"required": true,
+				"complete": "actions"
 			},
 			{
 				"name": "slot",
@@ -127,12 +148,14 @@
 	{
 		"id": "binds",
 		"handler": "binds",
-		"usage": "binds"
+		"usage": "binds",
+		"description": "List every key binding."
 	},
 	{
 		"id": "seed",
 		"handler": "seed",
 		"usage": "seed <n>",
+		"description": "Set the random seed.",
 		"args": [
 			{
 				"name": "n",
@@ -144,12 +167,14 @@
 	{
 		"id": "restart",
 		"handler": "restart",
-		"usage": "restart"
+		"usage": "restart",
+		"description": "Reload the current scene."
 	},
 	{
 		"id": "report",
 		"handler": "report",
 		"usage": "report [note]",
+		"description": "Write a bug report file.",
 		"args": [
 			{
 				"name": "note",
@@ -160,17 +185,20 @@
 	{
 		"id": "quit",
 		"handler": "quit",
-		"usage": "quit"
+		"usage": "quit",
+		"description": "Quit the game."
 	},
 	{
 		"id": "state",
 		"handler": "state",
-		"usage": "state"
+		"usage": "state",
+		"description": "Print the state every state provider reports."
 	},
 	{
 		"id": "assert",
 		"handler": "assert",
 		"usage": "assert <key> <value>",
+		"description": "Fail unless a state key has this value (for scenarios).",
 		"args": [
 			{
 				"name": "key",
@@ -188,10 +216,91 @@
 		"id": "locale",
 		"handler": "locale",
 		"usage": "locale [code]",
+		"description": "Show or switch the language.",
 		"args": [
 			{
 				"name": "code",
-				"kind": "string"
+				"kind": "string",
+				"complete": "locales"
+			}
+		]
+	},
+	{
+		"id": "console_assert",
+		"handler": "console_assert",
+		"usage": "console_assert <key> <value>",
+		"description": "Fail unless the console's own UI shows this (for scenarios).",
+		"args": [
+			{
+				"name": "key",
+				"kind": "enum",
+				"values": [
+					"open",
+					"input",
+					"suggests",
+					"hint",
+					"tab",
+					"button",
+					"history"
+				],
+				"required": true
+			},
+			{
+				"name": "value",
+				"kind": "rest",
+				"required": true
+			}
+		]
+	},
+	{
+		"id": "console_release",
+		"handler": "console_release",
+		"usage": "console_release <on|off>",
+		"description": "Make the console act as in a player build, where it cannot open (for tests).",
+		"args": [
+			{
+				"name": "on",
+				"kind": "bool",
+				"required": true
+			}
+		]
+	},
+	{
+		"buttons": [
+			{
+				"id": "help",
+				"label": "Help",
+				"run": "help",
+				"group": "Console",
+				"tip": "Lists every command."
+			},
+			{
+				"id": "clear",
+				"label": "Clear",
+				"run": "clear",
+				"group": "Console",
+				"tip": "Empties the console's text."
+			},
+			{
+				"id": "restart",
+				"label": "Restart",
+				"run": "restart",
+				"group": "Console",
+				"tip": "Reloads the current scene."
+			},
+			{
+				"id": "report",
+				"label": "Report bug",
+				"run": "report",
+				"group": "Console",
+				"tip": "Writes a bug report file and prints where it is."
+			},
+			{
+				"id": "copy_log",
+				"label": "Copy log",
+				"run": "copy_log",
+				"group": "Console",
+				"tip": "Copies the console's text so you can paste it."
 			}
 		]
 	}

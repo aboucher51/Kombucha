@@ -73,6 +73,7 @@ cat > "$EXCLUDES" <<'EOF'
 /scenarios/baseline.txt
 /scenarios/baselines
 /scenarios/frame_budget.txt
+/scenarios/console_ui.txt
 /scenarios/hooks.txt
 /scenarios/leave_boot.txt
 /scenarios/onscreen.txt

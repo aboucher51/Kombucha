@@ -117,3 +117,151 @@ func test_quotes_survive_tokenising_and_only_the_empty_token_is_special() -> voi
 		"spaces separate; quotes are ordinary characters")
 	assert_eq(DebugConsole.tokenise('assert key ""'), PackedStringArray(["assert", "key", ""]),
 		"except the empty token")
+
+
+# ── The upgraded console: gate, key, suggestions, history, buttons ───────
+# Only core commands here: this file travels to scaffolded projects.
+
+func _clean_console() -> void:
+	DebugConsole.reset_session()
+	DirAccess.remove_absolute(DebugConsole.prefs_path())
+	DebugConsole.reset_session()
+
+
+func _key(code: Key) -> InputEventKey:
+	var event := InputEventKey.new()
+	event.keycode = code
+	event.physical_keycode = code
+	event.pressed = true
+	return event
+
+
+func test_a_player_build_never_opens_the_console_but_execute_still_answers() -> void:
+	_clean_console()
+	DebugConsole.simulate_release = true
+	assert_false(DebugConsole.allowed(), "a release-flavoured run refuses")
+	DebugConsole.toggle()
+	assert_false(DebugConsole.is_open(), "toggle does nothing")
+	DebugConsole._input(_key(KEY_F12))
+	assert_false(DebugConsole.is_open(), "the key is ignored")
+	assert_string_contains(DebugConsole.execute("help"), "save", "the harness's seam still answers")
+	DebugConsole.simulate_release = false
+	assert_true(DebugConsole.allowed(), "a debug run allows it")
+	_clean_console()
+
+
+func test_the_gate_asks_the_project_hook_first() -> void:
+	var previous: Object = DebugConsole.hooks
+	var mine := GateHooks.new()
+	DebugConsole.hooks = mine
+	assert_false(DebugConsole.allowed(), "the hook's false wins in a debug run")
+	mine.answer = null
+	assert_true(DebugConsole.allowed(), "null hands it back to the build check")
+	DebugConsole.hooks = previous
+	mine.free()
+
+
+class GateHooks extends Node:
+	var answer: Variant = false
+	func console_allowed() -> Variant:
+		return answer
+
+
+func test_the_toggle_key_is_tilde_and_f12_or_the_projects_console_action() -> void:
+	var had_action := InputMap.has_action("console")
+	var saved: Array = InputMap.action_get_events("console") if had_action else []
+	if had_action:
+		InputMap.erase_action("console")
+	assert_true(DebugConsole.is_toggle_event(_key(KEY_QUOTELEFT)), "~ with no console action")
+	assert_true(DebugConsole.is_toggle_event(_key(KEY_F12)), "F12 always")
+	InputMap.add_action("console")
+	InputMap.action_add_event("console", _key(KEY_F2))
+	assert_false(DebugConsole.is_toggle_event(_key(KEY_QUOTELEFT)), "the project's action replaces ~")
+	assert_true(DebugConsole.is_toggle_event(_key(KEY_F2)), "and is the key instead")
+	assert_true(DebugConsole.is_toggle_event(_key(KEY_F12)), "F12 still works")
+	InputMap.erase_action("console")
+	if had_action:
+		InputMap.add_action("console")
+		for event in saved:
+			InputMap.action_add_event("console", event)
+
+
+func test_the_first_word_suggests_commands_with_usage_and_description() -> void:
+	var got := DebugConsole.suggest("vol")
+	assert_eq(str(got["items"][0]["insert"]), "volume ")
+	assert_string_contains(str(got["items"][0]["text"]), "volume <bus> <0-100>")
+	assert_string_contains(str(got["items"][0]["text"]), "Set a sound bus", "the description rides the row")
+	var inside := DebugConsole.suggest("ave")
+	var inserts: Array = []
+	for row: Dictionary in inside["items"]:
+		inserts.append(row["insert"])
+	assert_has(inserts, "save ", "a word inside an id matches too")
+
+
+func test_arguments_show_a_hint_and_their_values() -> void:
+	var bus := DebugConsole.suggest("volume ")
+	var values: Array = []
+	for row: Dictionary in bus["items"]:
+		values.append(row["text"])
+	assert_eq(values, ["Master", "Music", "SFX"])
+	assert_string_contains(str(bus["hint"]), "argument 1 of 2, bus")
+	var percent := DebugConsole.suggest("volume Music ")
+	assert_string_contains(str(percent["hint"]), "a whole number from 0 to 100, needed")
+	var partial := DebugConsole.suggest("volume mu")
+	assert_eq(str(partial["items"][0]["insert"]), "Music ")
+	assert_eq(int(partial["replace"]), 2, "the half-typed word is what a pick replaces")
+	var done := DebugConsole.suggest("volume Music 50 ")
+	assert_string_contains(str(done["hint"]), "nothing more to type")
+	assert_string_contains(str(DebugConsole.suggest("frobnicate x")["hint"]), "No command")
+
+
+func test_a_complete_source_offers_live_names() -> void:
+	var rows: Array = []
+	for row: Dictionary in DebugConsole.suggest("help sav")["items"]:
+		rows.append(row["text"])
+	assert_has(rows, "save", "help's argument completes command names")
+	assert_has(DebugConsole.complete_values("actions", ""), "pause")
+
+
+func test_history_is_kept_under_the_redirected_save_root() -> void:
+	_clean_console()
+	assert_string_starts_with(DebugConsole.prefs_path(), SCRATCH_SAVES, "never the developer's own files")
+	DebugConsole.remember("volume Music 80")
+	DebugConsole.remember("volume Music 80")
+	DebugConsole.remember("binds")
+	assert_true(FileAccess.file_exists(DebugConsole.prefs_path()))
+	DebugConsole.reset_session()
+	assert_eq(DebugConsole.history(), ["volume Music 80", "binds"] as Array[String],
+		"read back from the file, a repeat stored once")
+	assert_eq(DebugConsole.search_history("mus"), ["volume Music 80"] as Array[String])
+	_clean_console()
+
+
+func test_core_buttons_run_known_commands_and_teach_their_line() -> void:
+	assert_eq(DebugConsole.button_problems(), [] as Array[String])
+	assert_has(DebugConsole.button_groups(), "Console")
+	var ids: Array = []
+	for row: Dictionary in DebugConsole.buttons():
+		ids.append(row["id"])
+	for id in ["help", "clear", "restart", "report", "copy_log"]:
+		assert_has(ids, id)
+	assert_string_contains(DebugConsole.press_button("help"), "volume")
+	assert_string_starts_with(DebugConsole.press_button("nope"), "ERROR:")
+	var tip := DebugConsole.button_tip(DebugConsole.button_row({"label": "Help", "run": "help", "tip": "Lists every command."}))
+	assert_string_contains(tip, "Runs: help")
+	assert_eq(str(DebugConsole.button_row({"label": "Copy log"})["id"]), "copy_log")
+	_clean_console()
+
+
+func test_the_ui_builds_named_buttons_and_keeps_its_height() -> void:
+	_clean_console()
+	DebugConsole.toggle()
+	assert_true(DebugConsole.is_open())
+	for id in ["help", "clear", "restart", "report", "copy_log"]:
+		assert_not_null(DebugConsole.find_child("ConsoleButton_%s" % id, true, false), id)
+	assert_not_null(DebugConsole.find_child("ConsoleTab_Console", true, false))
+	DebugConsole.set_height(240.0)
+	DebugConsole.reset_session()
+	assert_false(DebugConsole.is_open(), "a reset closes it")
+	assert_almost_eq(DebugConsole.height(), 240.0, 0.5, "the height comes back from the file")
+	_clean_console()

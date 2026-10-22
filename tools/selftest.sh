@@ -16,7 +16,8 @@
 #      and refuses a dirty source — against a scratch source and project;
 #   4. a plain engine `ERROR:` line (a ConfigFile key with no default, a
 #      freed lambda capture) turns the boot gate and the scenario gate
-#      red — 738 of them once sat under an all-green check.
+#      red — 738 of them once sat under an all-green check;
+#   5. a release-flavoured run cannot open the debug console.
 set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SCRATCH="$(mktemp -d)"
@@ -230,5 +231,21 @@ if [[ $CODE -eq 0 && "$(head -1 "$DEST2/tools/TOOLING_VERSION")" == "feedfacefee
 	say ok "a git-less plugin source stamps the installed sha"
 else
 	say FAIL "a git-less source stamped '$(head -1 "$DEST2/tools/TOOLING_VERSION" 2>/dev/null)' (exit $CODE): $(tail -2 <<<"$OUT")"; FAILED=1
+fi
+# 5. The console's dev gate. A player build must not open the console
+#    (its cheats would ship), and the release check of an exported binary
+#    reads `--console-check`: exit 0 = allowed, 3 = refused. A debug run
+#    with `--console-release` behaves as a player build.
+OUT="$(cd "$SCRATCH" && timeout 30 "${GODOT:-godot4}" --headless --path . -- --console-check 2>&1)"; CODE=$?
+if [[ $CODE -eq 0 ]] && grep -q 'console_allowed=true' <<<"$OUT"; then
+	say ok "a debug run allows the console (--console-check exits 0)"
+else
+	say FAIL "a debug run's --console-check said '$(grep -m1 console_allowed <<<"$OUT")' (exit $CODE)"; FAILED=1
+fi
+OUT="$(cd "$SCRATCH" && timeout 30 "${GODOT:-godot4}" --headless --path . -- --console-release --console-check 2>&1)"; CODE=$?
+if [[ $CODE -eq 3 ]] && grep -q 'console_allowed=false' <<<"$OUT" && grep -q 'DebugConsole: off in this build' <<<"$OUT"; then
+	say ok "a release-flavoured run refuses the console and says so at boot"
+else
+	say FAIL "a release-flavoured run did not refuse the console (exit $CODE)"; FAILED=1
 fi
 exit $FAILED

@@ -1,0 +1,34 @@
+# The console as a developer meets it in a dev build: ~ opens it, a typed
+# word shows matching commands, Tab takes one, the argument's values and
+# hint follow, a button runs its line, ~ closes it. With the gate set to a
+# player build, the same key does nothing.
+wait 5
+key QuoteLeft
+console_assert open true
+type vol
+console_assert suggests volume <bus> <0-100>
+shot console-commands 0 0 1280 360
+key Tab
+console_assert input volume
+console_assert suggests Music
+console_assert hint argument 1 of 2, bus
+type Mu
+key Tab
+console_assert hint argument 2 of 2, percent
+shot console-argument 0 0 1280 360
+click ConsoleTab_Console
+console_assert tab Console
+console_assert button help
+click ConsoleTab_Fixture
+console_assert button notes
+click ConsoleButton_notes
+console_assert history notes
+assert_tooltip ConsoleButton_notes Runs: notes
+shot console-buttons
+key QuoteLeft
+console_assert open false
+console_release on
+key QuoteLeft
+key F12
+console_assert open false
+console_release off

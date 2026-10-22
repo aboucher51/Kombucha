@@ -83,8 +83,17 @@ Linux binary; CI runs it on version tags (`.github/workflows/export.yml`).
 
 ### The debug console
 
-F12 toggles it; `DebugConsole.execute(line) -> String` is the input-free
-seam — scenarios pass unknown commands straight to it, so scenario lines
+**Dev builds only.** F12 or ~ toggles it (a project with a `console`
+InputMap action gets that action instead of ~, so a rebindable row keeps
+working and nothing toggles twice); the key is ignored while another text
+field has focus. It opens only when `DebugConsole.allowed()`: a debug
+build, or an export with the `dev` custom feature, unless the project's
+`console_allowed()` hook decides. A player export builds no console UI at
+all, so its cheats do not ship — before this gate every export carried
+them. `-- --console-check` prints `console_allowed=…` and exits 0 or 3,
+which is how a release check proves an exported binary; `--console-release`
+makes a debug run act as a player build. `DebugConsole.execute(line) ->
+String` is the input-free seam, it answers in every build — scenarios pass unknown commands straight to it, so scenario lines
 and console lines are ONE vocabulary. **A new command needs both halves**:
 its surface (name, aliases, usage, args) in
 `data/console_commands.project.json` and a handler in
@@ -117,6 +126,33 @@ answering for its id (one project's `saves` prints the browser's own row
 text, another's `settle` knows its own busy nodes), and `null` means "not
 mine". Without this, a project that needed its own `locale` had to edit
 the synced console, and the next sync erased it.
+
+**It suggests as you type.** The first word lists matching commands
+(usage plus the command's one-line `description`, which every command
+should carry); after it, the current argument's hint (name, kind, needed
+or optional, range) and its values, from an `enum`'s `values`, a `bool`,
+or a `"complete": "<source>"` field. Core sources are `commands`, `saves`,
+`actions` and `locales`; the project's `console_complete(source, prefix)`
+hook is asked first, so a game offers its registry's ids. Up/Down walk the
+list (the history when it is hidden), Tab takes a row, Enter takes one
+only after Up/Down, Esc hides it, Ctrl+R searches past lines.
+`DebugConsole.suggest(text)` is the pure answer the list shows; test that,
+not pixels. **History, height and tab persist** in `console.cfg` under
+`SaveManager.save_root`, so a suite or harness run never touches the
+developer's own; the harness calls `DebugConsole.reset_session()` between
+scenarios, because a console left open covers every later shot.
+**Buttons are data.** A list entry `{"buttons": [{id, label, run, group,
+tip, fill}]}` in either command file adds buttons under a tab per
+`group` (the project's first, core `Console` last: Help, Clear, Restart,
+Report bug, Copy log). `run` is a console line, so a button is a command
+the tooltip teaches; `fill: true` puts the line in the input to finish.
+Each is `ConsoleButton_<id>` under `ConsoleTab_<group>`, and
+`DebugConsole.press_button(id)` is its input-free seam;
+`button_problems()` lists a button whose line names no command, and a
+test should assert it empty. `console_assert <key> <value>` reads the
+console's own UI back (open, input, suggests, hint, tab, button,
+history), and the harness's `key <name>` and `type <text>` reach it as a
+keyboard would.
 
 ### Tests
 
@@ -286,7 +322,9 @@ you need to prove is that the *player's* path works, not that a handler
 does), `click_at <x> <y>` (viewport coordinates, for Node2D boards),
 `scroll_to <NodeName>` (`click` and `hover` scroll a target below a
 ScrollContainer's fold into view themselves; this forces it), `press
-<action>`,
+<action>`, `key <name>` (a real key, `QuoteLeft` or `Ctrl+R`, for keys no
+action names), `type <text>` (one key event per character into the
+focused control),
 `assert_visible`, `assert_onscreen` (Control, or Node3D through the live
 camera), `assert_zone <NodeName> <top|bottom|left|right>` (the whole rect
 in that zone of the viewport: a layout rule a scenario enforces instead of

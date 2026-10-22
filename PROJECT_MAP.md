@@ -33,7 +33,7 @@ Every `signal` a project script declares that something listens to, or that anot
 
 ### `scenes/main.tscn` — Main:Control
 
-12 nodes; scripts: `scripts/main.gd`, `scripts/ui/pause_menu.gd`; used by: 2 tests.
+12 nodes; scripts: `scripts/main.gd`, `scripts/ui/pause_menu.gd`; used by: scripts/dev/dev_hooks.gd, 3 tests.
 
 ```
 Main:Control  [scripts/main.gd]
@@ -52,7 +52,7 @@ Main:Control  [scripts/main.gd]
 
 ### `scenes/second.tscn` — Second:Control
 
-2 nodes.
+2 nodes; used by: scripts/dev/dev_hooks.gd.
 
 ```
 Second:Control
@@ -112,9 +112,9 @@ Membership from scenes and `add_to_group`; queries are `get_nodes_in_group`, `ca
 | `scripts/autoloads/pads.gd` | Node |  | Pads, 1 test | 0 | 7 |
 | `scripts/autoloads/save_manager.gd` | Node |  | SaveManager, scripts/autoloads/audio_manager.gd, scripts/autoloads/game_manager.gd, scripts/autoloads/keybinds.gd, +6 more, 7 tests | 0 | 13 |
 | `scripts/dev/bug_report.gd` | RefCounted | BugReport | scripts/dev/debug_console.gd, 1 test | 0 | 3 |
-| `scripts/dev/debug_console.gd` | Node |  | DebugConsole, scripts/dev/screenshot_harness.gd, 5 tests | 0 | 25 |
-| `scripts/dev/dev_hooks.gd` | Node |  | scripts/dev/debug_console.gd, 1 test | 0 | 3 |
-| `scripts/dev/screenshot_harness.gd` | Node |  | ScreenshotHarness, 2 tests | 0 | 39 |
+| `scripts/dev/debug_console.gd` | Node |  | DebugConsole, scripts/dev/screenshot_harness.gd, 5 tests | 0 | 75 |
+| `scripts/dev/dev_hooks.gd` | Node |  | scripts/dev/debug_console.gd, 1 test | 0 | 4 |
+| `scripts/dev/screenshot_harness.gd` | Node |  | ScreenshotHarness, 2 tests | 0 | 41 |
 | `scripts/dev/selftest_driver.gd` | Node |  | SelftestDriver, 1 test | 0 | 2 |
 | `scripts/main.gd` | Control |  | scenes/main.tscn, 1 test | 0 | 10 |
 | `scripts/ui/pause_menu.gd` | Control | PauseMenu | scenes/main.tscn, 1 test | 0 | 4 |
@@ -123,7 +123,7 @@ Membership from scenes and `add_to_group`; queries are `get_nodes_in_group`, `ca
 | `scripts/ui/ui_theme.gd` | RefCounted | UITheme | scripts/dev/debug_console.gd, scripts/main.gd, scripts/ui/pause_menu.gd, 2 tests | 0 | 6 |
 | `scripts/ui/volume_sliders.gd` | RefCounted | VolumeSliders | scripts/ui/pause_menu.gd, 1 test | 0 | 1 |
 | `scripts/util/bbcode.gd` | RefCounted | BBCode | 2 tests | 0 | 2 |
-| `scripts/util/cmdline.gd` | RefCounted | Cmdline | scripts/dev/screenshot_harness.gd, scripts/dev/selftest_driver.gd, tools/seeds/dev_driver.gd, 2 tests | 0 | 5 |
+| `scripts/util/cmdline.gd` | RefCounted | Cmdline | scripts/dev/debug_console.gd, scripts/dev/screenshot_harness.gd, scripts/dev/selftest_driver.gd, tools/seeds/dev_driver.gd, 2 tests | 0 | 5 |
 | `scripts/util/content_db.gd` | RefCounted | ContentDB | 2 tests | 0 | 3 |
 | `scripts/util/data_merger.gd` | RefCounted | DataMerger | scripts/util/content_db.gd, 2 tests | 0 | 5 |
 | `scripts/util/function_registry.gd` | RefCounted | FunctionRegistry | 2 tests | 1 | 6 |
@@ -135,7 +135,7 @@ Membership from scenes and `add_to_group`; queries are `get_nodes_in_group`, `ca
 | `scripts/util/save_compat.gd` | RefCounted | SaveCompat | scripts/autoloads/save_manager.gd, 3 tests | 0 | 3 |
 | `scripts/util/version_util.gd` | RefCounted | VersionUtil | scripts/autoloads/save_manager.gd, scripts/util/save_compat.gd, 2 tests | 0 | 3 |
 | `tools/seeds/dev_driver.gd` | Node |  |  | 0 | 2 |
-| `tools/seeds/dev_hooks.gd` | Node |  |  | 0 | 4 |
+| `tools/seeds/dev_hooks.gd` | Node |  |  | 0 | 6 |
 
 ## Data files
 

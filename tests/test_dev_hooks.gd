@@ -69,3 +69,22 @@ func test_sandbox_hook_clears_project_state() -> void:
 	DebugConsole.execute("note leak")
 	_hooks.sandbox()
 	assert_eq(DebugConsole.execute("notes"), "No notes.")
+
+
+## The project's half of the console upgrade: its buttons join a tab of
+## their own ahead of the core one, and its `console_complete` hook is
+## asked for a `complete` source before the core sources.
+func test_project_buttons_lead_and_run_through_the_hooks() -> void:
+	assert_eq(DebugConsole.button_groups()[0], "Fixture")
+	assert_eq(DebugConsole.button_problems(), [] as Array[String])
+	DebugConsole.execute("note from a button")
+	assert_string_contains(DebugConsole.press_button("notes"), "from a button")
+	DebugConsole.reset_session()
+
+
+func test_a_complete_source_is_asked_of_the_hooks_first() -> void:
+	var rows: Array = []
+	for row: Dictionary in DebugConsole.suggest("goto res://scenes/Ma")["items"]:
+		rows.append(row["text"])
+	assert_has(rows, "res://scenes/main.tscn")
+	assert_eq(DebugConsole.complete_values("no_such_source", ""), [] as Array[String])

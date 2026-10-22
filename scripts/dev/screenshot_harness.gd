@@ -33,6 +33,11 @@ extends Node
 ##     scroll_to <NodeName>    scroll a ScrollContainer row into view first
 ##     hover <NodeName>        move the real mouse over it and verify it took
 ##     press <action>          synthesise an input action press+release
+##     key <name>              synthesise a real key press+release: an OS key
+##                             name with optional modifiers (QuoteLeft, F12,
+##                             Tab, Ctrl+R) — for keys no action names
+##     type <text>             type the rest of the line into the focused
+##                             control, one key event per character
 ##     assert_visible <NodeName>   fail unless the named Control is visible
 ##     assert_onscreen <NodeName>  fail if it escapes the visible viewport
 ##                             (Control, or Node3D through the live camera)
@@ -275,6 +280,10 @@ func _sandbox() -> void:
 	# The REAL cursor is global state too: parked over a control it feeds
 	# hover and tooltips into every scenario after the one that moved it.
 	Input.warp_mouse(Vector2(2, 2))
+	# The console is global too: left open it covers every later shot, and
+	# its history and height are read from wherever the save root pointed.
+	if DebugConsole.has_method("reset_session"):
+		DebugConsole.reset_session()
 	_hook("sandbox")
 
 
@@ -392,6 +401,10 @@ func _execute(line: String) -> String:
 			return await _hover(parts)
 		"press":
 			return await _press(parts)
+		"key":
+			return await _key(parts)
+		"type":
+			return await _type(line.substr(line.find(" ") + 1) if line.contains(" ") else "")
 		"assert_visible":
 			if parts.size() < 2:
 				return "ERROR: usage: assert_visible <NodeName>"
@@ -940,6 +953,48 @@ func _press(parts: PackedStringArray) -> String:
 		await get_tree().process_frame
 	for i in DEFAULT_SETTLE_FRAMES:
 		await get_tree().process_frame
+	return ""
+
+
+## A real key event, for keys no action names (the console's ~). Through
+## Input.parse_input_event like `press`, so `_input` sees it first, as it
+## would a keyboard's.
+func _key(parts: PackedStringArray) -> String:
+	if parts.size() < 2:
+		return "ERROR: usage: key <name> (QuoteLeft, F12, Tab, Ctrl+R)"
+	var code := OS.find_keycode_from_string(parts[1])
+	var bare: Key = code & KEY_CODE_MASK
+	if bare == KEY_NONE:
+		return "ERROR: '%s' names no key (try QuoteLeft, F12, Tab, Ctrl+R)" % parts[1]
+	for pressed in [true, false]:
+		var event := InputEventKey.new()
+		event.keycode = bare
+		event.physical_keycode = bare
+		event.pressed = pressed
+		event.ctrl_pressed = code & KEY_MASK_CTRL != 0
+		event.shift_pressed = code & KEY_MASK_SHIFT != 0
+		event.alt_pressed = code & KEY_MASK_ALT != 0
+		Input.parse_input_event(event)
+		await get_tree().process_frame
+	for i in DEFAULT_SETTLE_FRAMES:
+		await get_tree().process_frame
+	return ""
+
+
+## Typed text, a character at a time, into whatever has focus.
+func _type(text: String) -> String:
+	if text.is_empty():
+		return "ERROR: usage: type <text>"
+	if get_viewport().gui_get_focus_owner() == null:
+		return "ERROR: nothing has focus to type into"
+	for ch in text:
+		var event := InputEventKey.new()
+		event.unicode = ch.unicode_at(0)
+		event.keycode = OS.find_keycode_from_string(ch.to_upper()) if ch != " " else KEY_SPACE
+		event.pressed = true
+		Input.parse_input_event(event)
+		await get_tree().process_frame
+	await get_tree().process_frame
 	return ""
 
 

@@ -44,8 +44,15 @@
 			{
 				"name": "scene_path",
 				"kind": "string",
+				"complete": "scenes",
 				"required": true
 			}
+		]
+	},
+	{
+		"buttons": [
+			{"id": "notes", "label": "Show notes", "run": "notes", "group": "Fixture", "tip": "Prints every note."},
+			{"id": "note", "label": "Add note", "run": "note", "group": "Fixture", "fill": true, "tip": "Starts a note for you to finish."}
 		]
 	}
 ]

@@ -54,3 +54,22 @@ func scenario_command(_parts: PackedStringArray, _line: String) -> Variant:
 ## for "not mine".
 func console_dispatch(_handler: String, _args: Dictionary) -> Variant:
 	return null
+
+
+## The console's dev gate, asked BEFORE the default (a debug build, or an
+## export with the `dev` custom feature). Return true or false to decide,
+## or null to keep the default. `DebugConsole.default_allowed()` is the
+## default, for a hook that only adds a case. A player export must answer
+## false, or the cheats the console reaches ship.
+func console_allowed() -> Variant:
+	return null
+
+
+## Values for an argument that declares `"complete": "<source>"` in
+## data/console_commands.project.json: unit ids, map ids, anything from the
+## live registry. Asked BEFORE the core sources (commands, saves, actions,
+## locales); return an Array of strings, or null for "not mine". `prefix`
+## is what is typed so far; the console filters again, so returning the
+## whole list is fine.
+func console_complete(_source: String, _prefix: String) -> Variant:
+	return null

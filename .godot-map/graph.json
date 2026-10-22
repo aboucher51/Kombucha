@@ -451,11 +451,20 @@
    "signals": [],
    "funcs": [
     "_ready",
+    "_report_gate",
+    "_load_all",
+    "_absorb",
     "_load_commands",
     "_load_hooks",
-    "_input_event_toggle",
-    "_unhandled_input",
+    "allowed",
+    "default_allowed",
+    "is_open",
+    "is_toggle_event",
+    "_input",
+    "_typing_elsewhere",
+    "_binding_a_key",
     "toggle",
+    "reset_session",
     "execute",
     "tokenise",
     "_dispatch",
@@ -465,28 +474,74 @@
     "_handle_help",
     "_handle_bind",
     "_save_names",
+    "_console_assert",
+    "plain_log",
     "_find_command",
     "_parse_args",
     "_parse_value",
+    "suggest",
+    "_command_matches",
+    "_command_row",
+    "_suggest_flag",
+    "_suggest_history",
+    "arg_hint",
+    "_spec_words",
+    "_number",
+    "_kind_words",
+    "values_for",
+    "complete_values",
+    "prefs_path",
+    "_ensure_prefs",
+    "_save_prefs",
+    "history",
+    "remember",
+    "search_history",
+    "button_row",
+    "buttons",
+    "button_groups",
+    "button_problems",
+    "button_tip",
+    "press_button",
+    "run_line",
+    "input_text",
     "_build_ui",
+    "_build_buttons",
+    "_first_group",
+    "_select_group",
+    "current_group",
+    "_on_button_pressed",
+    "_apply_height",
+    "set_height",
+    "height",
+    "_on_grip_input",
     "print_line",
     "_on_submitted",
+    "_on_text_changed",
     "_on_input_key",
-    "_recall",
-    "_autocomplete",
-    "_completions_from"
+    "_list_showing",
+    "accept_suggestion",
+    "_on_suggestion_clicked",
+    "_refresh_suggestions",
+    "_show_pick",
+    "shown_suggestions",
+    "_recall"
    ],
    "emits": [],
    "connects": [
-    "_input.text_submitted",
-    "_input.gui_input"
+    "_entry.text_submitted",
+    "_entry.text_changed",
+    "_entry.gui_input",
+    "_suggest_list.item_clicked",
+    "grip.gui_input",
+    "tab.pressed",
+    "button.pressed"
    ],
    "node_paths": [],
    "groups_joined": [],
    "groups_queried": [
     "state"
    ],
-   "lines": 541
+   "lines": 1331
   },
   "res://scripts/dev/dev_hooks.gd": {
    "path": "res://scripts/dev/dev_hooks.gd",
@@ -496,12 +551,16 @@
    "extends": "Node",
    "tool": false,
    "loads": [],
-   "refs": [],
+   "refs": [
+    "res://scenes",
+    "res://scenes/"
+   ],
    "signals": [],
    "funcs": [
     "sandbox",
     "scenario_command",
-    "console_dispatch"
+    "console_dispatch",
+    "console_complete"
    ],
    "emits": [],
    "connects": [],
@@ -510,7 +569,7 @@
    "groups_queried": [
     "settle"
    ],
-   "lines": 59
+   "lines": 72
   },
   "res://scripts/dev/screenshot_harness.gd": {
    "path": "res://scripts/dev/screenshot_harness.gd",
@@ -557,6 +616,8 @@
     "_assert_tooltip",
     "_frame_budget",
     "_press",
+    "_key",
+    "_type",
     "_assert_onscreen",
     "_find_all",
     "pick_named",
@@ -573,7 +634,7 @@
    "node_paths": [],
    "groups_joined": [],
    "groups_queried": [],
-   "lines": 1054
+   "lines": 1109
   },
   "res://scripts/dev/selftest_driver.gd": {
    "path": "res://scripts/dev/selftest_driver.gd",
@@ -1199,14 +1260,25 @@
     "test_bind_and_refusal",
     "test_alias_resolves",
     "test_project_hooks_may_override_a_core_command",
-    "test_quotes_survive_tokenising_and_only_the_empty_token_is_special"
+    "test_quotes_survive_tokenising_and_only_the_empty_token_is_special",
+    "_clean_console",
+    "_key",
+    "test_a_player_build_never_opens_the_console_but_execute_still_answers",
+    "test_the_gate_asks_the_project_hook_first",
+    "test_the_toggle_key_is_tilde_and_f12_or_the_projects_console_action",
+    "test_the_first_word_suggests_commands_with_usage_and_description",
+    "test_arguments_show_a_hint_and_their_values",
+    "test_a_complete_source_offers_live_names",
+    "test_history_is_kept_under_the_redirected_save_root",
+    "test_core_buttons_run_known_commands_and_teach_their_line",
+    "test_the_ui_builds_named_buttons_and_keeps_its_height"
    ],
    "emits": [],
    "connects": [],
    "node_paths": [],
    "groups_joined": [],
    "groups_queried": [],
-   "lines": 120
+   "lines": 268
   },
   "res://tests/test_dev_hooks.gd": {
    "path": "res://tests/test_dev_hooks.gd",
@@ -1216,7 +1288,9 @@
    "extends": "GutTest",
    "tool": false,
    "loads": [],
-   "refs": [],
+   "refs": [
+    "res://scenes/main.tscn"
+   ],
    "signals": [],
    "funcs": [
     "before_each",
@@ -1228,14 +1302,16 @@
     "test_scenario_command_is_error_shaped_and_passes_through_unknowns",
     "test_a_flag_may_precede_a_rest_argument",
     "test_quotes_reach_the_handler",
-    "test_sandbox_hook_clears_project_state"
+    "test_sandbox_hook_clears_project_state",
+    "test_project_buttons_lead_and_run_through_the_hooks",
+    "test_a_complete_source_is_asked_of_the_hooks_first"
    ],
    "emits": [],
    "connects": [],
    "node_paths": [],
    "groups_joined": [],
    "groups_queried": [],
-   "lines": 72
+   "lines": 91
   },
   "res://tests/test_function_registry.gd": {
    "path": "res://tests/test_function_registry.gd",
@@ -1602,14 +1678,16 @@
     "sandbox",
     "restore",
     "scenario_command",
-    "console_dispatch"
+    "console_dispatch",
+    "console_allowed",
+    "console_complete"
    ],
    "emits": [],
    "connects": [],
    "node_paths": [],
    "groups_joined": [],
    "groups_queried": [],
-   "lines": 57
+   "lines": 76
   }
  },
  "resources": {
@@ -1729,9 +1807,20 @@
   "res://scenarios/baselines/nowhere/none.png": [
    "res://tests/test_screenshot_harness.gd"
   ],
+  "res://scenes": [
+   "res://scripts/dev/dev_hooks.gd"
+  ],
+  "res://scenes/": [
+   "res://scripts/dev/dev_hooks.gd"
+  ],
   "res://scenes/main.tscn": [
+   "res://scripts/dev/dev_hooks.gd",
    "res://tests/test_console_state.gd",
+   "res://tests/test_dev_hooks.gd",
    "res://tests/test_smoke.gd"
+  ],
+  "res://scenes/second.tscn": [
+   "res://scripts/dev/dev_hooks.gd"
   ],
   "res://scripts": [
    "res://tests/test_localization.gd"
@@ -1853,6 +1942,7 @@
    "res://tests/test_localization.gd"
   ],
   "res://scripts/util/cmdline.gd": [
+   "res://scripts/dev/debug_console.gd",
    "res://scripts/dev/screenshot_harness.gd",
    "res://scripts/dev/selftest_driver.gd",
    "res://tests/test_cmdline.gd",
