@@ -40,9 +40,12 @@ const HOOKS_PATH := "res://scripts/dev/dev_hooks.gd"
 const SCROLLBACK := 1000
 const HISTORY_MAX := 200
 const SUGGEST_MAX := 40
-const SUGGEST_ROWS := 8
+const SUGGEST_ROWS := 6
 const PREFS_FILE := "console.cfg"
-const HEIGHT_DEFAULT := 320.0
+## 0 = not chosen yet: the panel takes HEIGHT_SHARE of the screen, so a
+## suggestion list does not squeeze the log to two lines on a big window.
+const HEIGHT_DEFAULT := 0.0
+const HEIGHT_SHARE := 0.48
 const HEIGHT_MIN := 160.0
 ## The group a button lands in when its row names none: the core buttons'.
 const CORE_GROUP := "Console"
@@ -1155,13 +1158,16 @@ func _apply_height() -> void:
 	if _panel == null:
 		return
 	var view_h := get_viewport().get_visible_rect().size.y
-	_height = clampf(_height, HEIGHT_MIN, maxf(HEIGHT_MIN, view_h * 0.95))
-	_panel.custom_minimum_size = Vector2(0, _height)
-	_panel.offset_bottom = _height
+	var want := _height if _height > 0.0 else view_h * HEIGHT_SHARE
+	var shown := clampf(want, HEIGHT_MIN, maxf(HEIGHT_MIN, view_h * 0.95))
+	if _height > 0.0:
+		_height = shown
+	_panel.custom_minimum_size = Vector2(0, shown)
+	_panel.offset_bottom = shown
 
 
 ## The console's height in canvas pixels; a test or scenario may set it.
-## Kept between runs like the history.
+## Kept between runs like the history. 0 = the default share of the screen.
 func set_height(pixels: float) -> void:
 	_ensure_prefs()
 	_height = pixels
