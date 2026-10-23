@@ -12,3 +12,12 @@ busy 100000
 expect_fail settle 0.2
 busy 0
 assert busy no
+# until: WATCH the state instead of counting frames. It runs the line
+# once a frame until it answers without an error, and fails with the last
+# error once the wall-clock limit runs out.
+busy 30
+until 5 assert busy no
+busy 100000
+expect_fail until 0.2 assert busy no
+busy 0
+until 2 assert busy no

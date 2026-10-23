@@ -26,6 +26,9 @@ extends Node
 ##     sleep <seconds>         wall-clock wait, for anything on an OS timer
 ##     settle [s] [group]      wait until no node in the group (default
 ##                             "settle") answers is_busy() true; ERROR after s
+##     until <s> <line>        run any scenario line once a frame until it
+##                             answers without an error; ERROR with the last
+##                             reply after s wall-clock seconds
 ##     click <NodeName>        synthesise a real mouse click on a named Control
 ##                             (a target below a ScrollContainer's fold is
 ##                             scrolled into view first; hover does the same)
@@ -389,6 +392,8 @@ func _execute(line: String) -> String:
 			return ""
 		"settle":
 			return await _settle(parts)
+		"until":
+			return await _until(parts, line)
 		"click":
 			return await _click(parts)
 		"click_at":
@@ -470,6 +475,29 @@ func _execute(line: String) -> String:
 ## never an answer.
 func _project_command(_parts: PackedStringArray, line: String) -> String:
 	return DebugConsole.execute(line)
+
+
+## `until <seconds> <line>`: the state a scenario waits for is WATCHED,
+## never counted. A fixed `wait N` covers more or less game on a busy
+## machine than on a quiet one, so the assert after it flaked only under
+## load (NavalWar, four scenarios under parallel checks). The limit is
+## wall-clock: a frame count is the very thing that varies.
+func _until(parts: PackedStringArray, line: String) -> String:
+	if parts.size() < 3 or not parts[1].is_valid_float():
+		return "ERROR: usage: until <seconds> <scenario line>"
+	# The inner line is cut from the RAW line, not re-joined from the
+	# tokens, so its quotes (`""`, a quoted phrase) reach it untouched.
+	var inner := line.strip_edges().substr(parts[0].length()).strip_edges()
+	inner = inner.substr(inner.find(" ") + 1).strip_edges()
+	var deadline := Time.get_ticks_msec() + int(float(parts[1]) * 1000.0)
+	while true:
+		var reply := str(await _execute(inner))
+		if not _is_error(reply):
+			return reply
+		if Time.get_ticks_msec() >= deadline:
+			return "ERROR: after %ss still: %s" % [parts[1], reply]
+		await get_tree().process_frame
+	return ""
 
 
 ## Calls an optional dev-hooks method by name; a project without hooks, or

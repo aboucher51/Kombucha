@@ -593,6 +593,7 @@
     "_run",
     "_execute",
     "_project_command",
+    "_until",
     "_hook",
     "_shot",
     "capture",
@@ -634,7 +635,7 @@
    "node_paths": [],
    "groups_joined": [],
    "groups_queried": [],
-   "lines": 1109
+   "lines": 1137
   },
   "res://scripts/dev/selftest_driver.gd": {
    "path": "res://scripts/dev/selftest_driver.gd",
@@ -1581,6 +1582,7 @@
     "test_a_missing_baseline_loads_as_null_without_an_engine_error",
     "test_a_baseline_round_trips_through_png_bytes",
     "test_project_hooks_may_override_a_builtin_scenario_command",
+    "test_until_watches_a_line_until_it_passes_and_names_the_last_error_when_it_never_does",
     "_named",
     "test_a_hidden_namesake_does_not_make_a_name_ambiguous",
     "test_two_visible_namesakes_are_ambiguous_and_none_is_not_visible"
@@ -1590,7 +1592,7 @@
    "node_paths": [],
    "groups_joined": [],
    "groups_queried": [],
-   "lines": 139
+   "lines": 172
   },
   "res://tests/test_smoke.gd": {
    "path": "res://tests/test_smoke.gd",

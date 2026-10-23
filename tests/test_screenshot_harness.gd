@@ -111,6 +111,39 @@ func test_project_hooks_may_override_a_builtin_scenario_command() -> void:
 	mine.free()
 
 
+## A state that arrives on the third ask: `until` must keep asking past
+## the first two errors, and give back the last error when it never comes.
+class ArrivingHooks extends Node:
+	var asks := 0
+	func scenario_command(parts: PackedStringArray, line: String) -> Variant:
+		match parts[0]:
+			"arrives":
+				asks += 1
+				return "" if asks >= 3 else "ERROR: not yet (%d)" % asks
+			"never":
+				return "ERROR: still waiting"
+			"echo":
+				return "echo [%s]" % line
+		return null
+
+
+func test_until_watches_a_line_until_it_passes_and_names_the_last_error_when_it_never_does() -> void:
+	Harness.keep_alive_for_tests = true
+	var harness: Node = Harness.new()
+	add_child_autofree(harness)
+	Harness.keep_alive_for_tests = false
+	var previous: Object = DebugConsole.hooks
+	var mine := ArrivingHooks.new()
+	DebugConsole.hooks = mine
+	assert_eq(await harness._execute("until 5 arrives"), "", "passes once the state arrives")
+	assert_eq(mine.asks, 3, "asked once a frame until it answered without an error")
+	assert_eq(await harness._execute("until 0.05 never"), "ERROR: after 0.05s still: ERROR: still waiting")
+	assert_eq(await harness._execute('until 1 echo "" x'), 'echo [echo "" x]', "the inner line keeps its quotes")
+	assert_string_starts_with(await harness._execute("until soon never"), "ERROR: usage")
+	DebugConsole.hooks = previous
+	mine.free()
+
+
 # ── name lookup: the visible namesake wins, two visible ones are an error ──
 
 func _named(node_name: String, shown: bool) -> Control:

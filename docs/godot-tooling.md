@@ -317,7 +317,9 @@ Built-in commands (`scripts/dev/screenshot_harness.gd`): `shot <name> [x y w
 h]`, `wait <frames>`, `ticks <n>` (physics frames: game time), `sleep
 <seconds>` (wall-clock, deliberately ignoring `Engine.time_scale`), `settle
 [s] [group]` (wait until nothing in the group answers `is_busy()`, ERROR
-after `s`), `click <NodeName>` (synthesises real input — prefer it when what
+after `s`), `until <s> <line>` (run any scenario line once a frame until it
+answers without an error; ERROR with its last reply after `s` wall-clock
+seconds), `click <NodeName>` (synthesises real input — prefer it when what
 you need to prove is that the *player's* path works, not that a handler
 does), `click_at <x> <y>` (viewport coordinates, for Node2D boards),
 `scroll_to <NodeName>` (`click` and `hover` scroll a target below a
@@ -371,6 +373,15 @@ Rules that keep the harness useful:
   `queue_free`'d node is a child until the frame ends and reads busy one
   frame too long. The harness skips nodes on their way out for the same
   reason, in `settle` and in the `state` group.
+- **A state the scenario waits for is watched, never counted.** Where a
+  `wait N` or `sleep s` stands before an assert, `until <s> <line>` runs
+  the assert itself once a frame until it passes: under batch load a
+  frame count covers more or less game than on a quiet box, and one
+  project had four scenarios that went red only under parallel checks
+  (a `wait 30` met three record rows instead of two). The watched value
+  must pass THROUGH the target (rows that grow one at a time) or HOLD it
+  (a button that stays visible); a value that can jump past the target
+  is never seen equal to it, and wants a different assert.
 - **A name shared by two VISIBLE nodes is an ERROR, not a coin toss.**
   Every lookup refuses an ambiguous name; assert on a uniquely named node
   instead. One project's `assert_onscreen Cliffs` used to answer about
