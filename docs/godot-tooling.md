@@ -307,6 +307,12 @@ new scenario for whatever you are working on rather than editing an existing
 one. Needs a display server (Xvfb, else WSLg's `DISPLAY=:0`) — **not**
 `--headless`, which has no renderer and captures blank frames. PNGs land
 in `shots/` (gitignored).
+**`shots/` and `builds/` each hold an empty `.gdignore`**, committed, and
+`shoot.sh`, `serve.sh` and `export.sh` write it back when it is missing:
+a long-lived headless editor (the GDScript language server an IDE keeps
+running) imports every PNG under `res://` as a texture and holds it, and
+one project's grew to 7.7 GB on ~3,600 shots and starved the shared
+machine until other sessions' checks were killed.
 **A run clears only the scenarios it is about to run** (shots are prefixed
 by scenario stem), so a single-scenario run no longer destroys the shots
 of the one before it — that bit twice in one day, the second time while

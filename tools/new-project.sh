@@ -97,6 +97,10 @@ else
 fi
 rm -f "$EXCLUDES"
 
+# /builds is excluded whole (old exports), but its .gdignore belongs to
+# every project: the editor must never import an export.
+mkdir -p "$DEST/builds" && : > "$DEST/builds/.gdignore"
+
 # The project's own README, and the fenced Kombucha-only sections gone.
 cp "$ROOT/tools/seeds/README.project.md" "$DEST/README.md"
 python3 - "$DEST/CLAUDE.md" "$DEST/LICENSES.md" <<'PY'

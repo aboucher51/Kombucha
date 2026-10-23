@@ -148,6 +148,12 @@ esac
 # single-scenario run before it — twice in one day, the second time
 # while they were being read.
 mkdir -p "$ROOT/shots"
+# The editor must never import the shots: a long-lived headless editor
+# (the GDScript language server an IDE keeps open) imports every PNG
+# under res:// as a texture and holds it, and one project's grew to
+# 7.7 GB on ~3,600 shots and starved the machine. The wipes below remove
+# shots by name only, so this file stays.
+[[ -e "$ROOT/shots/.gdignore" ]] || : > "$ROOT/shots/.gdignore"
 rm -f "$ROOT"/shots/shard.*.log 2>/dev/null
 if [[ -z "${SHOOT_KEEP:-}" ]]; then
 	for scenario in "${SCENARIOS[@]}"; do

@@ -8,6 +8,10 @@ claude-log.md
 # for PNGs that land inside res://)
 shots/*
 !shots/.gitkeep
+# .gdignore keeps the editor out: a long-lived headless editor (the GDScript
+# language server) imports every PNG under res:// and holds it; one project's
+# reached 7.7 GB on ~3,600 shots. tools/shoot.sh and export.sh recreate both.
+!shots/.gdignore
 
 # Export artifacts
 *.apk
@@ -21,7 +25,8 @@ shots/*
 *.pck
 *.zip
 export/
-builds/
+builds/*
+!builds/.gdignore
 
 # C# / Mono build output (if a project adds C#)
 .mono/

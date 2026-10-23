@@ -59,6 +59,8 @@ send() { # name, source-file
 case "${1:-}" in
 	start)
 		running && { echo "serve: already running (pid $(cat "$PIDFILE"))"; exit 0; }
+		# The editor never imports the shots (shoot.sh says why).
+		mkdir -p "$ROOT/shots"; [[ -e "$ROOT/shots/.gdignore" ]] || : > "$ROOT/shots/.gdignore"
 		mkdir -p "$SERVE/user"; rm -f "$SERVE"/*.cmd "$SERVE"/*.done "$SERVE/quit" "$SERVE/counter"; : > "$LOG"
 		ARGS=(--path "$ROOT")
 		[[ -n "${SHOOT_RESOLUTION:-}" ]] && ARGS+=(--resolution "$SHOOT_RESOLUTION")

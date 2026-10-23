@@ -208,8 +208,9 @@ if [[ $CODE -eq 0 && -f "$DEST3/tools/TOOLING_VERSION" && -f "$DEST3/scripts/dev
 		&& ! grep -q 'What this repo is' "$DEST3/CLAUDE.md" && ! grep -q 'kombucha-only' "$DEST3/CLAUDE.md" \
 		&& grep -q 'docs/godot-tooling.md' "$DEST3/CLAUDE.md" && ! grep -q 'itself is MIT' "$DEST3/LICENSES.md" \
 		&& grep -q 'config/name="Self Test"' "$DEST3/project.godot" && ! grep -q SelftestDriver "$DEST3/project.godot" \
-		&& [[ "$(git -C "$DEST3" rev-list --count HEAD)" == "1" ]] && [[ -z "$(git -C "$DEST3" status --porcelain)" ]]; then
-	say ok "new-project.sh scaffolds a named, stamped, committed project without the Kombucha-only paths"
+		&& [[ "$(git -C "$DEST3" rev-list --count HEAD)" == "1" ]] && [[ -z "$(git -C "$DEST3" status --porcelain)" ]] \
+		&& [[ "$(git -C "$DEST3" ls-files shots/.gdignore builds/.gdignore | wc -l)" == "2" ]]; then
+	say ok "new-project.sh scaffolds a named, stamped, committed project without the Kombucha-only paths, the editor kept out of shots/ and builds/"
 else
 	say FAIL "new-project.sh scaffold is wrong (exit $CODE): $(tail -3 <<<"$OUT")"; FAILED=1
 fi

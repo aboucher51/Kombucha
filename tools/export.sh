@@ -86,6 +86,11 @@ ensure_templates() {
 
 ensure_templates || exit 1
 
+# The editor never imports the builds (a web export is PNGs and a .pck
+# under res://; shoot.sh says what a long-lived editor does with those).
+mkdir -p builds
+[[ -e builds/.gdignore ]] || : > builds/.gdignore
+
 echo "── import (translations, class registry) ──"
 "$GODOT" --headless --path . --import > /dev/null 2>&1
 
