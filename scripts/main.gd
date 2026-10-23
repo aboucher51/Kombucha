@@ -26,9 +26,14 @@ var last_click := Vector2(-1, -1)
 var last_row := ""
 ## The dropdown's chosen id (the harness's `select` seam).
 var quality := "medium"
+## Where saves pointed when this scene was built: the harness must sandbox
+## BEFORE the scene a scenario drives is built, or a first scenario's game
+## writes its files to the real save folder (sandbox_first.txt).
+var built_save_root := ""
 
 
 func _ready() -> void:
+	built_save_root = SaveManager.save_root
 	theme = UITheme.get_theme()
 	RenderingServer.set_default_clear_color(UITheme.BACKGROUND)
 	AudioManager.ui_sounds.merge(UI_SOUNDS)
@@ -108,6 +113,7 @@ func assert_key(key: String, value: String) -> String:
 		"last_click": actual = _point(last_click)
 		"last_row": actual = last_row
 		"quality": actual = quality
+		"built_save_root": actual = built_save_root
 		_: return "ERROR: unknown key '%s'" % key
 	if actual != value:
 		return "ERROR: %s is '%s', expected '%s'" % [key, actual, value]

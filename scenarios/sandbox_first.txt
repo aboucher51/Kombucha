@@ -1,0 +1,6 @@
+# The scene a scenario drives is built AFTER the sandbox, the first
+# scenario of a process included: built before it, its game read the real
+# save root and settings. One project's first scenario wrote its accounts
+# to the player's real save folder.
+wait 2
+assert built_save_root user://sandbox_saves

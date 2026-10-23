@@ -635,7 +635,7 @@
    "node_paths": [],
    "groups_joined": [],
    "groups_queried": [],
-   "lines": 1137
+   "lines": 1142
   },
   "res://scripts/dev/selftest_driver.gd": {
    "path": "res://scripts/dev/selftest_driver.gd",
@@ -701,7 +701,7 @@
     "settle"
    ],
    "groups_queried": [],
-   "lines": 123
+   "lines": 129
   },
   "res://scripts/ui/pause_menu.gd": {
    "path": "res://scripts/ui/pause_menu.gd",
@@ -1875,6 +1875,7 @@
    "res://scripts/dev/bug_report.gd",
    "res://scripts/dev/debug_console.gd",
    "res://scripts/dev/screenshot_harness.gd",
+   "res://scripts/main.gd",
    "res://scripts/ui/ui_scale_root.gd",
    "res://scripts/util/content_db.gd",
    "res://tests/test_audio_manager.gd",

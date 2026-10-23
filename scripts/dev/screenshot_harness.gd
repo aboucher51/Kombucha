@@ -168,7 +168,12 @@ func _ready() -> void:
 	await get_tree().process_frame
 	await get_tree().process_frame
 
-	_sandbox()
+	# Sandbox, then build the boot scene AGAIN: the one the engine built
+	# first read the real save root and settings, so a first scenario (and
+	# every serve session) drove a game whose files went to the player's
+	# real save folder. One project's scenario that reopened its game found
+	# no account: the second build read the sandbox.
+	await _reset_between_scenarios()
 
 	# Which rasterizer made the pixels: a GPU and a software renderer do not
 	# produce identical images, and a log that says which one ran is what
