@@ -92,7 +92,7 @@ case "${1:-}" in
 		esac
 		# The GPU on either display when WSLg offers one (same adapter, same
 		# baselines); the virtual display gets llvmpipe explicitly without it.
-		if [[ -z "${GALLIUM_DRIVER:-}" && "${SHOOT_GPU:-auto}" != "0" && -e /usr/lib/x86_64-linux-gnu/dri/d3d12_dri.so ]]; then
+		if [[ -z "${GALLIUM_DRIVER:-}" && "${SHOOT_GPU:-auto}" != "0" && -e /dev/dxg && -e /usr/lib/x86_64-linux-gnu/dri/d3d12_dri.so ]]; then
 			export GALLIUM_DRIVER=d3d12
 		elif [[ ${#RUNNER[@]} -gt 0 && -z "${GALLIUM_DRIVER:-}" ]]; then
 			export LIBGL_ALWAYS_SOFTWARE=1

@@ -117,7 +117,7 @@ PY
 		else
 			printf '  FAIL  Xvfb path did not render with llvmpipe (SHOOT_GPU=0)\n'; MISSING=1
 		fi
-		if [[ -e /usr/lib/x86_64-linux-gnu/dri/d3d12_dri.so ]]; then
+		if [[ -e /dev/dxg && -e /usr/lib/x86_64-linux-gnu/dri/d3d12_dri.so ]]; then
 			OUT="$(SHOOT_DISPLAY=xvfb SHOOT_JOBS=1 SHOOT_KEEP=1 tools/shoot.sh scenarios/baseline.txt 2>&1)"
 			if [[ $? -eq 0 ]] && grep -q 'renderer D3D12' <<<"$OUT"; then
 				printf '  ok    Xvfb path renders on the GPU, same baselines as the real display\n'

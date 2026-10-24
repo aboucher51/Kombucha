@@ -176,7 +176,11 @@ fi
 # one, the virtual display gets Mesa's software rasterizer explicitly, so
 # the result is the same on a runner with no GPU as on one with a GPU
 # nobody asked for; SHOOT_GPU=0 is how CI's baselines are made here.
-gpu_available() { [[ -z "${GALLIUM_DRIVER:-}" && -e /usr/lib/x86_64-linux-gnu/dri/d3d12_dri.so ]]; }
+# The d3d12 driver only works through WSL's GPU device, /dev/dxg. The driver
+# file alone is not enough: Ubuntu's Mesa ships it everywhere, and on a Linux
+# server with no WSL the engine then died in GLX ("failed to create drisw
+# screen", signal 11) instead of falling back to llvmpipe.
+gpu_available() { [[ -z "${GALLIUM_DRIVER:-}" && -e /dev/dxg && -e /usr/lib/x86_64-linux-gnu/dri/d3d12_dri.so ]]; }
 if [[ "${SHOOT_GPU:-auto}" != "0" ]] && gpu_available; then
 	export GALLIUM_DRIVER=d3d12
 elif [[ ${#RUNNER[@]} -gt 0 && -z "${GALLIUM_DRIVER:-}" ]]; then
