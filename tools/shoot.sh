@@ -17,6 +17,13 @@
 #   SHOOT_BASELINES=update      expect_shot WRITES its baselines (into
 #                               scenarios/baselines/<renderer>/) instead of
 #                               comparing; look at them, then commit them
+#   SHOOT_RENDER_SLOT=auto      on a machine with the agent-tickets script,
+#                               hold its machine-wide `render` slot while
+#                               the engines run, so batches from several
+#                               projects take turns; 0 skips it (and the
+#                               llvmpipe cap that comes with it)
+#   SHOOT_RENDER_WAIT=1800      seconds to wait for that slot, then run anyway
+#   AGENT_TICKETS_SCRIPT=<path> the tickets.py to ask (default: the skill's)
 #   SHOOT_JOBS=auto             processes to split the batch across: auto
 #                               (default) is 2 for four or more scenarios
 #                               on a machine with four or more cores, else
@@ -207,7 +214,35 @@ fi
 (( JOBS < 1 )) && JOBS=1
 
 WORK="$(mktemp -d)"
-trap 'rm -rf "$WORK"' EXIT
+RENDER_SLOT=""
+TK="${AGENT_TICKETS_SCRIPT:-$HOME/.claude/skills/agent-tickets/scripts/tickets.py}"
+give_render_slot() {
+	[[ -n "$RENDER_SLOT" ]] && python3 "$TK" slot give render "$RENDER_SLOT" >/dev/null 2>&1
+	RENDER_SLOT=""
+}
+trap 'give_render_slot; rm -rf "$WORK"' EXIT
+
+# ── take turns with other projects on a shared machine ───────────────────
+# A software-rendered engine uses most of a machine's cores, so two
+# projects' batches at once slow each other and a third starves (measured:
+# one llvmpipe shard took ~12 of a 32-thread server's cores, with three
+# agent workers sharing it). Where the agent-tickets script is installed,
+# a batch holds the machine-wide `render` slot (one by default) while its
+# engines run, and caps llvmpipe at half the cores split across its
+# shards, leaving the rest for other projects' headless tests and builds.
+# CI and machines without the script run exactly as before.
+if [[ "${SHOOT_RENDER_SLOT:-auto}" != "0" && -f "$TK" ]] && command -v python3 >/dev/null; then
+	echo "shoot: taking the render slot (waits while another batch holds it)"
+	RENDER_SLOT="$(python3 "$TK" slot take render --owner "shoot:$(basename "$ROOT")" \
+		--wait "${SHOOT_RENDER_WAIT:-1800}" 2>/dev/null)" || RENDER_SLOT=""
+	if [[ -z "$RENDER_SLOT" ]]; then
+		echo "shoot: no render slot after ${SHOOT_RENDER_WAIT:-1800}s; running anyway" >&2
+	elif [[ -n "${LIBGL_ALWAYS_SOFTWARE:-}" && -z "${LP_NUM_THREADS:-}" ]]; then
+		LP=$(( CORES / 2 / JOBS )); (( LP < 2 )) && LP=2
+		export LP_NUM_THREADS=$LP
+		echo "shoot: llvmpipe capped at $LP threads per shard (LP_NUM_THREADS)"
+	fi
+fi
 # Longest-first from the last run's per-scenario seconds, unknown priced at
 # the average (so a new scenario is not assumed free); one boot per shard
 # is the fixed cost the deal is balancing against. One shard keeps the
@@ -271,6 +306,7 @@ for pid in "${PIDS[@]}"; do
 		STATUS=$CODE
 	fi
 done
+give_render_slot   # the engines are done; reading the logs needs no slot
 
 LOG_LIMIT="${SHOOT_LOG_LIMIT:-$((2 * 1024 * 1024))}"
 for log in "$WORK"/shard.*.log; do

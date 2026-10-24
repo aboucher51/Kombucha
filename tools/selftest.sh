@@ -156,6 +156,30 @@ if [[ "${QUICK:-0}" -eq 0 ]]; then
 	else
 		say FAIL "an engine error was reported without its scenario"; FAILED=1
 	fi
+	# A batch on a machine with the agent-tickets script takes the machine-wide
+	# `render` slot around its engines and gives it back; SHOOT_RENDER_SLOT=0
+	# skips it. Without the turn-taking, three projects' llvmpipe batches on
+	# one server each slowed the others (~12 cores per shard).
+	TKSTUB="$SCRATCH/tk-stub.py"; TKLOG="$SCRATCH/tk-stub.log"
+	printf '%s\n' 'import os, sys' \
+		'open(os.environ["TK_STUB_LOG"], "a").write(" ".join(sys.argv[1:]) + "\n")' \
+		'if sys.argv[1:3] == ["slot", "take"]: print("render-0")' > "$TKSTUB"
+	: > "$TKLOG"
+	OUT="$(cd "$SCRATCH" && TK_STUB_LOG="$TKLOG" AGENT_TICKETS_SCRIPT="$TKSTUB" SHOOT_JOBS=1 \
+		tools/shoot.sh scenarios/example.txt 2>&1)"
+	if grep -q '^slot take render' "$TKLOG" && grep -q '^slot give render render-0$' "$TKLOG"; then
+		say ok "a batch takes the render slot and gives it back"
+	else
+		say FAIL "the render slot was not taken and returned: $(tr '\n' '|' < "$TKLOG")"; FAILED=1
+	fi
+	: > "$TKLOG"
+	(cd "$SCRATCH" && TK_STUB_LOG="$TKLOG" AGENT_TICKETS_SCRIPT="$TKSTUB" SHOOT_RENDER_SLOT=0 SHOOT_JOBS=1 \
+		tools/shoot.sh scenarios/example.txt >/dev/null 2>&1)
+	if [[ ! -s "$TKLOG" ]]; then
+		say ok "SHOOT_RENDER_SLOT=0 leaves the slot alone"
+	else
+		say FAIL "SHOOT_RENDER_SLOT=0 still asked for a slot"; FAILED=1
+	fi
 else
 	say -- "scenario gate on an engine ERROR line (no display)"
 fi

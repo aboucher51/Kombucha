@@ -302,6 +302,16 @@ pixel-identical between GPU reruns, and the adapter name (so the
 `SHOOT_GPU=0` forces llvmpipe, which CI always uses; `check.sh --ci`
 sets both, and the local gate proves the virtual display with each.
 
+**Batches take turns on a shared machine.** Where the agent-tickets
+script is installed, `shoot.sh` holds its machine-wide `render` slot
+(one at a time by default) while its engines run, and caps llvmpipe at
+half the cores split across its shards (`LP_NUM_THREADS`): one llvmpipe
+shard took ~12 of a 32-thread server's cores, so three projects'
+batches at once each slowed the other two. Headless tests do not wait
+for it. `SHOOT_RENDER_SLOT=0` skips the slot, `SHOOT_RENDER_WAIT` (1800 s)
+is how long to wait before running anyway; CI has no script and is
+unchanged.
+
 Scenarios are plain-text files in `scenarios/`, one command per line. Write a
 new scenario for whatever you are working on rather than editing an existing
 one. Needs a display server (Xvfb, else WSLg's `DISPLAY=:0`) — **not**
