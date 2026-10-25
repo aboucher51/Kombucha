@@ -1,9 +1,10 @@
 ---
 id: KOMBU-5
 title: godot-tooling.md: the push gate renders only what a batch reaches
-status: ready
-priority: 5
-owner: 
+status: claimed
+priority: 4
+owner: kombucha-worker
+pid: 1433256
 depends_on: [KOMBU-3, KOMBU-4]
 touches: [docs/godot-tooling.md]
 created: 2026-10-25
@@ -20,5 +21,8 @@ Wait until NAVAL-52 has landed on NavalWar's develop (check `git -C ~/godot-proj
 
 ## Progress
 - 2026-10-25 17:34 PM: parked at p5 until NAVAL-52 lands on NavalWar's develop (its write-up is the source); set back to 4 then.
+- 2026-10-25 17:34 PM: NAVAL-52 landed on NavalWar develop at 352edfdb (navalwar-pm). Unparked. Source: docs/conventions/dev-seams.md, last section, at that commit.
+- 2026-10-25 17:35 paragraph written after the --scenarios seam in Checking a change; running the full check
+- 2026-10-25 17:57 full check --ci green (139 tests, 20 scenarios; 1344 s, mostly waiting for the render slot); commit aabd556; waiting for Alex's yes to push
 
 ## Left for later
