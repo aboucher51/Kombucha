@@ -169,3 +169,23 @@ func test_two_visible_namesakes_are_ambiguous_and_none_is_not_visible() -> void:
 	b.visible = false
 	assert_string_contains(str(Harness.pick_named([a, b] as Array[Node], "Pair").get("error", "")), "not visible")
 	assert_string_contains(str(Harness.pick_named([] as Array[Node], "Nobody").get("error", "")), "no node named")
+
+
+# ── drag arguments: a named start or a point, then the end and the steps ──
+
+func test_drag_parses_a_named_start_or_a_point() -> void:
+	var named := Harness.parse_drag(PackedStringArray(["drag", "MasterSlider", "10", "20"]))
+	assert_eq(named, {"target": "MasterSlider", "from": Vector2.ZERO, "to": Vector2(10, 20),
+		"steps": Harness.DEFAULT_DRAG_STEPS})
+	var point := Harness.parse_drag(PackedStringArray(["drag", "1", "2", "3.5", "4", "5"]))
+	assert_eq(point, {"target": "", "from": Vector2(1, 2), "to": Vector2(3.5, 4), "steps": 5})
+
+
+func test_drag_refuses_a_missing_end_or_a_bad_step_count() -> void:
+	for line in ["drag", "drag Slider", "drag Slider 10", "drag 1 2 3", "drag Slider x 10",
+			"drag Slider 1 2 3 4"]:
+		assert_eq(Harness.parse_drag(DebugConsole.tokenise(line)).get("error", ""),
+			Harness.DRAG_USAGE, line)
+	for line in ["drag Slider 1 2 0", "drag Slider 1 2 1.5"]:
+		assert_string_contains(str(Harness.parse_drag(DebugConsole.tokenise(line)).get("error", "")),
+			"whole number", line)

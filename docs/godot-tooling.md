@@ -338,6 +338,10 @@ answers without an error; ERROR with its last reply after `s` wall-clock
 seconds), `click <NodeName>` (synthesises real input — prefer it when what
 you need to prove is that the *player's* path works, not that a handler
 does), `click_at <x> <y>` (viewport coordinates, for Node2D boards),
+`drag <NodeName | x y> <to_x> <to_y> [steps]` (press at the start, move
+with the button held in `steps` moves, 8 by default, release at the end;
+use it over `click` when the thing must follow the pointer, like a
+slider or a lever),
 `scroll_to <NodeName>` (`click` and `hover` scroll a target below a
 ScrollContainer's fold into view themselves; this forces it), `press
 <action>`, `key <name>` (a real key, `QuoteLeft` or `Ctrl+R`, for keys no

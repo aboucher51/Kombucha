@@ -405,6 +405,8 @@ func _execute(line: String) -> String:
 			if parts.size() < 3:
 				return "ERROR: usage: click_at <x> <y>"
 			return await _click_point(Vector2(float(parts[1]), float(parts[2])))
+		"drag":
+			return await _drag(parts)
 		"scroll_to":
 			return await _scroll_to(parts)
 		"hover":
@@ -669,11 +671,21 @@ static func compare(actual: Image, baseline: Image, masks: Array[Rect2i]) -> Dic
 func _click(parts: PackedStringArray) -> String:
 	if parts.size() < 2:
 		return "ERROR: usage: click <NodeName>"
-	var target := _find_control(parts[1])
+	var at: Variant = await _settled_centre(parts[1])
+	if at is String:
+		return at
+	return await _click_point(at)
+
+
+## The canvas centre of the named visible Control once its layout holds
+## still and it is scrolled into view, or an "ERROR: ..." String. Shared by
+## `click` and `drag`, so a drag starts exactly where a click would land.
+func _settled_centre(node_name: String) -> Variant:
+	var target := _find_control(node_name)
 	if target == null:
 		return _lookup_error
 	if not target.is_visible_in_tree():
-		return "ERROR: '%s' is not visible" % parts[1]
+		return "ERROR: '%s' is not visible" % node_name
 	# A control shown THIS frame has no laid-out rect yet, and clicking its
 	# stale centre misses. Wait until the rect holds still for two
 	# consecutive frames (bounded): under heavy batch load layout can take
@@ -683,13 +695,101 @@ func _click(parts: PackedStringArray) -> String:
 	for i in 30:
 		await get_tree().process_frame
 		if not is_instance_valid(target):
-			return "ERROR: '%s' was freed while its layout settled" % parts[1]
+			return "ERROR: '%s' was freed while its layout settled" % node_name
 		var rect := target.get_global_rect()
 		if i > 0 and rect == last_rect:
 			break
 		last_rect = rect
 	await _scroll_into_view(target)
-	return await _click_point(target.get_global_transform_with_canvas() * (target.size / 2.0))
+	return target.get_global_transform_with_canvas() * (target.size / 2.0)
+
+
+const DRAG_USAGE := "ERROR: usage: drag <NodeName | x y> <to_x> <to_y> [steps]"
+const DEFAULT_DRAG_STEPS := 8
+
+
+## `drag` arguments as {target, from, to, steps} or {error}. A start that
+## is a number is a canvas point, anything else a node name (whose `from`
+## is resolved later). Static so a headless test can pin every shape.
+static func parse_drag(parts: PackedStringArray) -> Dictionary:
+	var args := parts.slice(1)
+	var target := ""
+	var from := Vector2.ZERO
+	if not args.is_empty() and not args[0].is_valid_float():
+		target = args[0]
+		args = args.slice(1)
+	elif args.size() >= 2:
+		from = Vector2(float(args[0]), float(args[1]))
+		args = args.slice(2)
+	if args.size() < 2 or args.size() > 3:
+		return {"error": DRAG_USAGE}
+	for value in args:
+		if not value.is_valid_float():
+			return {"error": DRAG_USAGE}
+	var steps := DEFAULT_DRAG_STEPS
+	if args.size() == 3:
+		if not args[2].is_valid_int() or int(args[2]) < 1:
+			return {"error": "ERROR: drag steps must be a whole number of 1 or more, not '%s'" % args[2]}
+		steps = int(args[2])
+	return {"target": target, "from": from, "to": Vector2(float(args[0]), float(args[1])),
+		"steps": steps}
+
+
+## A held drag: press at the start, `steps` motion events with the left
+## button down, release at the end, all through push_input in canvas
+## coordinates like `_click_point`. For what a click cannot prove: a
+## slider or lever that follows the pointer while the button is held.
+##
+## Unlike a click, the button stays down across frames (a drag the GUI
+## sees in one frame proves nothing about following). On the real display
+## the shards share the ONE cursor, so another process may warp it across
+## this window mid-drag and land a stray motion event. The pressed control
+## keeps the mouse focus either way; the stray event can only move it for a
+## frame. So each step re-warps the cursor to where this drag is, and the
+## LAST motion and the release go out in the same frame, with no await
+## between them: the control's final position always comes from this drag.
+func _drag(parts: PackedStringArray) -> String:
+	var parsed := parse_drag(parts)
+	if parsed.has("error"):
+		return str(parsed["error"])
+	var from: Vector2 = parsed["from"]
+	if not str(parsed["target"]).is_empty():
+		var centre: Variant = await _settled_centre(str(parsed["target"]))
+		if centre is String:
+			return centre
+		from = centre
+	var to: Vector2 = parsed["to"]
+	var steps := int(parsed["steps"])
+	_warp_cursor(from)
+	_push_drag_button(from, true)
+	await get_tree().process_frame
+	var last := from
+	for i in range(1, steps + 1):
+		var point := from.lerp(to, float(i) / float(steps))
+		_warp_cursor(point)
+		var motion := InputEventMouseMotion.new()
+		motion.button_mask = MOUSE_BUTTON_MASK_LEFT
+		motion.position = point
+		motion.global_position = point
+		motion.relative = point - last
+		get_viewport().push_input(motion, true)
+		last = point
+		if i < steps:
+			await get_tree().process_frame
+	_push_drag_button(to, false)
+	for i in DEFAULT_SETTLE_FRAMES:
+		await get_tree().process_frame
+	return ""
+
+
+func _push_drag_button(at: Vector2, pressed: bool) -> void:
+	var event := InputEventMouseButton.new()
+	event.button_index = MOUSE_BUTTON_LEFT
+	event.button_mask = MOUSE_BUTTON_MASK_LEFT if pressed else 0
+	event.pressed = pressed
+	event.position = at
+	event.global_position = at
+	get_viewport().push_input(event, true)
 
 
 ## A click at viewport (canvas) coordinates. push_input with local coords,

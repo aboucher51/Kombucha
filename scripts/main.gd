@@ -99,9 +99,9 @@ func is_busy() -> bool:
 
 
 func state_text() -> String:
-	return "title=%s paused=%s busy=%s last_click=%s last_row=%s quality=%s" % [
+	return "title=%s paused=%s busy=%s last_click=%s last_row=%s quality=%s master_volume=%s" % [
 		%TitleLabel.text, _yes_no(get_tree().paused), _yes_no(is_busy()),
-		_point(last_click), last_row, quality]
+		_point(last_click), last_row, quality, _master_volume()]
 
 
 func assert_key(key: String, value: String) -> String:
@@ -113,11 +113,18 @@ func assert_key(key: String, value: String) -> String:
 		"last_click": actual = _point(last_click)
 		"last_row": actual = last_row
 		"quality": actual = quality
+		"master_volume": actual = _master_volume()
 		"built_save_root": actual = built_save_root
 		_: return "ERROR: unknown key '%s'" % key
 	if actual != value:
 		return "ERROR: %s is '%s', expected '%s'" % [key, actual, value]
 	return ""
+
+
+## The Master bus as a whole percent, the way its slider shows it (the
+## harness's `drag` proves the slider follows the pointer through this).
+static func _master_volume() -> String:
+	return str(roundi(AudioManager.get_bus_volume(&"Master") * 100.0))
 
 
 static func _yes_no(flag: bool) -> String:

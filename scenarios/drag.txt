@@ -1,0 +1,20 @@
+# drag: press, move with the button held, release. Proves a slider follows
+# the pointer while it is dragged, which a click cannot.
+wait 10
+press pause
+assert_visible MasterSlider
+assert master_volume 100
+# Past the left end: the slider keeps the drag and stops at its lowest value.
+drag MasterSlider 0 360
+assert master_volume 0
+shot dragged-left
+drag MasterSlider 1279 360 3
+assert master_volume 100
+# Usage and lookup errors are errors, not silent no-ops.
+expect_fail drag NoSuchSlider 10 10
+expect_fail drag MasterSlider 10
+expect_fail drag MasterSlider 10 10 0
+click ResumeButton
+# The start can be a canvas point: the press lands there.
+drag 40 40 200 200
+assert last_click 40,40
