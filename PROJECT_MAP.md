@@ -113,8 +113,8 @@ Membership from scenes and `add_to_group`; queries are `get_nodes_in_group`, `ca
 | `scripts/autoloads/save_manager.gd` | Node |  | SaveManager, scripts/autoloads/audio_manager.gd, scripts/autoloads/game_manager.gd, scripts/autoloads/keybinds.gd, +7 more, 7 tests | 0 | 13 |
 | `scripts/dev/bug_report.gd` | RefCounted | BugReport | scripts/dev/debug_console.gd, 1 test | 0 | 3 |
 | `scripts/dev/debug_console.gd` | Node |  | DebugConsole, scripts/dev/screenshot_harness.gd, 5 tests | 0 | 75 |
-| `scripts/dev/dev_hooks.gd` | Node |  | scripts/dev/debug_console.gd, 1 test | 0 | 4 |
-| `scripts/dev/screenshot_harness.gd` | Node |  | ScreenshotHarness, 2 tests | 0 | 46 |
+| `scripts/dev/dev_hooks.gd` | Node |  | scripts/dev/debug_console.gd, 1 test | 0 | 6 |
+| `scripts/dev/screenshot_harness.gd` | Node |  | ScreenshotHarness, 2 tests | 0 | 48 |
 | `scripts/dev/selftest_driver.gd` | Node |  | SelftestDriver, 1 test | 0 | 2 |
 | `scripts/main.gd` | Control |  | scenes/main.tscn, 1 test | 0 | 11 |
 | `scripts/ui/pause_menu.gd` | Control | PauseMenu | scenes/main.tscn, 1 test | 0 | 4 |
