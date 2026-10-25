@@ -361,6 +361,11 @@ manager actually granted, for a check at a named size),
 `"ERROR: ..."` on failure, `null` to hand the line to the console. **The
 harness only fails on error-shaped replies**, so an assertion command must
 return an error, never a `"false"` answer that passes silently.
+The hooks also hear each scenario start and end:
+`scenario_started(path)` runs after the sandbox, before the first line,
+and `scenario_finished(path, ok)` runs after the last line, failed or
+not. Use them to record what each scenario loads; never read the
+harness's private fields, which a sync may rename.
 
 **State readback before pixels.** The console's `state` and `assert <key>
 <value>` reach any node in the `state` group that implements

@@ -189,3 +189,32 @@ func test_drag_refuses_a_missing_end_or_a_bad_step_count() -> void:
 	for line in ["drag Slider 1 2 0", "drag Slider 1 2 1.5"]:
 		assert_string_contains(str(Harness.parse_drag(DebugConsole.tokenise(line)).get("error", "")),
 			"whole number", line)
+
+
+# ── scenario_started / scenario_finished reach the project's hooks ──
+
+func _scenario_file(stem: String, lines: String) -> String:
+	var path := "user://%s.txt" % stem
+	var file := FileAccess.open(path, FileAccess.WRITE)
+	file.store_string(lines)
+	file.close()
+	return path
+
+
+func test_the_hooks_hear_a_scenario_start_before_its_first_line_and_finish_with_its_verdict() -> void:
+	Harness.keep_alive_for_tests = true
+	var harness: Node = Harness.new()
+	add_child_autofree(harness)
+	Harness.keep_alive_for_tests = false
+	harness._sandbox()
+	# The first line asserts the started note exists: it fails unless the
+	# hook ran before it.
+	await harness._run(_scenario_file("hooks_started", "assert_note started: hooks_started\n"))
+	assert_eq(harness._failures, 0, "scenario_started ran before the first line")
+	assert_eq(DebugConsole.hooks.last_finished, "hooks_started ok")
+	# A failing line logs its failure as an engine error: expected here.
+	gut.error_tracker.treat_push_error_as = GutUtils.TREAT_AS.NOTHING
+	await harness._run(_scenario_file("hooks_failed", "assert_note never written\n"))
+	assert_eq(DebugConsole.hooks.last_finished, "hooks_failed fail",
+		"scenario_finished runs after a failed line too, with ok false")
+	harness._restore()

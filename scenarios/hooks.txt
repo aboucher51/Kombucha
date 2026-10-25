@@ -3,6 +3,8 @@
 # the sandbox hook clears the note between scenarios is pinned by
 # tests/test_screenshot_harness.gd — scenarios are dealt across processes
 # and reordered by cost, so no scenario may depend on another having run.
+# The started hook ran before the first line, after the sandbox.
+assert_note started: hooks
 wait 5
 note remember me
 notes

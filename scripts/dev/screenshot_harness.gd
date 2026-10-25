@@ -323,7 +323,19 @@ func _reset_between_scenarios() -> void:
 	await get_tree().process_frame
 
 
+## The project hooks hear a scenario start and finish, so a project can
+## record what each one loads without reading this file's private fields.
+## `scenario_started(path)` runs AFTER the sandbox and the return to the
+## boot scene, before the first line; `scenario_finished(path, ok)` runs
+## after the last line, a failed one included, before the next sandbox.
 func _run(path: String) -> void:
+	_scenario_stem = path.get_file().get_basename()
+	_hook_with("scenario_started", [path])
+	await _run_lines(path)
+	_hook_with("scenario_finished", [path, _failures == 0])
+
+
+func _run_lines(path: String) -> void:
 	var file := FileAccess.open(path, FileAccess.READ)
 	if file == null:
 		file = FileAccess.open("res://" + path, FileAccess.READ)
@@ -331,7 +343,6 @@ func _run(path: String) -> void:
 		_fail(path, 0, "cannot open scenario file")
 		return
 	print("── scenario: %s ──" % path)
-	_scenario_stem = path.get_file().get_basename()
 	var started := Time.get_ticks_msec()
 	var line_number := 0
 	var trace: Array[String] = []
@@ -513,6 +524,12 @@ func _hook(method: String) -> void:
 	var hooks: Object = DebugConsole.hooks
 	if hooks != null and hooks.has_method(method):
 		hooks.call(method)
+
+
+func _hook_with(method: String, args: Array) -> void:
+	var hooks: Object = DebugConsole.hooks
+	if hooks != null and hooks.has_method(method):
+		hooks.callv(method, args)
 
 
 func _shot(parts: PackedStringArray) -> String:

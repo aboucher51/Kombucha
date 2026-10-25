@@ -37,6 +37,17 @@ func restore() -> void:
 	pass
 
 
+## A scenario is about to run its first line (after the sandbox and the
+## return to the boot scene). For recording what each scenario loads.
+#func scenario_started(_path: String) -> void:
+#	pass
+
+
+## A scenario ran its last line; `ok` is false if any line failed.
+#func scenario_finished(_path: String, _ok: bool) -> void:
+#	pass
+
+
 ## Every scenario line, asked BEFORE the harness's built-ins, so a project
 ## may take one over (a `settle` that knows its own busy nodes). Return ""
 ## for success, "ERROR: ..." for failure (the harness fails on exactly that

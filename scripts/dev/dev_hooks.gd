@@ -12,8 +12,23 @@ extends Node
 static var notes: Array[String] = []
 
 
+## The last scenario the harness finished, as "<stem> ok|fail". NOT cleared
+## by sandbox(): it outlives its scenario on purpose, so a test can read it.
+static var last_finished := ""
+
+
 func sandbox() -> void:
 	notes.clear()
+
+
+## Notes the scenario's stem: sandbox() has already run, so the note
+## survives into the scenario, and its first line can assert it.
+func scenario_started(path: String) -> void:
+	notes.append("started: %s" % path.get_file().get_basename())
+
+
+func scenario_finished(path: String, ok: bool) -> void:
+	last_finished = "%s %s" % [path.get_file().get_basename(), "ok" if ok else "fail"]
 
 
 func scenario_command(parts: PackedStringArray, _line: String) -> Variant:
