@@ -84,6 +84,24 @@ path that does not exist fails the check. check.sh then prints "N of M
 scenario(s), chosen by tools/check.local.sh", so a smaller gate is never
 read as the full sweep. The script must answer `--scenarios` and exit
 before its own checks, or they run twice (the seed does).
+
+**A long scenario suite can gate on only what a batch reaches.** Record
+what each scenario loads: the dev hooks' `scenario_started` and
+`scenario_finished` bracket each scenario, so a recorder can note every
+script and scene added in between and write one record per scenario to
+a committed file. Then `check.local.sh --scenarios` picks the scenarios
+a batch's changed files reach: a scenario that loaded the file, or
+loaded a file that uses it (the project map's links say which). Always
+add a small core of the main flows, and every scenario the record has
+never seen. Run everything when an autoload, `project.godot`, the main
+scene or the tooling changes. One project's gate rendered 200 scenarios
+on every push, about 17 of its 25 minutes, for batches that touched one
+screen. **The full sweep must still run when the ticket queue is empty,
+and it must re-record.** A record only shrinks the gate: a scenario that
+now loads a file it did not load before is left out of every gate that
+changes that file. Without the sweep, a broken scenario can skip the
+gate forever.
+
 `tools/export.sh` builds every preset `export_presets.cfg` declares that it
 knows (Linux, Windows Desktop, Web; an unknown one is named and skipped),
 fetches only the export templates those need on first run (~1 GB
