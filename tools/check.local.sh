@@ -6,6 +6,11 @@ set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT" || exit 2
 
+# check.sh asks `--scenarios` first: which scenarios to render. Kombucha's
+# gate renders all of them (CLAUDE.md, "Agent tickets"), so the answer is
+# nothing. Answered before any check runs, or they would all run twice.
+[[ "${1:-}" == "--scenarios" ]] && exit 0
+
 # Every path the manifest names must exist here, or a sync would ship a
 # manifest that points at nothing.
 MISSING=0

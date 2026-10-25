@@ -16,7 +16,8 @@
 #      and refuses a dirty source — against a scratch source and project;
 #   4. a plain engine `ERROR:` line (a ConfigFile key with no default, a
 #      freed lambda capture) turns the boot gate and the scenario gate
-#      red — 738 of them once sat under an all-green check;
+#      red — 738 of them once sat under an all-green check; check.sh
+#      renders only the scenarios `check.local.sh --scenarios` chooses;
 #   5. a release-flavoured run cannot open the debug console.
 set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -183,6 +184,54 @@ if [[ "${QUICK:-0}" -eq 0 ]]; then
 else
 	say -- "scenario gate on an engine ERROR line (no display)"
 fi
+
+# check.sh renders the scenarios tools/check.local.sh chooses: a gate
+# that renders only what a batch touches can still use check.sh. shoot.sh
+# is stubbed to record what it was asked to render (the test runner and
+# the boot are stubbed or red above; only the scenario section is read).
+cp "$SCRATCH/tools/shoot.sh" "$SCRATCH/shoot.bak"
+printf '#!/usr/bin/env bash\nprintf "%%s\\n" "$@" > shoot-args\necho "scenario ok: stub"\n' > "$SCRATCH/tools/shoot.sh"
+ALL_COUNT=$(cd "$SCRATCH" && ls scenarios/*.txt | wc -l)
+chosen_run() { # check.local.sh body; sets OUT and ARGS
+	printf '#!/usr/bin/env bash\n%s\n' "$1" > "$SCRATCH/tools/check.local.sh"
+	rm -f "$SCRATCH/shoot-args" "$SCRATCH/local-calls"
+	OUT="$(cd "$SCRATCH" && tools/check.sh 2>&1)"
+	ARGS="$(cat "$SCRATCH/shoot-args" 2>/dev/null)"
+}
+chosen_run 'echo call >> local-calls; [[ "$1" == "--scenarios" ]] && { echo scenarios/example.txt; exit 0; }; exit 0'
+if [[ "$ARGS" == "scenarios/example.txt" ]] && grep -q "1 of $ALL_COUNT scenario(s), chosen by tools/check.local.sh" <<<"$OUT"; then
+	say ok "check.local.sh --scenarios chooses what check.sh renders, and check.sh says so"
+else
+	say FAIL "a chosen scenario list was not rendered alone (rendered: $(tr '\n' ' ' <<<"$ARGS"))"; FAILED=1
+fi
+chosen_run '[[ "$1" == "--scenarios" ]] && exit 3; exit 0'
+if [[ $(wc -l <<<"$ARGS") -eq $ALL_COUNT ]] && ! grep -q 'chosen by' <<<"$OUT"; then
+	say ok "a non-zero --scenarios answer renders every scenario"
+else
+	say FAIL "a non-zero --scenarios answer did not render all $ALL_COUNT scenarios"; FAILED=1
+fi
+chosen_run '[[ "$1" == "--scenarios" ]] && { echo none; exit 0; }; exit 0'
+if [[ -z "$ARGS" ]] && grep -q "0 of $ALL_COUNT scenario(s)" <<<"$OUT" && grep -q 'chose none' <<<"$OUT"; then
+	say ok "--scenarios answering none renders nothing, and says so"
+else
+	say FAIL "--scenarios answering none still rendered: $(tr '\n' ' ' <<<"$ARGS")"; FAILED=1
+fi
+chosen_run '[[ "$1" == "--scenarios" ]] && { echo scenarios/no_such.txt; exit 0; }; exit 0'
+if grep -q 'FAIL  tools/check.local.sh --scenarios listed scenarios/no_such.txt' <<<"$OUT"; then
+	say ok "a listed scenario that does not exist fails, by name"
+else
+	say FAIL "a missing listed scenario did not fail by name"; FAILED=1
+fi
+# A script written before the seam never mentions it: it is not asked,
+# so its checks run once and its output is never read as paths.
+chosen_run 'echo call >> local-calls; echo "  ok    some project gate"; exit 0'
+if [[ $(wc -l < "$SCRATCH/local-calls") -eq 1 && $(wc -l <<<"$ARGS") -eq $ALL_COUNT ]]; then
+	say ok "a check.local.sh without --scenarios runs once and renders all"
+else
+	say FAIL "a check.local.sh without --scenarios ran $(wc -l < "$SCRATCH/local-calls") time(s)"; FAILED=1
+fi
+mv "$SCRATCH/shoot.bak" "$SCRATCH/tools/shoot.sh"
+printf '#!/usr/bin/env bash\nexit 0\n' > "$SCRATCH/tools/check.local.sh"
 
 # 3. The sync script. A scratch SOURCE (the working tree committed into a
 #    fresh repo, so the script under test is this one and HEAD is known)

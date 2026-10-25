@@ -75,6 +75,15 @@ which check.sh runs between the boot and the scenarios with `QUICK` set;
 check.sh itself is synced over. When a project's copy of the tooling is
 behind, check.sh says so in a `note:` line — that is the cue to run
 `/sync-godot-tooling`.
+**`check.local.sh` may choose which scenarios check.sh renders**, for a
+push gate that renders only what a batch touches. If the file mentions
+`--scenarios`, check.sh first calls it with that argument. It prints the
+paths to render, one per line, or the one word `none` to render nothing.
+No output, or a non-zero exit, renders all of `scenarios/*.txt`. A listed
+path that does not exist fails the check. check.sh then prints "N of M
+scenario(s), chosen by tools/check.local.sh", so a smaller gate is never
+read as the full sweep. The script must answer `--scenarios` and exit
+before its own checks, or they run twice (the seed does).
 `tools/export.sh` builds every preset `export_presets.cfg` declares that it
 knows (Linux, Windows Desktop, Web; an unknown one is named and skipped),
 fetches only the export templates those need on first run (~1 GB

@@ -7,6 +7,18 @@
 set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT" || exit 2
+
+# ── which scenarios check.sh renders ───────────────────────────────────────
+# check.sh first calls this file with `--scenarios`. Print the scenario
+# paths to render, one per line, or the one word `none` to render nothing;
+# print nothing (or exit non-zero) to render all of scenarios/*.txt.
+# check.sh then says "N of M scenario(s), chosen by tools/check.local.sh".
+# A listed path that does not exist fails the check. Answer and EXIT here,
+# before any check below, or every check runs twice.
+if [[ "${1:-}" == "--scenarios" ]]; then
+	exit 0
+fi
+
 FAILED=0
 
 # ── the target screens ─────────────────────────────────────────────────────

@@ -150,10 +150,43 @@ fi
 
 if [[ $QUICK -eq 0 ]]; then
 	shopt -s nullglob
-	SCENARIOS=(scenarios/*.txt)
+	ALL_SCENARIOS=(scenarios/*.txt)
+	SCENARIOS=("${ALL_SCENARIOS[@]}")
+	CHOSEN=0
 	echo "── scenarios ──"
+	# A project whose push gate renders only what a batch touches answers
+	# `tools/check.local.sh --scenarios` with the paths to render, one per
+	# line, or the one word `none` to render nothing. No output or a
+	# non-zero exit means all of them. The script is asked only when its
+	# text mentions `--scenarios`: one written before this seam ignores its
+	# arguments, so asking it would run all its checks a second time and
+	# read its ok/FAIL lines as scenario paths.
+	if [[ -x tools/check.local.sh ]] && grep -q -- '--scenarios' tools/check.local.sh; then
+		if LIST="$(QUICK=$QUICK tools/check.local.sh --scenarios)" && [[ -n "${LIST//[[:space:]]/}" ]]; then
+			CHOSEN=1
+			SCENARIOS=()
+			while read -r path; do
+				[[ -z "$path" || "$path" == none ]] && continue
+				if [[ -f "$path" ]]; then
+					SCENARIOS+=("$path")
+				else
+					pass_or_fail "tools/check.local.sh --scenarios listed $path, which does not exist" 1
+				fi
+			done <<<"$LIST"
+		fi
+	fi
+	# Said every time, so a gate that renders less is never read as the
+	# full sweep.
+	if [[ $CHOSEN -eq 1 ]]; then
+		printf '  note  %d of %d scenario(s), chosen by tools/check.local.sh\n' \
+			"${#SCENARIOS[@]}" "${#ALL_SCENARIOS[@]}"
+	fi
 	if [[ ${#SCENARIOS[@]} -eq 0 ]]; then
-		printf '  ok    no scenarios yet\n'
+		if [[ $CHOSEN -eq 1 ]]; then
+			printf '  ok    no scenarios rendered (tools/check.local.sh chose none)\n'
+		else
+			printf '  ok    no scenarios yet\n'
+		fi
 	else
 		# No pinned SHOOT_TIMEOUT: shoot.sh scales its own budget with the
 		# scenario count, and a pinned 300 broke two projects the day their
