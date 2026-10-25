@@ -1,11 +1,11 @@
 ---
 id: KOMBU-6
 title: Harness drag: real cursor warps end a drag that checks button_mask
-status: ready
+status: done
 priority: 2
-owner: 
+owner: kombucha-worker
 depends_on: []
-touches: [scripts/dev/screenshot_harness.gd, scenarios/drag.txt, scripts/main.gd, scenes/main.tscn, docs/godot-tooling.md]
+touches: [scripts/dev/screenshot_harness.gd, scenarios/drag.txt, scripts/main.gd, scenes/main.tscn, docs/godot-tooling.md, PROJECT_MAP.md, .godot-map/graph.json, scripts/ui/pause_menu.gd]
 created: 2026-10-25
 updated: 2026-10-25
 ---
@@ -26,5 +26,11 @@ What to do (scripts/dev/screenshot_harness.gd, `drag`):
 - Tell the PM when done, so navalwar-pm can be told.
 
 ## Progress
+- 2026-10-25 19:58 Branch kombu-6-drag-warp. Fixture: code-built Lever in main.gd (lets go on a buttonless motion), state key 'lever'; drag.txt drags it. RED on today's harness: lever stuck at 50 (drag.txt:22, :24). Fix: drag warps to the start and waits for the window to see that OS motion (window_input), then presses; no warps while held; warp to the end after release. Docs line added. Green run waiting on the render slot.
+- 2026-10-25 20:14 Scenario green with the fix (lever 0 and 100). Added PROJECT_MAP.md and .godot-map/graph.json to touches: main.gd's new functions change the generated map. Commit 75699a1 on origin/main 57bf7c3. Running the full check.
+- 2026-10-25 20:19 Full check 1 was red only on baseline.txt: the lever on the boot screen changed the committed boot baseline (4790 px = its rect). Forge cannot redraw the nvidia (desktop GPU) baseline, so the lever moved into the pause menu (ticket allowed it); the boot frame is unchanged. Touches gained scripts/ui/pause_menu.gd, and PROJECT_MAP.md and .godot-map/graph.json (regenerated map). Re-proving red/green, then the full check again.
+- 2026-10-25 20:52 Full check green: 139 tests, 20 scenarios, 0 engine errors (32 min, mostly waiting for the render slot). Commit 85dd1a3 on origin/main 57bf7c3, 7 files, +136 -20. Push request sent to the PM; waiting for Alex's yes.
+- 2026-10-25 22:18 Pushed after Alex's yes (via PM): 57bf7c3..85dd1a3.
+- 2026-10-25 22:18 done on main at fefc33e
 
 ## Left for later
