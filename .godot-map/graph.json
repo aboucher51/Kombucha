@@ -609,6 +609,8 @@
     "_settled_centre",
     "parse_drag",
     "_drag",
+    "_warp_and_await",
+    "_on_window_input",
     "_push_drag_button",
     "_click_point",
     "_warp_cursor",
@@ -639,11 +641,13 @@
    "emits": [
     "dropdown.item_selected"
    ],
-   "connects": [],
+   "connects": [
+    "?.window_input"
+   ],
    "node_paths": [],
    "groups_joined": [],
    "groups_queried": [],
-   "lines": 1259
+   "lines": 1299
   },
   "res://scripts/dev/selftest_driver.gd": {
    "path": "res://scripts/dev/selftest_driver.gd",
@@ -703,14 +707,15 @@
    ],
    "node_paths": [
     "%RowList",
-    "%TitleLabel"
+    "%TitleLabel",
+    "PauseMenu"
    ],
    "groups_joined": [
     "state",
     "settle"
    ],
    "groups_queried": [],
-   "lines": 136
+   "lines": 137
   },
   "res://scripts/ui/pause_menu.gd": {
    "path": "res://scripts/ui/pause_menu.gd",
@@ -724,6 +729,10 @@
    "signals": [],
    "funcs": [
     "_ready",
+    "_make_lever",
+    "_on_lever_input",
+    "_move_lever",
+    "_show_lever",
     "_unhandled_input",
     "open",
     "close"
@@ -731,12 +740,14 @@
    "emits": [],
    "connects": [
     "resume.pressed",
-    "quit.pressed"
+    "quit.pressed",
+    "track.gui_input",
+    "track.resized"
    ],
    "node_paths": [],
    "groups_joined": [],
    "groups_queried": [],
-   "lines": 90
+   "lines": 143
   },
   "res://scripts/ui/ui_focus.gd": {
    "path": "res://scripts/ui/ui_focus.gd",
@@ -1931,6 +1942,7 @@
   ],
   "res://scripts/ui/pause_menu.gd": [
    "res://scenes/main.tscn",
+   "res://scripts/main.gd",
    "res://tests/test_localization.gd"
   ],
   "res://scripts/ui/ui_focus.gd": [

@@ -350,7 +350,10 @@ does), `click_at <x> <y>` (viewport coordinates, for Node2D boards),
 `drag <NodeName | x y> <to_x> <to_y> [steps]` (press at the start, move
 with the button held in `steps` moves, 8 by default, release at the end;
 use it over `click` when the thing must follow the pointer, like a
-slider or a lever),
+slider or a lever; the real cursor stays still while the button is
+held, because its motions carry no button and a hand-made lever lets
+go on one, so on the real display a drag wants `SHOOT_JOBS=1`, like
+hover),
 `scroll_to <NodeName>` (`click` and `hover` scroll a target below a
 ScrollContainer's fold into view themselves; this forces it), `press
 <action>`, `key <name>` (a real key, `QuoteLeft` or `Ctrl+R`, for keys no

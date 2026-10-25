@@ -136,6 +136,11 @@ static var keep_alive_for_tests := false
 ## Baselines written so far this scenario: a name met twice compares the
 ## second time, so the FIRST frame is the reference, not the last.
 var _written_baselines: Dictionary = {}
+## The last REAL mouse motion the window got from the OS, in window pixels,
+## and the frame it came on. Pushed events never pass through the window's
+## own input, so these see only the real cursor (`drag` waits on them).
+var _real_motion_at := Vector2(-1, -1)
+var _real_motion_frame := -1
 
 
 func _ready() -> void:
@@ -152,6 +157,7 @@ func _ready() -> void:
 	# window to the foreground (measured), which is why shoot.sh prefers a
 	# virtual display.
 	DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_NO_FOCUS, true)
+	get_window().window_input.connect(_on_window_input)
 
 	_boot_locale = TranslationServer.get_locale()
 	# Before the first await, so it lands ahead of the main scene's _ready —
@@ -758,13 +764,20 @@ static func parse_drag(parts: PackedStringArray) -> Dictionary:
 ## slider or lever that follows the pointer while the button is held.
 ##
 ## Unlike a click, the button stays down across frames (a drag the GUI
-## sees in one frame proves nothing about following). On the real display
-## the shards share the ONE cursor, so another process may warp it across
-## this window mid-drag and land a stray motion event. The pressed control
-## keeps the mouse focus either way; the stray event can only move it for a
-## frame. So each step re-warps the cursor to where this drag is, and the
-## LAST motion and the release go out in the same frame, with no await
-## between them: the control's final position always comes from this drag.
+## sees in one frame proves nothing about following).
+##
+## The real cursor is NOT warped while the button is held. Every warp makes
+## the OS send a real motion a frame or more later, and that motion has no
+## button held: a control that lets go on such a motion (most hand-made
+## sliders, which read it as a mouse released outside the window) dropped
+## the drag at the first step (NavalWar's lever, KOMBU-6; an HSlider
+## ignores the button, which is why it hid this). So the cursor is warped
+## to the start and its motion awaited BEFORE the press, and to the end
+## only after the release. On the real display the shards share the ONE
+## cursor, and another shard's warp lands the same buttonless motion
+## mid-drag: a scenario that drags such a control there wants
+## SHOOT_JOBS=1, like hover. The last motion and the release go out in the
+## same frame, with no await between them.
 func _drag(parts: PackedStringArray) -> String:
 	var parsed := parse_drag(parts)
 	if parsed.has("error"):
@@ -777,13 +790,12 @@ func _drag(parts: PackedStringArray) -> String:
 		from = centre
 	var to: Vector2 = parsed["to"]
 	var steps := int(parsed["steps"])
-	_warp_cursor(from)
+	await _warp_and_await(from)
 	_push_drag_button(from, true)
 	await get_tree().process_frame
 	var last := from
 	for i in range(1, steps + 1):
 		var point := from.lerp(to, float(i) / float(steps))
-		_warp_cursor(point)
 		var motion := InputEventMouseMotion.new()
 		motion.button_mask = MOUSE_BUTTON_MASK_LEFT
 		motion.position = point
@@ -794,9 +806,37 @@ func _drag(parts: PackedStringArray) -> String:
 		if i < steps:
 			await get_tree().process_frame
 	_push_drag_button(to, false)
+	_warp_cursor(to)
 	for i in DEFAULT_SETTLE_FRAMES:
 		await get_tree().process_frame
 	return ""
+
+
+## Frames to wait for the OS motion a warp causes before going on anyway.
+const WARP_WAIT_FRAMES := 30
+
+
+## Warps the real cursor and waits until the window has seen the motion
+## that warp causes, so it cannot arrive after the next pushed event. No
+## warp when the window last saw the cursor there already: a warp that
+## moves nothing may send nothing, and the wait would run out.
+func _warp_and_await(canvas_point: Vector2) -> void:
+	var window_point := get_viewport().get_screen_transform() * canvas_point
+	if _real_motion_at.distance_to(window_point) < 1.0:
+		return
+	var warped_on := Engine.get_process_frames()
+	Input.warp_mouse(window_point)
+	for i in WARP_WAIT_FRAMES:
+		await get_tree().process_frame
+		if _real_motion_frame >= warped_on and _real_motion_at.distance_to(window_point) < 1.0:
+			return
+
+
+func _on_window_input(event: InputEvent) -> void:
+	var motion := event as InputEventMouseMotion
+	if motion != null:
+		_real_motion_at = motion.position
+		_real_motion_frame = Engine.get_process_frames()
 
 
 func _push_drag_button(at: Vector2, pressed: bool) -> void:

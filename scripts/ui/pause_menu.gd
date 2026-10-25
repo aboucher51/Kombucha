@@ -17,6 +17,11 @@ extends Control
 ## makes that navigation visible.
 
 var _panel: PanelContainer
+## The hand-made lever's value, 0 to 100 (main.gd's `lever` state key).
+var lever := 50
+var _lever_held := false
+var _lever_track: Panel
+var _lever_fill: ColorRect
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -49,6 +54,7 @@ func _ready() -> void:
 	box.add_child(title)
 
 	box.add_child(VolumeSliders.make())
+	box.add_child(_make_lever())
 
 	var resume := Button.new()
 	resume.name = "ResumeButton"
@@ -64,6 +70,53 @@ func _ready() -> void:
 	quit.pressed.connect(GameManager.quit_game)
 	AudioManager.bind_button(quit)
 	box.add_child(quit)
+
+
+## A hand-made lever, like most sliders a game draws itself: it lets go on
+## any motion with no button held, the way a real mouse released outside
+## the window reads. An HSlider ignores the button mask, so it cannot
+## catch a drag whose motions arrive without the button (KOMBU-6). It
+## lives here, not on the boot screen, so the boot baseline stays as is.
+func _make_lever() -> Panel:
+	var track := Panel.new()
+	track.name = "Lever"
+	track.custom_minimum_size = Vector2(180, 20)
+	var fill := ColorRect.new()
+	fill.name = "LeverFill"
+	fill.color = UITheme.ACCENT
+	fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	fill.set_anchors_and_offsets_preset(Control.PRESET_LEFT_WIDE)
+	track.add_child(fill)
+	track.gui_input.connect(_on_lever_input)
+	track.resized.connect(_show_lever)
+	_lever_track = track
+	_lever_fill = fill
+	return track
+
+
+func _on_lever_input(event: InputEvent) -> void:
+	var button := event as InputEventMouseButton
+	if button != null and button.button_index == MOUSE_BUTTON_LEFT:
+		_lever_held = button.pressed
+		if button.pressed:
+			_move_lever(button.position.x)
+		return
+	var motion := event as InputEventMouseMotion
+	if motion == null or not _lever_held:
+		return
+	if motion.button_mask & MOUSE_BUTTON_MASK_LEFT == 0:
+		_lever_held = false
+		return
+	_move_lever(motion.position.x)
+
+
+func _move_lever(local_x: float) -> void:
+	lever = roundi(clampf(local_x / _lever_track.size.x, 0.0, 1.0) * 100.0)
+	_show_lever()
+
+
+func _show_lever() -> void:
+	_lever_fill.offset_right = _lever_track.size.x * lever / 100.0
 
 
 func _unhandled_input(event: InputEvent) -> void:

@@ -99,9 +99,9 @@ func is_busy() -> bool:
 
 
 func state_text() -> String:
-	return "title=%s paused=%s busy=%s last_click=%s last_row=%s quality=%s master_volume=%s" % [
+	return "title=%s paused=%s busy=%s last_click=%s last_row=%s quality=%s master_volume=%s lever=%d" % [
 		%TitleLabel.text, _yes_no(get_tree().paused), _yes_no(is_busy()),
-		_point(last_click), last_row, quality, _master_volume()]
+		_point(last_click), last_row, quality, _master_volume(), $PauseMenu.lever]
 
 
 func assert_key(key: String, value: String) -> String:
@@ -114,6 +114,7 @@ func assert_key(key: String, value: String) -> String:
 		"last_row": actual = last_row
 		"quality": actual = quality
 		"master_volume": actual = _master_volume()
+		"lever": actual = str($PauseMenu.lever)
 		"built_save_root": actual = built_save_root
 		_: return "ERROR: unknown key '%s'" % key
 	if actual != value:

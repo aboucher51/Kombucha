@@ -14,6 +14,13 @@ assert master_volume 100
 expect_fail drag NoSuchSlider 10 10
 expect_fail drag MasterSlider 10
 expect_fail drag MasterSlider 10 10 0
+# A hand-made lever lets go on any motion with no button held, so every
+# motion the drag delivers, pushed or from the real cursor, must hold it.
+assert lever 50
+drag Lever 0 360
+assert lever 0
+drag Lever 1279 360 3
+assert lever 100
 click ResumeButton
 # The start can be a canvas point: the press lands there.
 drag 40 40 200 200
