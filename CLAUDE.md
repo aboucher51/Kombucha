@@ -45,6 +45,28 @@ Rules that follow from that:
   `feedback/` branch (`docs/feedback/README.md`): the project reports
   what it hit, this repo assesses it and appends the disposition. A
   project never reads this repo to write one.
+
+## Agent tickets
+
+Kombucha's ticket board lives in the checkout on forge, with the key
+`KOMBU`. Its manager session is `kombucha-pm`, and it runs the one ticket
+worker. Which machine does what is in the network policy:
+https://claude.ai/artifact/YCi8J7ano5QjUVMBnFJk4M (read it there; it is
+not copied here).
+
+- **The push gate is the full check: `tools/check.sh --ci`, green.** On
+  forge it runs with software rendering, like CI, under a heavy slot. A
+  full run there took about 70 seconds (measured 2026-10-25, with another
+  project's heavy run on the machine), so there is no smaller gate and no
+  separate sweep. Without a named gate, a worker guesses which check
+  counts and may push on the quick one, which renders nothing.
+- **Every push waits for Alex's yes.** This repo is public. The worker
+  stops before `git push` and sends the PM the branch, the commit list,
+  the diffstat and the check result. It pushes only after the PM passes
+  on Alex's yes. A push cannot be taken back once someone has seen it.
+- **Main moves only through the gate.** Other projects pull this
+  checkout before `/sync-godot-tooling`, so a broken main is copied into
+  every project that syncs that day.
 <!-- /kombucha-only -->
 
 ## GodotPrompter
