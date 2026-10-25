@@ -1,9 +1,9 @@
 ---
 id: KOMBU-2
 title: CLAUDE.md: an Agent tickets section that names the push gate
-status: ready
+status: done
 priority: 2
-owner: 
+owner: kombucha-worker
 depends_on: []
 touches: [CLAUDE.md]
 created: 2026-10-25
@@ -22,5 +22,9 @@ What to write (short, in the style of the rest of CLAUDE.md: the rule plus what 
 Keep this section out of what new-project.sh copies if it is Kombucha-only (fence it `<!-- kombucha-only -->`, see the top of CLAUDE.md).
 
 ## Progress
+- 2026-10-25 14:41 Agent tickets section drafted inside the kombucha-only fence; wall time to be filled from the batch's full check --ci
+- 2026-10-25 15:11 measured full check --ci at 69-71 s on forge, recorded in CLAUDE.md (commit 97b65dc); check green; waiting for Alex's yes to push
+- 2026-10-25 15:30 pushed to main as 97b65dc
+- 2026-10-25 15:30 done on main at 03a0505
 
 ## Left for later

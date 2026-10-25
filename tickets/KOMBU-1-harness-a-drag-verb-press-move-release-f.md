@@ -1,11 +1,11 @@
 ---
 id: KOMBU-1
 title: Harness: a drag verb (press, move, release) for sliders and levers
-status: ready
+status: done
 priority: 2
-owner: 
+owner: kombucha-worker
 depends_on: []
-touches: [scripts/dev/screenshot_harness.gd, scenarios/drag.txt, tests/test_screenshot_harness.gd, docs/godot-tooling.md]
+touches: [scripts/dev/screenshot_harness.gd, scripts/main.gd, PROJECT_MAP.md, .godot-map/graph.json, scenarios/drag.txt, tests/test_screenshot_harness.gd, docs/godot-tooling.md]
 created: 2026-10-25
 updated: 2026-10-25
 ---
@@ -25,5 +25,18 @@ What to do:
 Then other projects get it with /sync-godot-tooling (NavalWar first; tell the PM in the report so navalwar-pm can be told).
 
 ## Progress
+- 2026-10-25 14:38 drag verb, parse test, scenarios/drag.txt written; added scripts/main.gd to touches: the fixture needs a master_volume state key so the scenario reads the volume back instead of pixels
+- 2026-10-25 15:08 drag.txt green; proven able to fail: with no motion events and no per-step warps the slider stays at 50 and lines 9 and 12 go red; motion events alone (no warps) pass
+- 2026-10-25 15:10 added PROJECT_MAP.md and .godot-map/graph.json to touches: check.sh fails on a stale map after the new scenario and state key
+- 2026-10-25 15:11 full tools/check.sh --ci green on forge in 71 s after rebase (commit df769bf); play pass written; waiting for Alex's yes to push
+- 2026-10-25 15:30 pushed to main as df769bf (Alex said push it, directly)
+- 2026-10-25 15:30 done on main at 03a0505
 
-## Left for later
+## Ready to play
+- What changed: scenarios can now say `drag <NodeName | x y> <to_x> <to_y> [steps]`. It presses the left button, moves with the button held for `steps` frames (8 by default), and lets go at the end.
+- What the scenario showed: `scenarios/drag.txt` drags the pause menu's Master slider past its left end (volume reads 0) and past its right end (volume reads 100). The shot `drag-01-dragged-left.png` shows the Master knob at the far left, the Music and SFX knobs untouched, and no cut-off or overlapping text. Bad lines (unknown slider, missing end point, 0 steps) fail as they should.
+- Proof the scenario can fail: with the moves taken out, the slider stays at 50 and the scenario goes red.
+- Questions for a person:
+  1. Does NavalWar's Speed lever need a drag that stops partway (for example, half speed), or is "all the way left / all the way right" enough proof?
+  2. Should `drag` also take a node name for the END point (drag this knob onto that box), for drag-and-drop UIs?
+  3. Is 8 moves a good default, or do levers in NavalWar need slower drags to show the follow?
