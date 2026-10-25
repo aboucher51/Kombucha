@@ -1,11 +1,11 @@
 ---
 id: KOMBU-4
 title: Harness: scenario_started / scenario_finished hooks for dev_hooks
-status: ready
+status: done
 priority: 3
-owner: 
+owner: kombucha-worker
 depends_on: []
-touches: [scripts/dev/screenshot_harness.gd, scripts/dev/dev_hooks.gd, tools/seeds/dev_hooks.gd, docs/godot-tooling.md]
+touches: [scripts/dev/screenshot_harness.gd, scripts/dev/dev_hooks.gd, scenarios/hooks.txt, PROJECT_MAP.md, .godot-map/graph.json, tests/test_screenshot_harness.gd, tools/seeds/dev_hooks.gd, docs/godot-tooling.md]
 created: 2026-10-25
 updated: 2026-10-25
 ---
@@ -22,5 +22,10 @@ What to do:
 - Docs: one line in docs/godot-tooling.md where dev_hooks' seams are listed.
 
 ## Progress
+- 2026-10-25 15:57 hooks called from _run; fixture dev_hooks notes the started stem (hooks.txt asserts it on line 1) and records last_finished; test covers ok and failed scenarios and goes red with the calls removed. Added scenarios/hooks.txt and tests/test_screenshot_harness.gd to touches: they are the fixture users
+- 2026-10-25 16:55 added PROJECT_MAP.md and .godot-map/graph.json to touches: the new hook methods made the map stale
+- 2026-10-25 16:59 full check --ci green in 167 s; commits 0973dff + f907b8c (map); waiting for Alex's yes to push
+- 2026-10-25 17:33 pushed to main (9590555..eb8562b)
+- 2026-10-25 17:33 done on main at 79af98b
 
 ## Left for later

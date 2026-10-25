@@ -2,7 +2,7 @@
 id: KOMBU-5
 title: godot-tooling.md: the push gate renders only what a batch reaches
 status: ready
-priority: 4
+priority: 5
 owner: 
 depends_on: [KOMBU-3, KOMBU-4]
 touches: [docs/godot-tooling.md]
@@ -19,5 +19,6 @@ Write: the idea, the two seams it uses (KOMBU-3 and KOMBU-4), and the rule that 
 Wait until NAVAL-52 has landed on NavalWar's develop (check `git -C ~/godot-projects/NavalWar log origin/develop` for docs/conventions/dev-seams.md).
 
 ## Progress
+- 2026-10-25 17:34 PM: parked at p5 until NAVAL-52 lands on NavalWar's develop (its write-up is the source); set back to 4 then.
 
 ## Left for later
