@@ -11,6 +11,8 @@
 #   2. the sharded run and the single-process run count the same tests;
 #      a named run runs exactly what was named, in a private user://;
 #      the default shard count follows nproc (one per thread, at most 16);
+#      a red run keeps its logs, lists each failure once under its own
+#      file, and prints the text of an unexpected error;
 #   3. the sync script stamps, seeds, sets the execute bit, reports drift
 #      (with the project's own lines), notes a missing CLAUDE.md import,
 #      and refuses a dirty source — against a scratch source and project;
@@ -114,6 +116,38 @@ else
 	say FAIL "a red run did not repeat its failing assertion"; FAILED=1
 fi
 mv "$SCRATCH/smoke.bak" "$SCRATCH/tests/test_smoke.gd"
+
+# 2g. A red run keeps its evidence and says what went wrong. GUT's
+#     "Unexpected Errors" line alone named no error; the logs were in a
+#     temp folder, gone by the time anyone looked; and the summary's
+#     script headers put one script's test under the next one's file.
+#     Two scripts in ONE process, the second failing on a push_error.
+printf 'extends GutTest\nfunc test_sa_fails() -> void:\n\tassert_eq(1, 2, "planted A")\nfunc test_sa_after() -> void:\n\tassert_true(true)\n' > "$SCRATCH/tests/test_zz_sa.gd"
+printf 'extends GutTest\nfunc test_sb_errors() -> void:\n\tpush_error("planted by the selftest")\n\tassert_true(true)\nfunc test_sb_after() -> void:\n\tassert_true(true)\n' > "$SCRATCH/tests/test_zz_sb.gd"
+OUT="$(cd "$SCRATCH" && tools/test.sh test_zz_sa test_zz_sb 2>&1)"
+REPORT="$(sed -n '/── failing assertions ──/,$p' <<<"$OUT")"
+LISTED="$(grep -E '^  res://' <<<"$REPORT")"
+if grep -q '<push_error>planted by the selftest' <<<"$REPORT"; then
+	say ok "an unexpected error's text is printed under its failure"
+else
+	say FAIL "a red run printed 'Unexpected Errors' without the error text"; FAILED=1
+fi
+if [[ "$LISTED" == $'  res://tests/test_zz_sa.gd test_sa_fails\n  res://tests/test_zz_sb.gd test_sb_errors' ]]; then
+	say ok "each failing test is listed once, under its own file"
+else
+	say FAIL "failing assertions listed wrong: $(tr '\n' ';' <<<"$LISTED")"; FAILED=1
+fi
+[[ -s "$SCRATCH/.godot/test-logs/named.log" ]] && say ok "a red named run keeps its log" \
+	|| { say FAIL "a red named run kept no log in .godot/test-logs"; FAILED=1; }
+OUT="$(cd "$SCRATCH" && TEST_JOBS=2 tools/test.sh 2>&1)"
+if compgen -G "$SCRATCH/.godot/test-logs/shard.*.log" >/dev/null \
+		&& compgen -G "$SCRATCH/.godot/test-logs/shard.*.xml" >/dev/null \
+		&& grep -q 'kept in .godot/test-logs/' <<<"$OUT"; then
+	say ok "a red shard keeps its log and JUnit file, and says where"
+else
+	say FAIL "a red sharded run kept no shard log or JUnit file"; FAILED=1
+fi
+rm -f "$SCRATCH"/tests/test_zz_s[ab].gd*
 
 # 2d. A parse error is LOCATED. The engine names the class and never the
 #     file, in every log, and finding it cost a round trip per guess.

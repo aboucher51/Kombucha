@@ -63,6 +63,16 @@ TIMINGS="$ROOT/.godot/test-timings"
 JUNIT="${TEST_JUNIT-$ROOT/.godot/test-results.xml}"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
+# A red run's logs and JUnit files are copied here before WORK goes: one
+# project's flake could not be read afterwards, because the evidence was
+# in WORK and a rerun had overwritten the merged report. Green keeps
+# nothing. A suite run clears only shard.*, a named run only named.*, so
+# rerunning one script does not wipe the suite's evidence.
+KEPT="$ROOT/.godot/test-logs"
+keep() { # source-file, kept-name
+	mkdir -p "$KEPT" && [[ -f "$1" ]] && cp "$1" "$KEPT/$2"
+	return 0
+}
 
 # GUT paints its summary; strip the reset codes that survive grep-free output.
 paint() { sed -E 's/\x1b\[0m$//' "$1"; }
@@ -72,18 +82,41 @@ load_fails() { grep -c 'Failed to load script' "$1" || true; }
 # GUT counts a failed assertion in its summary but prints the text far
 # above it; on a suite of any size that is hundreds of lines up, and the
 # reflex is a second run piped through grep. Repeat them at the end.
+#
+# Each log is read ONCE: GUT's own "Run Summary" when it printed one, else
+# (a shard killed by the timeout prints none) the lines as each test ran.
+# Reading both listed every failure twice, and the summary's script
+# headers relabelled the stream's last test name with the next script
+# ("test_b_after" under test_a's file). An "Unexpected Errors" failure
+# says nothing by itself; the numbered lines under it are GUT's text for
+# each push_error or engine error it counted, and they come along.
 report_failures() {
 	local out
 	out="$(awk '
-		/^res:\/\/tests\// { script = $0; next }
-		/^\* test_/ { name = substr($0, 3); next }
-		/\[Failed\]/ {
-			line = $0
-			gsub(/\033\[[0-9;]*m/, "", line)
-			sub(/^[ \t]+/, "", line)
-			printf "  %s %s\n    %s\n", script, name, line
+		function flush() {
+			if (ns > 0) { for (i = 1; i <= ns; i++) print summary[i] }
+			else { for (i = 1; i <= nr; i++) print stream[i] }
+			ns = 0; nr = 0; in_summary = 0; errors = 0
 		}
-	' "$@" 2>/dev/null | head -40)"
+		function keep(text) {
+			if (in_summary) summary[++ns] = text; else stream[++nr] = text
+		}
+		FNR == 1 && NR > 1 { flush() }
+		{ line = $0; gsub(/\033\[[0-9;]*m/, "", line) }
+		line ~ /^= Run Summary/ { in_summary = 1; errors = 0; next }
+		line ~ /^res:\/\/tests\// { script = line; errors = 0; next }
+		line ~ /^[*-] test_/ { name = substr(line, 3); errors = 0; next }
+		line ~ /\[Failed\]/ {
+			sub(/^[ \t]+/, "", line)
+			keep(sprintf("  %s %s\n    %s", script, name, line))
+			errors = (line ~ /Unexpected Errors/); next
+		}
+		errors && line ~ /^[ \t]+\[[0-9]+\] / {
+			sub(/^[ \t]+/, "", line); keep("      " line); next
+		}
+		{ errors = 0 }
+		END { flush() }
+	' "$@" 2>/dev/null | head -60)"
 	[[ -n "$out" ]] && { echo "── failing assertions ──"; printf '%s\n' "$out"; }
 	return 0
 }
@@ -133,6 +166,7 @@ if [[ $# -gt 0 ]]; then
 	done
 	mapfile -t SELECTED < <(printf '%s\n' "${SELECTED[@]}" | awk '!seen[$0]++')
 	LOG="$WORK/named.log"
+	rm -f "$KEPT"/named.*
 	[[ -n "$JUNIT" ]] && mkdir -p "$(dirname "$JUNIT")"
 	{
 		printf '{"dirs": [], "include_subdirs": false, "log_level": 1,'
@@ -151,14 +185,20 @@ if [[ $# -gt 0 ]]; then
 	paint "$LOG"
 	echo "Ran ${#SELECTED[@]} script(s): ${SELECTED[*]#tests/}"
 	[[ $STATUS -eq 124 ]] && echo "test: timed out after ${TIMEOUT}s — a test is probably awaiting something that never comes" >&2
-	[[ $STATUS -ne 0 ]] && report_failures "$LOG"
+	if [[ $STATUS -ne 0 ]]; then
+		report_failures "$LOG"
+		keep "$LOG" named.log
+		[[ -n "$JUNIT" ]] && keep "$JUNIT" named.xml
+	fi
 	FAILS=$(load_fails "$LOG")
 	if [[ "$FAILS" -gt 0 ]]; then
 		report_parse_error "$LOG"
 		echo "test: $FAILS test script(s) failed to load (parse error above)" >&2
 		echo "Failing Tests         $FAILS (scripts that did not load)"
 		STATUS=1
+		keep "$LOG" named.log
 	fi
+	[[ $STATUS -ne 0 && -f "$KEPT/named.log" ]] && echo "test: the log is kept in ${KEPT#"$ROOT"/}/named.log"
 	exit $STATUS
 fi
 
@@ -233,6 +273,7 @@ done
 for ((i = 0; i < LIVE; i++)); do mv "$WORK/live.$i" "$WORK/list.$i"; done
 JOBS=$LIVE
 
+rm -f "$KEPT"/shard.*
 PIDS=()
 STARTED=$(date +%s)
 for ((i = 0; i < JOBS; i++)); do
@@ -272,6 +313,8 @@ for ((i = 0; i < JOBS; i++)); do
 	if [[ $CODE -ne 0 ]]; then
 		echo "── shard $i ──"
 		paint "$WORK/shard.$i.log"
+		keep "$WORK/shard.$i.log" "shard.$i.log"
+		keep "$WORK/shard.$i.xml" "shard.$i.xml"
 		STATUS=1
 	fi
 done
@@ -297,6 +340,7 @@ fi
 
 # The assertions behind a red run, repeated where they can be read.
 [[ $STATUS -ne 0 ]] && report_failures "$WORK"/shard.*.log
+compgen -G "$KEPT/shard.*" >/dev/null && echo "test: red shards' logs and JUnit files are kept in ${KEPT#"$ROOT"/}/"
 
 # Per-script times for the NEXT run's deal. Written only when every shard
 # produced one, so a crashed run cannot poison the balance with a half table.

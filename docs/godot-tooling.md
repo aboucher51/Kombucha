@@ -225,7 +225,15 @@ sense, run `TEST_JOBS=1` and compare.
 
 **A red run repeats its failing assertions at the end**, under
 `── failing assertions ──`: GUT counts them in its summary but prints the
-text far above it, which on any real suite is hundreds of lines up.
+text far above it, which on any real suite is hundreds of lines up. Each
+failing test is listed once, under its own file, and an "Unexpected
+Errors" failure is followed by the error text GUT counted. **A red run
+keeps its evidence** in `.godot/test-logs/`: each red shard's log and
+JUnit file (`shard.N.log`, `.xml`), or a named run's `named.log`. A
+flake could not be read once the run's temporary folder was gone, and a
+rerun had already replaced `.godot/test-results.xml`. A suite run
+clears only the `shard.*` files and a named run only `named.*`, so
+rerunning one script keeps the suite's evidence.
 
 **A parse error is reported everywhere except where it is.** The engine
 answers a class that will not parse with `Could not resolve class "X",
