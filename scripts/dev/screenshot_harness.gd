@@ -114,6 +114,10 @@ const BASELINE_DIR := "res://scenarios/baselines"
 const SANDBOX_SAVE_ROOT := "user://sandbox_saves"
 ## Frames given to layout/tweens after a click before the next command.
 const DEFAULT_SETTLE_FRAMES := 8
+## Frames per second a served engine draws while it waits for a command.
+## A command is picked up within one frame, so 10 keeps a reply under a
+## tenth of a second plus the command's own time.
+const SERVE_IDLE_FPS := 10
 
 var _shot_index := 0
 ## Set by _find_named / _find_control when they return null: the reason.
@@ -219,22 +223,43 @@ func _ready() -> void:
 ## a file is the seam every shell already has: no socket, no protocol, and
 ## the reply is a file too. Polled once a frame; a scenario runs to its end
 ## before the next is looked at, so replies are in order.
+##
+## Waiting for a command, the engine draws at SERVE_IDLE_FPS: uncapped, one
+## waiting engine on a software renderer drew a login screen at ~2,000%
+## CPU (Mapledot, on forge; a cap of 5 took it to ~30%). It stops by itself
+## after `--serve-idle` seconds with no command (0 never), and when its
+## serve folder or its project is gone: one engine whose worktree was
+## removed polled the missing folder for 17 hours at 15 cores.
 func _serve(dir_path: String) -> void:
 	DirAccess.make_dir_recursive_absolute(dir_path)
 	print("harness: serving %s" % dir_path)
+	var idle_limit_ms := int(Cmdline.value("--serve-idle")) * 1000
+	var project_file := ProjectSettings.globalize_path("res://project.godot")
+	var command_fps := Engine.max_fps
+	Engine.max_fps = SERVE_IDLE_FPS
+	var last_command_ms := Time.get_ticks_msec()
 	while true:
 		await get_tree().process_frame
 		var dir := DirAccess.open(dir_path)
-		if dir == null:
-			continue
+		if dir == null or not FileAccess.file_exists(project_file):
+			print("harness: stopping, %s is gone" % (dir_path if dir == null else project_file))
+			break
 		if dir.file_exists("quit"):
 			dir.remove("quit")
+			break
+		if idle_limit_ms > 0 and Time.get_ticks_msec() - last_command_ms > idle_limit_ms:
+			print("harness: stopping, no command for %d s" % (idle_limit_ms / 1000))
 			break
 		var pending: Array[String] = []
 		for file_name in dir.get_files():
 			if file_name.ends_with(".cmd"):
 				pending.append(file_name)
+		if pending.is_empty():
+			continue
 		pending.sort()
+		# A command runs at the game's own pace; a frame cap it sets is kept
+		# for the next command, and idle drawing goes back to the cap after.
+		Engine.max_fps = command_fps
 		for file_name in pending:
 			var path := dir_path.path_join(file_name)
 			_failures = 0
@@ -246,6 +271,10 @@ func _serve(dir_path: String) -> void:
 			if done != null:
 				done.store_string("ok\n" if _failures == 0 else "fail %d\n" % _failures)
 			dir.remove(file_name)
+		command_fps = Engine.max_fps
+		Engine.max_fps = SERVE_IDLE_FPS
+		last_command_ms = Time.get_ticks_msec()
+	Engine.max_fps = command_fps
 	_restore()
 	get_tree().quit(0)
 

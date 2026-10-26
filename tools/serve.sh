@@ -20,6 +20,12 @@
 # keyboard on every launch under WSLg; else the real display;
 # SHOOT_DISPLAY=real to watch the window. The GPU is used on either.
 #
+# A waiting engine draws at 10 fps, llvmpipe gets 4 threads
+# (LP_NUM_THREADS overrides), and the engine stops by itself after
+# SERVE_IDLE_S seconds with no command (default 1800, 0 never) or when
+# its serve folder or project is gone. One forgotten engine ran 17 hours
+# at 15 cores after its worktree was removed.
+#
 # OWNED BY KOMBUCHA (tools/tooling-manifest.txt); do not edit in a project.
 set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -28,6 +34,7 @@ SERVE="${SERVE_DIR:-$ROOT/.godot/serve}"
 LOG="$SERVE/engine.log"
 PIDFILE="$SERVE/engine.pid"
 TIMEOUT="${SERVE_TIMEOUT:-120}"
+IDLE_S="${SERVE_IDLE_S:-1800}"
 
 running() { [[ -f "$PIDFILE" ]] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; }
 
@@ -47,7 +54,10 @@ send() { # name, source-file
 	cp "$2" "$SERVE/$name.cmd.tmp" && mv "$SERVE/$name.cmd.tmp" "$SERVE/$name.cmd"
 	local waited=0
 	while [[ ! -f "$SERVE/$name.done" ]]; do
-		running || { echo "serve: engine died — see $LOG" >&2; return 2; }
+		if ! running; then
+			grep -m1 '^harness: stopping' "$LOG" >&2 || echo "serve: engine died — see $LOG" >&2
+			return 2
+		fi
 		sleep 0.05; waited=$((waited + 1))
 		if (( waited > TIMEOUT * 20 )); then echo "serve: no reply after ${TIMEOUT}s" >&2; return 124; fi
 	done
@@ -97,12 +107,15 @@ case "${1:-}" in
 		elif [[ ${#RUNNER[@]} -gt 0 && -z "${GALLIUM_DRIVER:-}" ]]; then
 			export LIBGL_ALWAYS_SOFTWARE=1
 		fi
+		# One llvmpipe engine takes ~12 of a 32-thread machine uncapped;
+		# a served engine is one window, not a batch.
+		[[ -n "${LIBGL_ALWAYS_SOFTWARE:-}" ]] && export LP_NUM_THREADS="${LP_NUM_THREADS:-4}"
 		if [[ ${#RUNNER[@]} -gt 0 ]]; then
 			[[ "${GALLIUM_DRIVER:-}" == "d3d12" ]] && echo "serve: virtual display (Xvfb), GPU" || echo "serve: virtual display (Xvfb), llvmpipe"
 		else
 			echo "serve: real display — the window takes focus; sudo apt install xvfb for a virtual one"
 		fi
-		XDG_DATA_HOME="$SERVE/user" nohup "${RUNNER[@]}" "$GODOT" "${ARGS[@]}" -- --serve "$SERVE" "${SEED[@]}" >"$LOG" 2>&1 &
+		XDG_DATA_HOME="$SERVE/user" nohup "${RUNNER[@]}" "$GODOT" "${ARGS[@]}" -- --serve "$SERVE" --serve-idle "$IDLE_S" "${SEED[@]}" >"$LOG" 2>&1 &
 		echo $! > "$PIDFILE"
 		for i in $(seq 1 200); do grep -q '^harness: serving' "$LOG" 2>/dev/null && break; sleep 0.1; done
 		grep -q '^harness: serving' "$LOG" || { echo "serve: engine did not start — see $LOG" >&2; exit 1; }

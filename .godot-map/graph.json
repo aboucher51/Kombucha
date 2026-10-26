@@ -583,7 +583,8 @@
    "loads": [],
    "refs": [
     "res://shots",
-    "res://scenarios/baselines"
+    "res://scenarios/baselines",
+    "res://project.godot"
    ],
    "signals": [],
    "funcs": [
@@ -647,7 +648,7 @@
    "node_paths": [],
    "groups_joined": [],
    "groups_queried": [],
-   "lines": 1299
+   "lines": 1328
   },
   "res://scripts/dev/selftest_driver.gd": {
    "path": "res://scripts/dev/selftest_driver.gd",
@@ -1826,6 +1827,9 @@
   "res://data/console_commands.project.json": [
    "res://scripts/dev/debug_console.gd",
    "res://scripts/util/content_db.gd"
+  ],
+  "res://project.godot": [
+   "res://scripts/dev/screenshot_harness.gd"
   ],
   "res://scenarios/baselines": [
    "res://scripts/dev/screenshot_harness.gd"

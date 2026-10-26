@@ -306,6 +306,12 @@ appear, answering each with its printed lines and a verdict in under a
 tenth of a second; state carries over between commands unless a line says
 `reset`. Nothing about it is a gate: `check.sh` runs `shoot.sh`, which
 boots fresh, deals the batch, and is what CI runs.
+**A served engine waiting for a command draws at 10 fps**, gets 4
+llvmpipe threads (`LP_NUM_THREADS`), and stops by itself after
+`SERVE_IDLE_S` seconds with no command (1800 by default, 0 for never)
+or when its serve folder or its project is gone. Uncapped, one waiting
+engine took about 20 cores on a software renderer, and one left behind
+by a removed worktree ran for 17 hours.
 
 **The batch runs on a virtual display when Xvfb is installed** (`sudo apt
 install xvfb`; the `SHOOT_DISPLAY=auto` default): no window appears and

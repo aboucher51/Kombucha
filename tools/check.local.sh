@@ -110,6 +110,47 @@ PY
 		printf '  FAIL  serve mode (tools/serve.sh) — see .godot/serve/engine.log\n'; MISSING=1
 		tools/serve.sh stop >/dev/null 2>&1
 	fi
+	# A served engine must not burn the machine while it waits, nor outlive
+	# its folder or an idle limit (KOMBU-7: one ran 17 hours at 15 cores).
+	# Each case uses its own scratch serve folder.
+	serve_pid() { pgrep -f -- "--serve $1" | while read -r p; do
+		[[ "$(cat /proc/$p/comm 2>/dev/null)" == godot* ]] && echo "$p"; done | head -1; }
+	SCRATCH="$(mktemp -d)"
+	if SERVE_DIR="$SCRATCH/a" tools/serve.sh start >/dev/null 2>&1; then
+		P=$(serve_pid "$SCRATCH/a")
+		T0=$(awk '{print $14+$15}' "/proc/$P/stat"); sleep 3
+		T1=$(awk '{print $14+$15}' "/proc/$P/stat")
+		PCT=$(( (T1 - T0) * 100 / $(getconf CLK_TCK) / 3 ))
+		SERVE_DIR="$SCRATCH/a" tools/serve.sh stop >/dev/null 2>&1
+		if (( PCT < 100 )); then
+			printf '  ok    a waiting served engine uses %d%% CPU (under 100%%)\n' "$PCT"
+		else
+			printf '  FAIL  a waiting served engine uses %d%% CPU (idle frame cap)\n' "$PCT"; MISSING=1
+		fi
+	else
+		printf '  FAIL  serve mode did not start in %s\n' "$SCRATCH/a"; MISSING=1
+	fi
+	if SERVE_DIR="$SCRATCH/b" SERVE_IDLE_S=2 tools/serve.sh start >/dev/null 2>&1; then
+		for i in $(seq 1 100); do SERVE_DIR="$SCRATCH/b" tools/serve.sh status >/dev/null 2>&1 || break; sleep 0.1; done
+		if ! SERVE_DIR="$SCRATCH/b" tools/serve.sh status >/dev/null 2>&1 \
+				&& grep -q '^harness: stopping, no command for 2 s' "$SCRATCH/b/engine.log"; then
+			printf '  ok    a served engine stops after SERVE_IDLE_S with no command\n'
+		else
+			printf '  FAIL  a served engine outlived SERVE_IDLE_S=2\n'; MISSING=1
+			SERVE_DIR="$SCRATCH/b" tools/serve.sh stop >/dev/null 2>&1
+		fi
+	fi
+	if SERVE_DIR="$SCRATCH/c" tools/serve.sh start >/dev/null 2>&1; then
+		P=$(serve_pid "$SCRATCH/c"); rm -rf "$SCRATCH/c"
+		for i in $(seq 1 100); do kill -0 "$P" 2>/dev/null || break; sleep 0.1; done
+		if ! kill -0 "$P" 2>/dev/null; then
+			printf '  ok    a served engine stops when its serve folder is gone\n'
+		else
+			printf '  FAIL  a served engine outlived its serve folder\n'; MISSING=1
+			kill "$P" 2>/dev/null
+		fi
+	fi
+	rm -rf "$SCRATCH"
 	# The CI path (virtual display, software GL) exercised HERE when the
 	# package is present, so the branch cannot rot between pushes — and the
 	# virtual display with the GPU, which is what every batch on a WSLg
