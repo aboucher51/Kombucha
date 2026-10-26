@@ -212,9 +212,9 @@ func test_the_hooks_hear_a_scenario_start_before_its_first_line_and_finish_with_
 	await harness._run(_scenario_file("hooks_started", "assert_note started: hooks_started\n"))
 	assert_eq(harness._failures, 0, "scenario_started ran before the first line")
 	assert_eq(DebugConsole.hooks.last_finished, "hooks_started ok")
-	# A failing line logs its failure as an engine error: expected here.
-	gut.error_tracker.treat_push_error_as = GutUtils.TREAT_AS.NOTHING
 	await harness._run(_scenario_file("hooks_failed", "assert_note never written\n"))
+	# A failing line logs its failure as an engine error: expected here.
+	assert_push_error("assert_note never written")
 	assert_eq(DebugConsole.hooks.last_finished, "hooks_failed fail",
 		"scenario_finished runs after a failed line too, with ok false")
 	harness._restore()

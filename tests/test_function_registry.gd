@@ -31,6 +31,6 @@ func test_registered_signal_reports_override() -> void:
 
 
 func test_missing_id_returns_default_not_crash() -> void:
-	# The logged error IS the behaviour under test.
-	gut.error_tracker.treat_push_error_as = GutUtils.TREAT_AS.NOTHING
 	assert_eq(registry.invoke("nope", [], -1), -1)
+	# The logged error IS the behaviour under test.
+	assert_push_error("no function registered for id \"nope\"")

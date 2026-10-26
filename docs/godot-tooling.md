@@ -269,9 +269,16 @@ timed out with the scripts it never reached, never as scripts that
 timer belongs behind a seam a test can shorten; profile with the per-script
 times in `.godot/test-timings`.
 
-A test that exercises a deliberate refusal path (where the logged error *is*
-the behaviour under test) must tell GUT the error is expected:
-`gut.error_tracker.treat_push_error_as = GutUtils.TREAT_AS.NOTHING`.
+**An expected error is asserted by its text.** A test of a refusal path,
+where the logged error is what it checks, ends with
+`assert_push_error("part of the message")` (`assert_engine_error` for an
+engine error). That marks only that error as expected, in that test, and
+fails if the error never comes. Never set
+`gut.error_tracker.treat_push_error_as`: GUT keeps one tracker for the
+whole process, so the setting stays off for every later test in the
+shard, and those tests pass with errors in them. This fixture had two
+such lines; a planted `push_error` test failed alone and passed after
+either one.
 
 **Headless UI smoke recipe:** a crash in code-built UI that only mouse input
 reaches is still testable headless — instantiate the real scene, let it
