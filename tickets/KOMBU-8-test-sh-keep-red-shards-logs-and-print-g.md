@@ -1,9 +1,10 @@
 ---
 id: KOMBU-8
 title: test.sh: keep red shards' logs and print GUT's error text
-status: ready
+status: claimed
 priority: 2
-owner: 
+owner: kombucha-worker
+pid: 1433256
 depends_on: []
 touches: [tools/test.sh, tools/selftest.sh, docs/godot-tooling.md, .gitignore]
 created: 2026-10-26
@@ -26,5 +27,8 @@ What to do (tools/test.sh):
 When done, tell the PM so navalwar-pm can be told.
 
 ## Progress
+- 2026-10-26 18:26 Committed a93b18f. Wrong label cause: report_failures read GUT's Run Summary too, whose script headers changed the label but whose '- test_x' names it ignored, so every failure was listed twice and the second under the next file. Now each log is read once (summary when present, else the stream), error lines under 'Unexpected Errors' are printed, red logs/XML kept in .godot/test-logs (suite clears shard.*, named clears named.*). .gitignore needs no change (.godot/ already ignored). Selftest 2g: 4 cases, all red on old test.sh, green on new. Found and filed KOMBU-9: tests that set treat_push_error_as NOTHING leak it to every later test in the shard.
+- 2026-10-26 18:28 Full check --ci green (109 s): 139 tests, 20 scenarios, 0 engine errors, the 7 new gate cases ok. Branch kombu-7-8-runners (3ebcf5c, a93b18f) on origin/main d125fc5. Push request sent to the PM; waiting for Alex's yes.
+- 2026-10-26 23:27 Push blocked the same way as KOMBU-7; see its note. Not pushed.
 
 ## Left for later
