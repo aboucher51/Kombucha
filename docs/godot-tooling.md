@@ -341,6 +341,13 @@ interrupts whoever is typing N times. `SHOOT_DISPLAY=real` is for
 watching the window. Under WSLg `/tmp/.X11-unix` is a read-only mount,
 so the virtual server listens on TCP (`xvfb-run -l`) and the client
 finds it there by itself; `serve.sh` follows the same rule.
+**The virtual screen is as big as the game window** (`SHOOT_RESOLUTION`,
+else the window size in `project.godot`, at least 1280x720;
+`tools/xvfb-screen.sh` works it out for both scripts). X keeps the real
+cursor inside its screen: on the old fixed 1280x720 screen, a 1600x900
+game's `hover` on a button at x=1292 stopped at x=1279 and read the
+control there instead. Clicks were not affected, because they are pushed
+events.
 
 **Rendering is on the GPU when WSLg offers one** (`SHOOT_GPU=auto`, Mesa's
 d3d12 driver), on the real display and the virtual one alike: measured

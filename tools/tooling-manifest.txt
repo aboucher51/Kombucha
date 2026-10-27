@@ -11,6 +11,7 @@ tools/serve.sh
 tools/export.sh
 tools/sync-tooling.sh
 tools/parse-error.sh
+tools/xvfb-screen.sh
 tools/tooling-manifest.txt
 tools/GODOT_VERSION
 tools/seeds/

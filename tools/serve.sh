@@ -96,7 +96,7 @@ case "${1:-}" in
 			xvfb)
 				command -v xvfb-run >/dev/null || { echo "serve: no xvfb-run — install xvfb (sudo apt install xvfb)" >&2; exit 2; }
 				listen=(); [[ -w /tmp/.X11-unix ]] || listen=(-l)
-				RUNNER=(xvfb-run -a "${listen[@]}" -s "-screen 0 ${SHOOT_RESOLUTION:-1280x720}x24")
+				RUNNER=(xvfb-run -a "${listen[@]}" -s "-screen 0 $("$ROOT/tools/xvfb-screen.sh" "$ROOT")x24")
 				ARGS+=(--audio-driver Dummy) ;;
 			*) echo "serve: SHOOT_DISPLAY must be auto, real or xvfb" >&2; exit 2 ;;
 		esac

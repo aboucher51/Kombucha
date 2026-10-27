@@ -125,7 +125,9 @@ virtual_display() {
 	# back to localhost TCP when the socket is missing).
 	local listen=()
 	[[ -w /tmp/.X11-unix ]] || listen=(-l)
-	RUNNER=(xvfb-run -a "${listen[@]}" -s "-screen 0 ${SHOOT_RESOLUTION:-1280x720}x24")
+	# The screen holds the whole window, or the real cursor stops at its
+	# edge (tools/xvfb-screen.sh says why and how big).
+	RUNNER=(xvfb-run -a "${listen[@]}" -s "-screen 0 $("$ROOT/tools/xvfb-screen.sh" "$ROOT")x24")
 }
 case "${SHOOT_DISPLAY:-auto}" in
 	real)

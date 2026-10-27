@@ -173,6 +173,22 @@ PY
 		else
 			printf '  --    Xvfb path on the GPU (no d3d12 driver on this machine)\n'
 		fi
+		# The virtual screen must hold a window bigger than 1280x720 with
+		# no SHOOT_RESOLUTION, or the real cursor stops at its edge and a
+		# hover past x=1279 reads the wrong control. The fixture's window
+		# is 1280x720, so a scratch copy opens at 1600x900 and hovers the
+		# top-right TwinA (x about 1532).
+		SCRATCH="$(mktemp -d)"
+		rsync -a --exclude 'shots/*.png' --exclude '.git' ./ "$SCRATCH/"
+		sed -i 's|^window/size/viewport_height=720$|&\nwindow/size/window_width_override=1600\nwindow/size/window_height_override=900|' "$SCRATCH/project.godot"
+		printf 'wait 5\nwindow\nhover TwinA\n' > "$SCRATCH/scenarios/zz_wide_hover.txt"
+		if (cd "$SCRATCH" && SHOOT_DISPLAY=xvfb SHOOT_JOBS=1 tools/shoot.sh scenarios/zz_wide_hover.txt >/dev/null 2>&1) \
+				&& grep -q '"reply": *"window 1600x900"' "$SCRATCH/shots/zz_wide_hover.jsonl"; then
+			printf '  ok    Xvfb screen holds a 1600x900 window: hover reaches x=1532\n'
+		else
+			printf '  FAIL  hover past x=1279 in a 1600x900 window under Xvfb (tools/xvfb-screen.sh)\n'; MISSING=1
+		fi
+		rm -rf "$SCRATCH"
 	else
 		printf '  --    Xvfb path (xvfb-run not installed: sudo apt install xvfb)\n'
 	fi
