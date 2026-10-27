@@ -1,14 +1,13 @@
 ---
 id: KOMBU-7
 title: serve.sh: an idle served engine spins every core, and outlives its folder
-status: claimed
+status: done
 priority: 2
 owner: kombucha-worker
-pid: 1433256
 depends_on: []
 touches: [tools/serve.sh, scripts/dev/screenshot_harness.gd, tools/check.local.sh, docs/godot-tooling.md, .godot-map/graph.json]
 created: 2026-10-25
-updated: 2026-10-26
+updated: 2026-10-27
 ---
 
 Found in Mapledot (MAPLE-62, 2026-10-25). A `tools/serve.sh` engine waiting for its next command draws frames as fast as it can. On forge (llvmpipe, Xvfb) one sat at about 2,000% CPU on a login screen, and a leftover one ran 17 hours at 15 cores after its worktree was removed.
@@ -27,5 +26,9 @@ Mapledot fixed its play sessions in its own files (PlaySession caps fps while fr
 - 2026-10-26 18:26 Committed 3ebcf5c (map graph.json regenerated, added to touches). Full check next, batched with KOMBU-8.
 - 2026-10-26 18:28 Full check --ci green (109 s): 139 tests, 20 scenarios, 0 engine errors, the 7 new gate cases ok. Branch kombu-7-8-runners (3ebcf5c, a93b18f) on origin/main d125fc5. Push request sent to the PM; waiting for Alex's yes.
 - 2026-10-26 23:27 Alex said yes (via kombucha-pm). Origin still d125fc5. git push was blocked by this session's permission check (auto mode classifier). Not pushed; branch kombu-7-8-runners still holds 3ebcf5c and a93b18f.
+- 2026-10-27 18:06 2026-10-27: Alex's standing yes relayed by kombucha-pm; origin still d125fc5, but git push of kombu-11-xvfb-size was blocked again by this session's permission check. Not pushed; stopped as the PM asked.
+- 2026-10-27 18:07 PM pushed kombu-11-xvfb-size (8c5c5b3) to main from kombucha-pm on Alex's direct go-ahead 2026-10-27 (the worker's session blocks git push).
+- 2026-10-27 18:08 Landed on origin/main in d125fc5..8c5c5b3 (pushed by kombucha-pm on Alex's go-ahead).
+- 2026-10-27 18:08 done on main at c2660d1
 
 ## Left for later

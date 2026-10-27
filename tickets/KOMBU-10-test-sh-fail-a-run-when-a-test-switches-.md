@@ -1,13 +1,14 @@
 ---
 id: KOMBU-10
 title: test.sh: fail a run when a test switches off GUT's push_error tracking
-status: waiting-on-user
+status: claimed
 priority: 3
-owner: 
+owner: kombucha-worker
+pid: 1433256
 depends_on: []
 touches: [tools/test.sh, tools/selftest.sh, docs/godot-tooling.md]
 created: 2026-10-26
-updated: 2026-10-26
+updated: 2026-10-27
 ---
 
 Left over from KOMBU-9 (2026-10-26).
@@ -20,5 +21,6 @@ Let the PM decide whether this should be a failure or a warning at first, since 
 
 ## Progress
 - 2026-10-26 23:37 PM: failure vs warning put to Alex 2026-10-26. PM recommends a failure (red, naming file:line and the fix), since a warning under a green run is what hid this.
+- 2026-10-27 18:07 Alex 2026-10-27: WARN, not fail. test.sh prints a warning naming file:line and the fix (assert_push_error), and the run stays green.
 
 ## Left for later
