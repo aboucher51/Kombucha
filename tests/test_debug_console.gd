@@ -107,6 +107,42 @@ func test_project_hooks_may_override_a_core_command() -> void:
 	mine.free()
 
 
+## A project row with a core row's id replaces it: the fixture's
+## console_commands.project.json declares `seed` again. Before, both rows
+## were kept, `help seed` showed the core usage and `help` listed seed
+## twice (NavalWar's `seed`).
+func test_a_project_row_replaces_the_core_row_with_its_id() -> void:
+	assert_string_contains(DebugConsole.execute("help seed"), "the fixture's own row")
+	var names := DebugConsole.execute("help").split(" ")
+	assert_eq(names.count("seed"), 1, "help lists seed once")
+	var items: Array = DebugConsole.suggest("seed")["items"]
+	assert_eq(items.size(), 1, "one suggestion row for seed")
+	if not items.is_empty():
+		assert_string_contains(str(items[0]["text"]), "the fixture's own row")
+	assert_string_contains(DebugConsole.execute("seed"), "the fixture's own row",
+		"a usage error quotes the project row")
+
+
+## The replaced row keeps the core row's place in the list, and a project
+## name that is a core ALIAS takes the alias away from the core row.
+func test_merging_rows_keeps_the_place_and_drops_a_taken_alias() -> void:
+	var core: Array = [
+		{"id": "help", "aliases": ["?", "h"], "usage": "help"},
+		{"id": "seed", "usage": "seed <n>"},
+		{"id": "quit", "usage": "quit"},
+	]
+	var project: Array = [
+		{"id": "seed", "usage": "seed <n> [mine]"},
+		{"id": "hint", "aliases": ["h"], "usage": "hint"},
+	]
+	var merged: Array = DebugConsole.merge_commands(core, project)
+	var ids: Array = merged.map(func(row: Dictionary) -> String: return str(row["id"]))
+	assert_eq(ids, ["help", "seed", "quit", "hint"])
+	assert_eq(merged[1]["usage"], "seed <n> [mine]")
+	assert_eq(merged[0]["aliases"], ["?"], "the project's `h` took the alias from help")
+	assert_eq(core[0]["aliases"], ["?", "h"], "the core list itself is not edited")
+
+
 func test_quotes_survive_tokenising_and_only_the_empty_token_is_special() -> void:
 	# A console command may take JSON, where the quotes ARE the value's
 	# type; stripping them broke thirteen scenario files in one project.

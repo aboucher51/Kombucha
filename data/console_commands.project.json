@@ -18,6 +18,19 @@
 		]
 	},
 	{
+		"id": "seed",
+		"handler": "seed",
+		"usage": "seed <n>   (the fixture's own row: it replaces the core one)",
+		"description": "Set the random seed. This row replaces the core seed row.",
+		"args": [
+			{
+				"name": "n",
+				"kind": "int",
+				"required": true
+			}
+		]
+	},
+	{
 		"id": "notes",
 		"handler": "notes",
 		"usage": "notes"

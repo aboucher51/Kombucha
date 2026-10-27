@@ -152,7 +152,11 @@ alike: a project may take over a core command or a harness built-in by
 answering for its id (one project's `saves` prints the browser's own row
 text, another's `settle` knows its own busy nodes), and `null` means "not
 mine". Without this, a project that needed its own `locale` had to edit
-the synced console, and the next sync erased it.
+the synced console, and the next sync erased it. **The project's command
+rows win the same way**: a row in `console_commands.project.json` with a
+core row's id replaces it in place, so `help`, usage errors and the
+suggestions show the project's own usage and list the command once, and
+a project name that is a core alias takes that alias.
 
 **It suggests as you type.** The first word lists matching commands
 (usage plus the command's one-line `description`, which every command

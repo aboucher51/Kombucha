@@ -454,6 +454,7 @@
     "_report_gate",
     "_load_all",
     "_absorb",
+    "merge_commands",
     "_load_commands",
     "_load_hooks",
     "allowed",
@@ -541,7 +542,7 @@
    "groups_queried": [
     "state"
    ],
-   "lines": 1337
+   "lines": 1385
   },
   "res://scripts/dev/dev_hooks.gd": {
    "path": "res://scripts/dev/dev_hooks.gd",
@@ -1282,6 +1283,8 @@
     "test_bind_and_refusal",
     "test_alias_resolves",
     "test_project_hooks_may_override_a_core_command",
+    "test_a_project_row_replaces_the_core_row_with_its_id",
+    "test_merging_rows_keeps_the_place_and_drops_a_taken_alias",
     "test_quotes_survive_tokenising_and_only_the_empty_token_is_special",
     "_clean_console",
     "_key",
@@ -1300,7 +1303,7 @@
    "node_paths": [],
    "groups_joined": [],
    "groups_queried": [],
-   "lines": 268
+   "lines": 304
   },
   "res://tests/test_dev_hooks.gd": {
    "path": "res://tests/test_dev_hooks.gd",

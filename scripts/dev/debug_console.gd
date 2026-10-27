@@ -109,16 +109,19 @@ func _report_gate() -> void:
 ## Commands and buttons from both files. A list entry holding `buttons`
 ## is the buttons; every other entry is a command. The project's buttons
 ## come first, so a game's own tabs lead and the core "Console" tab trails.
+## A project command with a core command's id replaces it (merge_commands).
 func _load_all() -> void:
-	_commands = []
 	var core_buttons: Array = []
 	var project_buttons: Array = []
-	_absorb(_load_commands(COMMANDS_PATH, true), core_buttons)
-	_absorb(_load_commands(PROJECT_COMMANDS_PATH, false), project_buttons)
+	var core := _absorb(_load_commands(COMMANDS_PATH, true), core_buttons)
+	var project := _absorb(_load_commands(PROJECT_COMMANDS_PATH, false), project_buttons)
+	_commands = merge_commands(core, project)
 	_buttons = project_buttons + core_buttons
 
 
-func _absorb(entries: Array, buttons_out: Array) -> void:
+## The command rows of one file; its button entries go to `buttons_out`.
+func _absorb(entries: Array, buttons_out: Array) -> Array:
+	var commands: Array = []
 	for entry: Variant in entries:
 		if not (entry is Dictionary):
 			continue
@@ -127,7 +130,47 @@ func _absorb(entries: Array, buttons_out: Array) -> void:
 				if raw is Dictionary:
 					buttons_out.append(button_row(raw))
 			continue
-		_commands.append(entry)
+		commands.append(entry)
+	return commands
+
+
+## The project's rows over the core's, by the rule the hooks follow for
+## handlers: the project is asked first. A project row with a core row's
+## id REPLACES that row in its place, so `help`, usage errors and the
+## suggestions all show the project's surface and list the command once
+## (one project's `seed` was listed twice and `help seed` showed the core
+## usage while its own handler ran). A project id or alias that is a core
+## row's ALIAS takes that alias: it is dropped from the core row. Every
+## other project row is added after the core rows. A project alias that
+## is another command's id takes nothing: _find_command tries ids first.
+## Neither list is edited.
+static func merge_commands(core: Array, project: Array) -> Array:
+	var taken: Dictionary = {}
+	var by_id: Dictionary = {}
+	for row: Dictionary in project:
+		taken[str(row.get("id", ""))] = true
+		for alias: Variant in row.get("aliases", []):
+			taken[str(alias)] = true
+		by_id[str(row.get("id", ""))] = row
+	var merged: Array = []
+	for row: Dictionary in core:
+		var id := str(row.get("id", ""))
+		if by_id.has(id):
+			merged.append(by_id[id])
+			by_id.erase(id)
+			continue
+		var aliases: Array = row.get("aliases", [])
+		var kept: Array = aliases.filter(func(alias: Variant) -> bool: return not taken.has(str(alias)))
+		if kept.size() == aliases.size():
+			merged.append(row)
+		else:
+			var copy := row.duplicate()
+			copy["aliases"] = kept
+			merged.append(copy)
+	for row: Dictionary in project:
+		if by_id.has(str(row.get("id", ""))):
+			merged.append(row)
+	return merged
 
 
 ## `required` files must parse; the project file may simply be absent.
@@ -547,9 +590,14 @@ func plain_log() -> String:
 
 # ── Parsing ──────────────────────────────────────────────────────────────
 
+## An id is found before any alias, so an alias never hides another
+## command's id, wherever the two rows sit in the list.
 func _find_command(name: String) -> Dictionary:
 	for command in _commands:
-		if command.get("id", "") == name or (command.get("aliases", []) as Array).has(name):
+		if command.get("id", "") == name:
+			return command
+	for command in _commands:
+		if (command.get("aliases", []) as Array).has(name):
 			return command
 	return {}
 
