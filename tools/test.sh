@@ -90,6 +90,23 @@ load_fails() { grep -c 'Failed to load script' "$1" || true; }
 # ("test_b_after" under test_a's file). An "Unexpected Errors" failure
 # says nothing by itself; the numbered lines under it are GUT's text for
 # each push_error or engine error it counted, and they come along.
+# A test that sets gut.error_tracker.treat_push_error_as (or the engine
+# or GUT error one) to anything but FAILURE switches that check off for
+# every LATER test in its process: GUT keeps one tracker per process. The
+# old docs told every project to write exactly that line, and Kombucha's
+# own suite had two; a planted push_error test failed alone and passed
+# after either. A warning, not a failure: the run stays green, and the
+# line names the file, the line and the fix.
+warn_tracker_switches() {
+	grep -nHE '^[^#]*treat_(push_error|engine_errors|gut_errors)_as[[:space:]]*=' "$@" 2>/dev/null \
+		| grep -v 'TREAT_AS\.FAILURE' \
+		| awk -F: '{
+			kind = ($0 ~ /treat_engine_errors_as/) ? "engine error" : ($0 ~ /treat_gut_errors_as/) ? "GUT error" : "push_error"
+			fix = (kind == "engine error") ? "assert_engine_error" : "assert_push_error"
+			printf "test: warning: %s:%s turns off GUT'\''s %s check for every later test in its process. Mark the one expected error instead: %s(\"part of the message\").\n", $1, $2, kind, fix
+		}' >&2
+}
+
 report_failures() {
 	local out
 	out="$(awk '
@@ -199,6 +216,7 @@ if [[ $# -gt 0 ]]; then
 		keep "$LOG" named.log
 	fi
 	[[ $STATUS -ne 0 && -f "$KEPT/named.log" ]] && echo "test: the log is kept in ${KEPT#"$ROOT"/}/named.log"
+	warn_tracker_switches "${SELECTED[@]}"
 	exit $STATUS
 fi
 
@@ -341,6 +359,8 @@ fi
 # The assertions behind a red run, repeated where they can be read.
 [[ $STATUS -ne 0 ]] && report_failures "$WORK"/shard.*.log
 compgen -G "$KEPT/shard.*" >/dev/null && echo "test: red shards' logs and JUnit files are kept in ${KEPT#"$ROOT"/}/"
+mapfile -t ALL_TESTS < "$WORK/all"
+warn_tracker_switches "${ALL_TESTS[@]}"
 
 # Per-script times for the NEXT run's deal. Written only when every shard
 # produced one, so a crashed run cannot poison the balance with a half table.

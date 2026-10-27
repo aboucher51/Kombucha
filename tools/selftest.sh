@@ -12,7 +12,8 @@
 #      a named run runs exactly what was named, in a private user://;
 #      the default shard count follows nproc (one per thread, at most 16);
 #      a red run keeps its logs, lists each failure once under its own
-#      file, and prints the text of an unexpected error;
+#      file, and prints the text of an unexpected error; a test that
+#      switches off GUT's error check is warned about by file and line;
 #   3. the sync script stamps, seeds, sets the execute bit, reports drift
 #      (with the project's own lines), notes a missing CLAUDE.md import,
 #      and refuses a dirty source — against a scratch source and project;
@@ -148,6 +149,24 @@ else
 	say FAIL "a red sharded run kept no shard log or JUnit file"; FAILED=1
 fi
 rm -f "$SCRATCH"/tests/test_zz_s[ab].gd*
+
+# 2h. A test that switches GUT's error check off is named, and the run
+#     stays green. GUT keeps one tracker per process, so the switch
+#     reached every later test; the old docs told projects to write it.
+#     A comment naming the setting, and the right fix, are left alone.
+printf 'extends GutTest\nfunc test_sw_switches_off() -> void:\n\tgut.error_tracker.treat_push_error_as = GutUtils.TREAT_AS.NOTHING\n\tpush_error("planted")\n\tassert_true(true)\n' > "$SCRATCH/tests/test_zz_sw.gd"
+printf 'extends GutTest\n# never set treat_push_error_as = NOTHING here\nfunc test_sx_marks_one() -> void:\n\tpush_error("planted")\n\tassert_push_error("planted")\n' > "$SCRATCH/tests/test_zz_sx.gd"
+OUT="$(cd "$SCRATCH" && tools/test.sh test_zz_sw test_zz_sx 2>&1)"; CODE=$?
+WARNED="$(grep '^test: warning:' <<<"$OUT")"
+if [[ $CODE -eq 0 ]] && [[ "$WARNED" == "test: warning: tests/test_zz_sw.gd:3 "*"assert_push_error("* ]] && [[ $(wc -l <<<"$WARNED") -eq 1 ]]; then
+	say ok "a test that switches off GUT's error check is named by file and line, run green"
+else
+	say FAIL "tracker switch not warned once by file:line on a green run (exit $CODE): $(tr '\n' ';' <<<"$WARNED")"; FAILED=1
+fi
+OUT="$(cd "$SCRATCH" && TEST_JOBS=2 tools/test.sh 2>&1)"
+grep -q '^test: warning: tests/test_zz_sw.gd:3 ' <<<"$OUT" && say ok "the sharded run warns about it too" \
+	|| { say FAIL "the sharded run did not warn about tests/test_zz_sw.gd:3"; FAILED=1; }
+rm -f "$SCRATCH"/tests/test_zz_s[wx].gd*
 
 # 2d. A parse error is LOCATED. The engine names the class and never the
 #     file, in every log, and finding it cost a round trip per guess.

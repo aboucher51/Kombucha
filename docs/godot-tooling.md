@@ -278,7 +278,8 @@ fails if the error never comes. Never set
 whole process, so the setting stays off for every later test in the
 shard, and those tests pass with errors in them. This fixture had two
 such lines; a planted `push_error` test failed alone and passed after
-either one.
+either one. `test.sh` prints a `test: warning:` line naming the file and
+line of any such setting, and the run stays green.
 
 **Headless UI smoke recipe:** a crash in code-built UI that only mouse input
 reaches is still testable headless — instantiate the real scene, let it
