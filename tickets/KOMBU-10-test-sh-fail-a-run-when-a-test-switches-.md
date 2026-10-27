@@ -1,10 +1,9 @@
 ---
 id: KOMBU-10
 title: test.sh: fail a run when a test switches off GUT's push_error tracking
-status: claimed
+status: done
 priority: 3
 owner: kombucha-worker
-pid: 1433256
 depends_on: []
 touches: [tools/test.sh, tools/selftest.sh, docs/godot-tooling.md]
 created: 2026-10-26
@@ -22,5 +21,10 @@ Let the PM decide whether this should be a failure or a warning at first, since 
 ## Progress
 - 2026-10-26 23:37 PM: failure vs warning put to Alex 2026-10-26. PM recommends a failure (red, naming file:line and the fix), since a warning under a green run is what hid this.
 - 2026-10-27 18:07 Alex 2026-10-27: WARN, not fail. test.sh prints a warning naming file:line and the fix (assert_push_error), and the run stays green.
+- 2026-10-27 18:09 Warning (not failure, per Alex) in tools/test.sh for named and suite runs; selftest 2h plants a switching test plus a comment-only/assert_push_error test: exactly one warning at tests/test_zz_sw.gd:3, exit 0. Old test.sh printed no warning. Docs line added. Commit on kombu-10-12; full check next. KOMBU-12 reopened: CLAUDE.md edit blocked by this session's permission check.
+- 2026-10-27 18:12 Full check --ci green (139 tests, 20 scenarios, 0 engine errors, selftest 2h ok). Rebased onto origin/main 87ed25f, which only added tickets/ files since the checked base 8c5c5b3: commit 0fc5cd3 on kombu-10-12 (worktree ../Kombucha-k10). Handed to kombucha-pm to merge and push.
+- 2026-10-27 18:12 PM pushed 0fc5cd3 to main.
+- 2026-10-27 18:12 Landed on origin/main in 87ed25f..0fc5cd3 (pushed by kombucha-pm).
+- 2026-10-27 18:12 done on origin/main at 0fc5cd3
 
 ## Left for later
