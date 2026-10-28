@@ -114,9 +114,11 @@ const BASELINE_DIR := "res://scenarios/baselines"
 const SANDBOX_SAVE_ROOT := "user://sandbox_saves"
 ## Frames given to layout/tweens after a click before the next command.
 const DEFAULT_SETTLE_FRAMES := 8
-## Frames per second a served engine draws while it waits for a command.
-## A command is picked up within one frame, so 10 keeps a reply under a
-## tenth of a second plus the command's own time.
+## Frames per second a served engine draws while it waits for a command,
+## unless `--serve-idle-fps <n>` (serve.sh's SERVE_IDLE_FPS) says otherwise.
+## The number trades CPU for reply time: a command is picked up within one
+## idle frame, so 10 answers within 0.1 s plus the command's own time, and
+## 5 within 0.2 s, for less CPU while it waits.
 const SERVE_IDLE_FPS := 10
 
 var _shot_index := 0
@@ -232,11 +234,12 @@ func _ready() -> void:
 ## removed polled the missing folder for 17 hours at 15 cores.
 func _serve(dir_path: String) -> void:
 	DirAccess.make_dir_recursive_absolute(dir_path)
-	print("harness: serving %s" % dir_path)
+	var idle_fps := _serve_idle_fps(Cmdline.value("--serve-idle-fps"))
+	print("harness: serving %s (idle %d fps)" % [dir_path, idle_fps])
 	var idle_limit_ms := int(Cmdline.value("--serve-idle")) * 1000
 	var project_file := ProjectSettings.globalize_path("res://project.godot")
 	var command_fps := Engine.max_fps
-	Engine.max_fps = SERVE_IDLE_FPS
+	Engine.max_fps = idle_fps
 	var last_command_ms := Time.get_ticks_msec()
 	while true:
 		await get_tree().process_frame
@@ -272,11 +275,23 @@ func _serve(dir_path: String) -> void:
 				done.store_string("ok\n" if _failures == 0 else "fail %d\n" % _failures)
 			dir.remove(file_name)
 		command_fps = Engine.max_fps
-		Engine.max_fps = SERVE_IDLE_FPS
+		Engine.max_fps = idle_fps
 		last_command_ms = Time.get_ticks_msec()
 	Engine.max_fps = command_fps
 	_restore()
 	get_tree().quit(0)
+
+
+## The idle frame rate from `--serve-idle-fps`. Empty means the default; a
+## value that is not a whole number above 0 also gets the default, with a
+## note, because 0 would mean "no cap" to the engine.
+static func _serve_idle_fps(text: String) -> int:
+	if text.is_empty():
+		return SERVE_IDLE_FPS
+	if text.is_valid_int() and int(text) > 0:
+		return int(text)
+	print("harness: --serve-idle-fps '%s' is not a whole number above 0; using %d" % [text, SERVE_IDLE_FPS])
+	return SERVE_IDLE_FPS
 
 
 ## The state every scenario starts from. This resets what every project has

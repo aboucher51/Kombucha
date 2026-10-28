@@ -340,7 +340,12 @@ llvmpipe threads (`LP_NUM_THREADS`), and stops by itself after
 `SERVE_IDLE_S` seconds with no command (1800 by default, 0 for never)
 or when its serve folder or its project is gone. Uncapped, one waiting
 engine took about 20 cores on a software renderer, and one left behind
-by a removed worktree ran for 17 hours.
+by a removed worktree ran for 17 hours. **`SERVE_IDLE_FPS` sets that
+rate** (default 10). It trades CPU for reply time: a command is picked
+up within one idle frame, so 5 fps answers within 0.2 s. One project's
+waiting sessions used about 80% CPU at 5 fps and 131% at 10. A value
+that is not a whole number above 0 gets 10, with a note in the engine
+log; the engine's `harness: serving` line says which rate it took.
 
 **The batch runs on a virtual display when Xvfb is installed** (`sudo apt
 install xvfb`; the `SHOOT_DISPLAY=auto` default): no window appears and

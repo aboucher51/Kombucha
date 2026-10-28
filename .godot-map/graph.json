@@ -591,6 +591,7 @@
    "funcs": [
     "_ready",
     "_serve",
+    "_serve_idle_fps",
     "_sandbox",
     "_restore",
     "_reset_between_scenarios",
@@ -649,7 +650,7 @@
    "node_paths": [],
    "groups_joined": [],
    "groups_queried": [],
-   "lines": 1328
+   "lines": 1343
   },
   "res://scripts/dev/selftest_driver.gd": {
    "path": "res://scripts/dev/selftest_driver.gd",
@@ -1613,14 +1614,16 @@
     "test_drag_parses_a_named_start_or_a_point",
     "test_drag_refuses_a_missing_end_or_a_bad_step_count",
     "_scenario_file",
-    "test_the_hooks_hear_a_scenario_start_before_its_first_line_and_finish_with_its_verdict"
+    "test_the_hooks_hear_a_scenario_start_before_its_first_line_and_finish_with_its_verdict",
+    "test_serve_idle_fps_takes_a_whole_number_above_zero",
+    "test_serve_idle_fps_falls_back_to_the_default_on_nonsense"
    ],
    "emits": [],
    "connects": [],
    "node_paths": [],
    "groups_joined": [],
    "groups_queried": [],
-   "lines": 221
+   "lines": 234
   },
   "res://tests/test_smoke.gd": {
    "path": "res://tests/test_smoke.gd",

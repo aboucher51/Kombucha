@@ -114,7 +114,7 @@ Membership from scenes and `add_to_group`; queries are `get_nodes_in_group`, `ca
 | `scripts/dev/bug_report.gd` | RefCounted | BugReport | scripts/dev/debug_console.gd, 1 test | 0 | 3 |
 | `scripts/dev/debug_console.gd` | Node |  | DebugConsole, scripts/dev/screenshot_harness.gd, 5 tests | 0 | 76 |
 | `scripts/dev/dev_hooks.gd` | Node |  | scripts/dev/debug_console.gd, 1 test | 0 | 6 |
-| `scripts/dev/screenshot_harness.gd` | Node |  | ScreenshotHarness, 2 tests | 0 | 50 |
+| `scripts/dev/screenshot_harness.gd` | Node |  | ScreenshotHarness, 2 tests | 0 | 51 |
 | `scripts/dev/selftest_driver.gd` | Node |  | SelftestDriver, 1 test | 0 | 2 |
 | `scripts/main.gd` | Control |  | scenes/main.tscn, 1 test | 0 | 11 |
 | `scripts/ui/pause_menu.gd` | Control | PauseMenu | scenes/main.tscn, scripts/main.gd, 1 test | 0 | 8 |

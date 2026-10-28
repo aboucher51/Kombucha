@@ -20,7 +20,10 @@
 # keyboard on every launch under WSLg; else the real display;
 # SHOOT_DISPLAY=real to watch the window. The GPU is used on either.
 #
-# A waiting engine draws at 10 fps, llvmpipe gets 4 threads
+# A waiting engine draws at SERVE_IDLE_FPS frames per second (default
+# 10; 5 uses less CPU while waiting, but a command can wait up to 0.2 s to be
+# picked up; 0, a negative or a word gets the default, with a note in the
+# engine log). llvmpipe gets 4 threads
 # (LP_NUM_THREADS overrides), and the engine stops by itself after
 # SERVE_IDLE_S seconds with no command (default 1800, 0 never) or when
 # its serve folder or project is gone. One forgotten engine ran 17 hours
@@ -35,6 +38,7 @@ LOG="$SERVE/engine.log"
 PIDFILE="$SERVE/engine.pid"
 TIMEOUT="${SERVE_TIMEOUT:-120}"
 IDLE_S="${SERVE_IDLE_S:-1800}"
+IDLE_FPS="${SERVE_IDLE_FPS:-10}"
 
 running() { [[ -f "$PIDFILE" ]] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; }
 
@@ -115,7 +119,7 @@ case "${1:-}" in
 		else
 			echo "serve: real display — the window takes focus; sudo apt install xvfb for a virtual one"
 		fi
-		XDG_DATA_HOME="$SERVE/user" nohup "${RUNNER[@]}" "$GODOT" "${ARGS[@]}" -- --serve "$SERVE" --serve-idle "$IDLE_S" "${SEED[@]}" >"$LOG" 2>&1 &
+		XDG_DATA_HOME="$SERVE/user" nohup "${RUNNER[@]}" "$GODOT" "${ARGS[@]}" -- --serve "$SERVE" --serve-idle "$IDLE_S" --serve-idle-fps "$IDLE_FPS" "${SEED[@]}" >"$LOG" 2>&1 &
 		echo $! > "$PIDFILE"
 		for i in $(seq 1 200); do grep -q '^harness: serving' "$LOG" 2>/dev/null && break; sleep 0.1; done
 		grep -q '^harness: serving' "$LOG" || { echo "serve: engine did not start — see $LOG" >&2; exit 1; }

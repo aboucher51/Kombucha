@@ -218,3 +218,16 @@ func test_the_hooks_hear_a_scenario_start_before_its_first_line_and_finish_with_
 	assert_eq(DebugConsole.hooks.last_finished, "hooks_failed fail",
 		"scenario_finished runs after a failed line too, with ok false")
 	harness._restore()
+
+
+# ── serve: the idle frame rate (SERVE_IDLE_FPS) ──
+
+func test_serve_idle_fps_takes_a_whole_number_above_zero() -> void:
+	assert_eq(Harness._serve_idle_fps("5"), 5)
+	assert_eq(Harness._serve_idle_fps(""), Harness.SERVE_IDLE_FPS, "no value is the default")
+
+
+func test_serve_idle_fps_falls_back_to_the_default_on_nonsense() -> void:
+	# 0 would mean "no cap" to the engine: the very thing the cap is for.
+	for text in ["0", "-5", "fast", "2.5"]:
+		assert_eq(Harness._serve_idle_fps(text), Harness.SERVE_IDLE_FPS, "'%s' gets the default" % text)

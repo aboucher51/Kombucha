@@ -130,7 +130,14 @@ PY
 	else
 		printf '  FAIL  serve mode did not start in %s\n' "$SCRATCH/a"; MISSING=1
 	fi
-	if SERVE_DIR="$SCRATCH/b" SERVE_IDLE_S=2 tools/serve.sh start >/dev/null 2>&1; then
+	# A project may idle lower than 10 fps (KOMBU-16: Mapledot froze its
+	# sessions at 5); the serving line says which rate the engine took.
+	if SERVE_DIR="$SCRATCH/b" SERVE_IDLE_S=2 SERVE_IDLE_FPS=5 tools/serve.sh start >/dev/null 2>&1; then
+		if grep -q '^harness: serving .* (idle 5 fps)$' "$SCRATCH/b/engine.log"; then
+			printf '  ok    SERVE_IDLE_FPS=5 sets the served engine'"'"'s idle frame rate\n'
+		else
+			printf '  FAIL  SERVE_IDLE_FPS=5 did not reach the served engine: %s\n' "$(grep -m1 '^harness: serving' "$SCRATCH/b/engine.log")"; MISSING=1
+		fi
 		for i in $(seq 1 100); do SERVE_DIR="$SCRATCH/b" tools/serve.sh status >/dev/null 2>&1 || break; sleep 0.1; done
 		if ! SERVE_DIR="$SCRATCH/b" tools/serve.sh status >/dev/null 2>&1 \
 				&& grep -q '^harness: stopping, no command for 2 s' "$SCRATCH/b/engine.log"; then
@@ -140,7 +147,14 @@ PY
 			SERVE_DIR="$SCRATCH/b" tools/serve.sh stop >/dev/null 2>&1
 		fi
 	fi
-	if SERVE_DIR="$SCRATCH/c" tools/serve.sh start >/dev/null 2>&1; then
+	# ...and a nonsense rate (0 would mean no cap at all) gets the default.
+	if SERVE_DIR="$SCRATCH/c" SERVE_IDLE_FPS=0 tools/serve.sh start >/dev/null 2>&1; then
+		if grep -q "^harness: --serve-idle-fps '0' is not" "$SCRATCH/c/engine.log" \
+				&& grep -q '^harness: serving .* (idle 10 fps)$' "$SCRATCH/c/engine.log"; then
+			printf '  ok    SERVE_IDLE_FPS=0 falls back to 10 fps, with a note\n'
+		else
+			printf '  FAIL  SERVE_IDLE_FPS=0 was not refused: %s\n' "$(grep -m1 '^harness: serving' "$SCRATCH/c/engine.log")"; MISSING=1
+		fi
 		P=$(serve_pid "$SCRATCH/c"); rm -rf "$SCRATCH/c"
 		for i in $(seq 1 100); do kill -0 "$P" 2>/dev/null || break; sleep 0.1; done
 		if ! kill -0 "$P" 2>/dev/null; then
