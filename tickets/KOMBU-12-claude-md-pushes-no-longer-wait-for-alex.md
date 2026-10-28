@@ -7,7 +7,7 @@ owner:
 depends_on: []
 touches: [CLAUDE.md]
 created: 2026-10-27
-updated: 2026-10-27
+updated: 2026-10-28
 ---
 
 CLAUDE.md's "Agent tickets" section (KOMBU-2) says every push waits for Alex's yes. Alex changed that 2026-10-27: "Kombucha has permission to merge and push on demand." Rewrite that bullet: a worker pushes a green batch through the gate (tools/check.sh --ci) on its own and reports what landed to the PM; main still moves only through the gate. Keep the reason other projects depend on main (the next bullet).
@@ -17,5 +17,6 @@ CLAUDE.md's "Agent tickets" section (KOMBU-2) says every push waits for Alex's y
 - 2026-10-27 18:08 PM: quote Alex's words and date in the CLAUDE.md bullet: "Kombucha has permission to merge and push on demand" (2026-10-27). pm-brief and the worker brief defer to the project's CLAUDE.md for a public repo's push rule (forgemaster).
 - 2026-10-27 18:09 PM (Alex via forgemaster, 2026-10-27): use this wording in CLAUDE.md: "Kombucha has permission to merge and push on demand (Alex, 2026-10-27). The PM pushes; ticket workers do not push. They hand finished, gated work to the PM." Replaces the earlier note's wording.
 - 2026-10-27 18:12 PM: the worker's session blocks CLAUDE.md edits (self-modification) and the PM edits only tickets/. Put to Alex: edit it himself, or say which session may.
+- 2026-10-28 03:08 From KOMBU-15 (kombucha-worker): CLAUDE.md's seam list (line ~31, 'extends through scripts/dev/dev_hooks.gd, data/console_commands.project.json and tools/check.local.sh') should also name tools/check.local.env. Left undone: CLAUDE.md edits are blocked for the worker. Proposed: 'extends through scripts/dev/dev_hooks.gd, data/console_commands.project.json, tools/check.local.sh and tools/check.local.env, which a sync never touches.'
 
 ## Left for later

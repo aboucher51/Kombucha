@@ -1,11 +1,11 @@
 ---
 id: KOMBU-15
 title: check.sh: a project-owned boot memory budget that a sync keeps
-status: ready
+status: done
 priority: 2
-owner: 
+owner: kombucha-worker
 depends_on: []
-touches: [tools/check.sh, tools/sync-tooling.sh, tools/seeds, tools/selftest.sh, docs/godot-tooling.md]
+touches: [tools/check.sh, tools/sync-tooling.sh, tools/seeds, tools/selftest.sh, docs/godot-tooling.md, tools/check.local.env, tools/new-project.sh, tools/tooling-manifest.txt]
 batch: KOMBU-B1
 created: 2026-10-28
 updated: 2026-10-28
@@ -23,5 +23,25 @@ What to do:
 When it lands, tell the PM so mapledot-pm can be told.
 
 ## Progress
+- 2026-10-28 03:08 tools/check.local.env added: check.sh reads KEY=VALUE lines as text (no shell), caller's env wins, budget line names its source; seed in tools/seeds, sync seeds it, new-project excludes Kombucha's copy so the seed lands; selftest proves file budget, env beats file, file never runs. Touches added: tools/check.local.env (the fixture's own file), tools/new-project.sh (scaffold must exclude Kombucha's copy so a project gets the seed), tools/tooling-manifest.txt (its header lists the project seams).
+- 2026-10-28 03:17 Committed e5b9aa0 on worker/kombu-b1; full tools/check.sh --ci green on forge (143 tests). CLAUDE.md seam line left for KOMBU-12 (blocked edit). Waiting for PM to land.
+- 2026-10-28 03:18 PM pushed a6dec5c to main.
+- 2026-10-28 03:18 done on origin/main at a6dec5c
+
+## Ready to play
+No game change; this is check output. What changed: a project sets its
+boot memory budget in `tools/check.local.env`, which a sync never touches.
+The check's line now says where the number came from, as in
+`ok    boot memory 113 MB (budget 390 MB, tools/check.local.env)`.
+What the run showed: the full `tools/check.sh --ci` is green on forge, and
+the selftest's three new lines pass (file budget reported, caller's
+variable beats the file, a `$(...)` value is not run and fails by name).
+Breaking the precedence on purpose made the "caller beats the file" check
+read the wrong source, so that check can fail.
+Questions for a person:
+- Mapledot: should its ci.yml stop passing CHECK_RSS_BUDGET_KB, now that
+  the file can hold 615000?
+- Is "environment" / "default" / "tools/check.local.env" clear enough as
+  the source word in the check line?
 
 ## Left for later
