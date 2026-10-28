@@ -75,6 +75,15 @@ which check.sh runs between the boot and the scenarios with `QUICK` set;
 check.sh itself is synced over. When a project's copy of the tooling is
 behind, check.sh says so in a `note:` line — that is the cue to run
 `/sync-godot-tooling`.
+**check.sh's settings live in `tools/check.local.env`**, a file a sync
+never touches. It holds plain `KEY=VALUE` lines; check.sh reads them as
+text and never runs them, so `$HOME` stays the five letters `$HOME`. The
+first key is `CHECK_RSS_BUDGET_KB`, the boot memory budget in KB
+(default 400000): the boot check fails at or above it, and its line says
+where the budget came from (`tools/check.local.env`, `environment` or
+`default`). A variable the caller sets wins over the file, so a CI
+workflow that passes one keeps working. Before this file, one project
+raised its budget by editing check.sh, and every sync put it back.
 **`check.local.sh` may choose which scenarios check.sh renders**, for a
 push gate that renders only what a batch touches. If the file mentions
 `--scenarios`, check.sh first calls it with that argument. It prints the
@@ -631,7 +640,8 @@ Kombucha repo and listed in `tools/tooling-manifest.txt`;
 not edit them here — a `/sync-godot-tooling` run overwrites them, and an
 improvement made here is invisible to every other project. Improve them in
 Kombucha, then sync. Extend them only through `scripts/dev/dev_hooks.gd`,
-`data/console_commands.project.json` and `tools/check.local.sh`.
+`data/console_commands.project.json`, `tools/check.local.sh` and
+`tools/check.local.env`.
 
 A sync prints the headlines of the Kombucha commits it pulled (old stamp
 to new), so a note that said "blocked on the next tooling sync" can be

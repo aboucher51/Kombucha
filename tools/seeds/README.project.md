@@ -29,8 +29,9 @@ debug console and Claude Code conventions wired in from day one.
 - **Utilities** (`scripts/util/`) — `DataMerger`, `FunctionRegistry`,
   `L10n`, `BugReport`, `SaveCompat`.
 - **Your seams** — `scripts/dev/dev_hooks.gd`,
-  `data/console_commands.project.json` and `tools/check.local.sh` are
-  yours; everything `tools/tooling-manifest.txt` lists is a synced copy
+  `data/console_commands.project.json`, `tools/check.local.sh` and
+  `tools/check.local.env` (check.sh's settings, like the boot memory
+  budget) are yours; everything `tools/tooling-manifest.txt` lists is a synced copy
   that `/sync-godot-tooling` overwrites.
 - **`scenes/main.tscn`** + **`scripts/main.gd`** — a placeholder boot
   scene meant to be replaced; the pause menu, theme, UI-sound wiring and

@@ -34,6 +34,36 @@ for arg in "$@"; do
 done
 export CHECK_CI=$CI_MODE
 
+# The project's own settings for this script: tools/check.local.env, which
+# a sync never touches (the first key is CHECK_RSS_BUDGET_KB). Before it, a
+# project with a bigger boot edited this file and every sync reset it.
+# Plain KEY=VALUE lines, read as text, never run as shell: a value is used
+# as written, with no $ expansion. A variable the caller already set wins,
+# so a CI workflow that passes one keeps working.
+LOCAL_ENV_KEYS=()
+if [[ -f tools/check.local.env ]]; then
+	while IFS= read -r line || [[ -n "$line" ]]; do
+		line="${line%$'\r'}"
+		[[ "$line" =~ ^[[:space:]]*(#|$) ]] && continue
+		if [[ "$line" =~ ^[[:space:]]*([A-Za-z_][A-Za-z0-9_]*)=(.*)$ ]]; then
+			key="${BASH_REMATCH[1]}"; value="${BASH_REMATCH[2]}"
+			[[ "$value" =~ ^\"(.*)\"$ || "$value" =~ ^\'(.*)\'$ ]] && value="${BASH_REMATCH[1]}"
+			if [[ -z "${!key+set}" ]]; then
+				export "$key=$value"
+				LOCAL_ENV_KEYS+=("$key")
+			fi
+		else
+			echo "note: tools/check.local.env: skipped a line that is not KEY=VALUE: $line"
+		fi
+	done < tools/check.local.env
+fi
+# Where a setting came from, for the line that reports it.
+setting_source() { # key
+	local k
+	for k in "${LOCAL_ENV_KEYS[@]}"; do [[ "$k" == "$1" ]] && { echo "tools/check.local.env"; return; }; done
+	[[ -n "${!1+set}" ]] && echo "environment" || echo "default"
+}
+
 # Where the project lives is the single biggest cost of the whole loop:
 # through WSL's /mnt/c bridge a real project boots in ~11 s per process,
 # from the Linux filesystem in under a second (measured on a 428 MB game:
@@ -124,11 +154,15 @@ rm -f "$LOG" "$LOG.rss"
 pass_or_fail "headless boot (clean, $ERRORS engine errors)" $?
 
 # Generous headroom over what a healthy boot uses: this catches eager
-# loading, not normal growth. Raise CHECK_RSS_BUDGET_KB as the game does.
+# loading, not normal growth. Raise CHECK_RSS_BUDGET_KB as the game does,
+# in tools/check.local.env (a sync resets an edit made here).
+BUDGET_SOURCE="$(setting_source CHECK_RSS_BUDGET_KB)"
 BUDGET_KB=${CHECK_RSS_BUDGET_KB:-400000}
-if [[ $RSS_KB -gt 0 ]]; then
+if ! [[ "$BUDGET_KB" =~ ^[0-9]+$ ]]; then
+	pass_or_fail "boot memory budget CHECK_RSS_BUDGET_KB='$BUDGET_KB' ($BUDGET_SOURCE) is not a whole number of KB" 1
+elif [[ $RSS_KB -gt 0 ]]; then
 	[[ $RSS_KB -lt $BUDGET_KB ]]
-	pass_or_fail "boot memory $(( RSS_KB / 1024 )) MB (budget $(( BUDGET_KB / 1024 )) MB)" $?
+	pass_or_fail "boot memory $(( RSS_KB / 1024 )) MB (budget $(( BUDGET_KB / 1024 )) MB, $BUDGET_SOURCE)" $?
 else
 	printf '  --    boot memory (no /usr/bin/time here to measure it)\n'
 fi

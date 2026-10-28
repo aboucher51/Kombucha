@@ -26,7 +26,8 @@
 # Run from Kombucha (this script's own repo: a clone, or the installed
 # plugin), or from anywhere via the /sync-godot-tooling skill. Drift in an owned file means the project edited
 # tooling in place: back the change up to Kombucha first (or move it into
-# dev_hooks.gd / check.local.sh), because the sync overwrites it.
+# dev_hooks.gd / check.local.sh / check.local.env), because the sync
+# overwrites it.
 set -uo pipefail
 GODOT="${GODOT:-godot4}"
 SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -222,6 +223,7 @@ seed() { # seed-file, destination
 seed dev_hooks.gd scripts/dev/dev_hooks.gd
 seed console_commands.project.json data/console_commands.project.json
 seed check.local.sh tools/check.local.sh
+seed check.local.env tools/check.local.env
 
 # The tooling rules are one owned text (docs/godot-tooling.md) that a
 # project's CLAUDE.md imports; without the import line the project reads

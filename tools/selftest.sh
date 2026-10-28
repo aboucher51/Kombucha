@@ -21,6 +21,8 @@
 #      freed lambda capture) turns the boot gate and the scenario gate
 #      red — 738 of them once sat under an all-green check; check.sh
 #      renders only the scenarios `check.local.sh --scenarios` chooses;
+#      check.sh takes its boot memory budget from tools/check.local.env,
+#      the caller's variable beats it, and the file is never run;
 #   5. a release-flavoured run cannot open the debug console.
 set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -286,6 +288,39 @@ fi
 mv "$SCRATCH/shoot.bak" "$SCRATCH/tools/shoot.sh"
 printf '#!/usr/bin/env bash\nexit 0\n' > "$SCRATCH/tools/check.local.sh"
 
+# The boot memory budget is the project's, in tools/check.local.env, which
+# a sync never touches: a project with a bigger boot used to edit check.sh
+# and every sync reset it. The caller's variable still wins (CI passes
+# one), and the file is read as text, never run.
+budget_run() { # file body, then env assignments; sets OUT
+	printf '%s\n' "$1" > "$SCRATCH/tools/check.local.env"
+	OUT="$(cd "$SCRATCH" && env -u CHECK_RSS_BUDGET_KB "${@:2}" tools/check.sh --quick 2>&1)"
+}
+if [[ -x /usr/bin/time ]]; then
+	budget_run 'CHECK_RSS_BUDGET_KB=123456'
+	if grep -q 'budget 120 MB, tools/check.local.env)' <<<"$OUT"; then
+		say ok "check.sh reports the budget from tools/check.local.env"
+	else
+		say FAIL "the budget in tools/check.local.env was not the one reported: $(grep 'boot memory' <<<"$OUT")"; FAILED=1
+	fi
+	budget_run 'CHECK_RSS_BUDGET_KB=123456' CHECK_RSS_BUDGET_KB=234567
+	if grep -q 'budget 229 MB, environment)' <<<"$OUT"; then
+		say ok "a CHECK_RSS_BUDGET_KB the caller set beats the file"
+	else
+		say FAIL "the caller's CHECK_RSS_BUDGET_KB did not beat the file: $(grep 'boot memory' <<<"$OUT")"; FAILED=1
+	fi
+	rm -f "$SCRATCH/ran-it"
+	budget_run 'CHECK_RSS_BUDGET_KB=$(touch ran-it)'
+	if [[ ! -e "$SCRATCH/ran-it" ]] && grep -q 'FAIL  boot memory budget .* is not a whole number' <<<"$OUT"; then
+		say ok "tools/check.local.env is read as text, and a bad budget fails by name"
+	else
+		say FAIL "tools/check.local.env ran a command or took a bad budget"; FAILED=1
+	fi
+else
+	say -- "the boot memory budget from tools/check.local.env (no /usr/bin/time here)"
+fi
+cp "$ROOT/tools/check.local.env" "$SCRATCH/tools/check.local.env"
+
 # 3. The sync script. A scratch SOURCE (the working tree committed into a
 #    fresh repo, so the script under test is this one and HEAD is known)
 #    and a scratch PROJECT (a copy with one owned file edited, the stamp
@@ -297,7 +332,7 @@ rsync -a --exclude '.git' --exclude '.godot' --exclude 'shots/*.png' "$ROOT/" "$
 git -C "$SRC2" init -q -b main && git -C "$SRC2" -c user.name=selftest -c user.email=selftest@example.invalid add -A >/dev/null \
 	&& git -C "$SRC2" -c user.name=selftest -c user.email=selftest@example.invalid commit -qm scratch
 rsync -a --exclude '.git' --exclude '.godot' "$SRC2/" "$DEST2/"
-rm -f "$DEST2/tools/TOOLING_VERSION" "$DEST2/tools/check.local.sh" "$DEST2/scripts/dev/dev_hooks.gd" "$DEST2/data/console_commands.project.json"
+rm -f "$DEST2/tools/TOOLING_VERSION" "$DEST2/tools/check.local.sh" "$DEST2/tools/check.local.env" "$DEST2/scripts/dev/dev_hooks.gd" "$DEST2/data/console_commands.project.json"
 printf '\n# a project-local edit that a sync must report\nPROJECT_EDIT=1\n' >> "$DEST2/tools/check.sh"
 chmod -x "$DEST2/tools/test.sh"
 printf '# a project\n' > "$DEST2/CLAUDE.md"
@@ -310,7 +345,7 @@ fi
 OUT="$(GODOT_TEMPLATE=/nonexistent "$SRC2/tools/sync-tooling.sh" "$DEST2" --no-check 2>&1)"; CODE=$?
 HEAD2="$(git -C "$SRC2" rev-parse HEAD)"
 if [[ $CODE -eq 0 && "$(head -1 "$DEST2/tools/TOOLING_VERSION")" == "$HEAD2" && -f "$DEST2/tools/check.local.sh" \
-		&& -f "$DEST2/scripts/dev/dev_hooks.gd" && -x "$DEST2/tools/test.sh" ]] \
+		&& -f "$DEST2/tools/check.local.env" && -f "$DEST2/scripts/dev/dev_hooks.gd" && -x "$DEST2/tools/test.sh" ]] \
 		&& ! grep -q PROJECT_EDIT "$DEST2/tools/check.sh" && grep -q 'does not import' <<<"$OUT"; then
 	say ok "sync stamps HEAD, seeds, sets +x, overwrites drift, notes the missing import"
 else
@@ -327,7 +362,10 @@ fi
 DEST3="$(mktemp -d)/Scaffolded"
 trap 'rm -rf "$SCRATCH" "$STUB" "$SRC2" "$DEST2" "$(dirname "$DEST3")"' EXIT
 OUT="$("$SRC2/tools/new-project.sh" "$DEST3" "Self Test" --no-check 2>&1)"; CODE=$?
+# The project gets the seed, not the fixture's own settings file.
+SEEDED_ENV=0; cmp -s "$DEST3/tools/check.local.env" "$SRC2/tools/seeds/check.local.env" && SEEDED_ENV=1
 if [[ $CODE -eq 0 && -f "$DEST3/tools/TOOLING_VERSION" && -f "$DEST3/scripts/dev/dev_hooks.gd" \
+		&& $SEEDED_ENV -eq 1 \
 		&& ! -e "$DEST3/skills" && ! -e "$DEST3/.claude-plugin" && ! -e "$DEST3/tools/selftest.sh" \
 		&& ! -e "$DEST3/tests/test_dev_hooks.gd" && ! -e "$DEST3/scenarios/hooks.txt" \
 		&& ! -e "$DEST3/docs/roadmap.md" && ! -e "$DEST3/docs/feedback" ]] \

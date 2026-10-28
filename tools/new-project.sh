@@ -86,6 +86,7 @@ cat > "$EXCLUDES" <<'EOF'
 /scripts/dev/dev_hooks.gd.uid
 /data/console_commands.project.json
 /tools/check.local.sh
+/tools/check.local.env
 EOF
 
 mkdir -p "$DEST"
