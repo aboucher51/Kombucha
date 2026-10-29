@@ -8,18 +8,18 @@ debug console and Claude Code conventions wired in from day one.
 
 - **`CLAUDE.md`** — the working contract for Claude Code: every convention
   with what breaks without it. Add this project's own rules to it as they
-  earn their place. It imports `docs/godot-tooling.md`, the tooling's
-  rules, which `/sync-godot-tooling` keeps current.
+  earn their place. `CLAUDE.md` imports `docs/godot-tooling.md`, the
+  tooling's rules, which `/sync-godot-tooling` keeps current.
 - **`tools/check.sh`** — tests + headless boot (with a memory budget) +
   your local checks + every scenario, in one command. `--quick` skips the
-  scenarios (no display needed). Green is the bar for a commit.
+  scenarios (no display needed). Get it green before every commit.
 - **`tools/test.sh`** — GUT suite (vendored in `addons/gut`, tests in
   `tests/`), headless, across parallel shards.
 - **`tools/shoot.sh`** / **`tools/serve.sh`** — the screenshot harness.
   Plain-text scenarios in `scenarios/` drive the game and capture PNGs
   into `shots/`; see `scenarios/example.txt`.
 - **`tools/export.sh`** — release builds for every preset in
-  `export_presets.cfg`, smoke-tested; CI runs it on `v*` tags.
+  `export_presets.cfg`, smoke-tested. CI runs it on `v*` tags.
 - **Autoloads** — `EventBus`, `SaveManager` (redirectable paths, so tests
   never touch real saves), `Keybinds` (conflict-group rebinding),
   `AudioManager`, `GameManager`, `Pads` (one router for controllers), and
@@ -31,10 +31,10 @@ debug console and Claude Code conventions wired in from day one.
 - **Your seams** — `scripts/dev/dev_hooks.gd`,
   `data/console_commands.project.json`, `tools/check.local.sh` and
   `tools/check.local.env` (check.sh's settings, like the boot memory
-  budget) are yours; everything `tools/tooling-manifest.txt` lists is a synced copy
-  that `/sync-godot-tooling` overwrites.
+  budget) are yours. Everything `tools/tooling-manifest.txt` lists is a
+  synced copy that `/sync-godot-tooling` overwrites.
 - **`scenes/main.tscn`** + **`scripts/main.gd`** — a placeholder boot
-  scene meant to be replaced; the pause menu, theme, UI-sound wiring and
+  scene for you to replace. The pause menu, theme, UI-sound wiring and
   harness seams (`state_text`, `is_busy`) in it are working examples.
-- **`LICENSES.md`** — third-party ledger; every third-party addition gets
+- **`LICENSES.md`** — third-party ledger. Give every third-party addition
   a row in the same commit.
