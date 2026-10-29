@@ -104,7 +104,7 @@ version in `.claude-plugin/plugin.json` and `marketplace.json`.
   baselines with masks, `frame_budget`, and state readback (`state`,
   `assert key value`) from any node that opts in.
 - **Runs on a display Claude can find or start**: WSLg with GPU
-  rendering where offered, Xvfb in CI. The harness deals scenarios across
+  rendering where offered, Xvfb in CI. `shoot.sh` deals scenarios across
   processes, each one sandboxed (saves, settings, keybinds, cursor, locale reset) and
   returned to the boot scene.
 - **Serve mode**: one engine kept alive, answering scenario files and
