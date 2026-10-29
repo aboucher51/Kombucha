@@ -530,8 +530,8 @@ Rules that keep the harness useful:
   quiet box. One project had four scenarios that went red only under
   parallel checks (a `wait 30` met three record rows instead of two).
 - The watched value must pass THROUGH the target (rows that grow one at a
-  time) or HOLD it (a button that stays visible). A value that can jump past
-  the target may never equal it on a frame the harness checks. Such a value
+  time) or HOLD it (a button that stays visible). If a value can jump past
+  the target, the harness never sees it equal to the target. Such a value
   wants a different assert.
 - **A name shared by two VISIBLE nodes is an ERROR, not a coin toss.**
   Every lookup refuses an ambiguous name. Assert on a uniquely named node
@@ -592,9 +592,10 @@ Rules that keep the harness useful:
   its own cursor. On the real display, the developer and every other shard
   share the one cursor.
 
-- **When you add UI, add the input-free seam alongside it.** No test,
-  scenario or screenshot can reach an interaction that only an InputEvent
-  reaches. Such an interaction is effectively untestable.
+- **When you add UI, add the input-free seam alongside it.** If only an
+  InputEvent can reach an interaction, no screenshot can capture it, no
+  scenario can script it, and no test can assert on it. Such an interaction
+  is effectively untestable.
 - Give run-time-built controls a stable `name`. Nothing can click or find an
   auto-named `@Button@3`.
 - Put `assert_onscreen` after anything that places objects. An object
