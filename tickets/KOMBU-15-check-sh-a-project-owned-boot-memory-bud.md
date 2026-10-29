@@ -8,7 +8,7 @@ depends_on: []
 touches: [tools/check.sh, tools/sync-tooling.sh, tools/seeds, tools/selftest.sh, docs/godot-tooling.md, tools/check.local.env, tools/new-project.sh, tools/tooling-manifest.txt]
 batch: KOMBU-B1
 created: 2026-10-28
-updated: 2026-10-28
+updated: 2026-10-29
 ---
 
 Let a project set its own boot memory budget in a file a sync never touches, so a sync stops resetting it.
@@ -27,6 +27,7 @@ When it lands, tell the PM so mapledot-pm can be told.
 - 2026-10-28 03:17 Committed e5b9aa0 on worker/kombu-b1; full tools/check.sh --ci green on forge (143 tests). CLAUDE.md seam line left for KOMBU-12 (blocked edit). Waiting for PM to land.
 - 2026-10-28 03:18 PM pushed a6dec5c to main.
 - 2026-10-28 03:18 done on origin/main at a6dec5c
+- 2026-10-29 07:33 CLAUDE.md seam line landed in 431b68d (TextCleaner).
 
 ## Ready to play
 No game change; this is check output. What changed: a project sets its

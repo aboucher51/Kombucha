@@ -1,7 +1,7 @@
 ---
 id: KOMBU-12
 title: CLAUDE.md: pushes no longer wait for Alex's yes
-status: waiting-on-user
+status: done
 priority: 3
 owner: 
 depends_on: []
@@ -19,5 +19,7 @@ CLAUDE.md's "Agent tickets" section (KOMBU-2) says every push waits for Alex's y
 - 2026-10-27 18:12 PM: the worker's session blocks CLAUDE.md edits (self-modification) and the PM edits only tickets/. Put to Alex: edit it himself, or say which session may.
 - 2026-10-28 03:08 From KOMBU-15 (kombucha-worker): CLAUDE.md's seam list (line ~31, 'extends through scripts/dev/dev_hooks.gd, data/console_commands.project.json and tools/check.local.sh') should also name tools/check.local.env. Left undone: CLAUDE.md edits are blocked for the worker. Proposed: 'extends through scripts/dev/dev_hooks.gd, data/console_commands.project.json, tools/check.local.sh and tools/check.local.env, which a sync never touches.'
 - 2026-10-29 06:57 Alex 2026-10-29: TextCleaner (rig session running the docs cleanup) makes both CLAUDE.md edits (this one + KOMBU-15's seam line) and pushes them. Sent it the wording.
+- 2026-10-29 07:33 TextCleaner pushed 431b68d (CLAUDE.md push rule + KOMBU-15 seam line); PM checked the diff.
+- 2026-10-29 07:33 done on main at 431b68d
 
 ## Left for later
