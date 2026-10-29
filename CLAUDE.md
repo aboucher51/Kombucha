@@ -35,8 +35,11 @@ Rules that follow from that:
   refreshes them and stamps `tools/TOOLING_VERSION`. A project never
   edits an owned file. It extends the tooling through
   `scripts/dev/dev_hooks.gd`, `data/console_commands.project.json`
-  and `tools/check.local.sh`, which a sync never touches. Seeds for those
-  live in `tools/seeds/`. Before this split, nine projects each carried a
+  and `tools/check.local.sh`, which a sync never touches. It also extends
+  it through `tools/check.local.env`, the project's own settings for
+  `check.sh`, starting with `CHECK_RSS_BUDGET_KB` (the most memory, in KB,
+  the game may use when it boots). A sync seeds that file once and never
+  touches it again. Seeds for those live in `tools/seeds/`. Before this split, nine projects each carried a
   diverged harness, and projects fixed the same bug four separate times.
 - **This repo is also the scaffold.** `tools/new-project.sh` copies the
   fixture minus Kombucha-only paths. It also strips the sections fenced
@@ -67,12 +70,12 @@ file does not copy it.
   full run there took about 70 seconds (measured 2026-10-25, with another
   project's heavy run on the machine). So there is no smaller gate and no
   separate sweep. Without a named gate, a worker guesses which check
-  counts and may push on the quick one, which renders nothing.
-- **Every push waits for Alex's yes.** This repo is public. The worker
-  stops before `git push` and sends the PM the branch, the commit list,
-  the diffstat and the check result. The worker pushes only after the PM
-  passes on Alex's yes. Nobody can take a push back once someone has
-  seen it.
+  counts and may hand over work that passed only the quick one, which
+  renders nothing.
+- **Kombucha has permission to merge and push on demand (Alex, 2026-10-27).**
+  The PM pushes; ticket workers do not push. They hand finished, gated
+  work to the PM. Before that date, every push to this public repo waited
+  for Alex's yes, and that held up tooling other projects were waiting on.
 - **Change main only through the gate.** Other projects pull this
   checkout before `/sync-godot-tooling`. So a broken main spreads into
   every project that syncs that day.
