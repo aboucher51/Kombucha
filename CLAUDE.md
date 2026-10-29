@@ -1,8 +1,7 @@
 # CLAUDE.md
 
-> **How to write in this file:** Load the `writing-instructions` skill before you add or change a rule.
-> Write each rule as a plain sentence that says who does what. Give orders to "you".
-> Do not copy the bold slogans or semicolon chains you may find below.
+> **How to write in this file:** Write each rule as a plain sentence that says who does what. Give orders to "you".
+> Keep every code name, in backticks. Do not copy any bold slogans or semicolon chains you find below.
 
 <!-- kombucha-only -->
 ## What this repo is
@@ -46,7 +45,7 @@ Rules that follow from that:
   kit in a game, bring it back here with `/update-kombucha`. Projects
   cherry-pick kit files (`sync-tooling.sh --kit` says what is newer).
 - **Lessons move both ways between Kombucha and its projects.** Put findings in `docs/research/`. A rule
-  earns a place below only as *the rule plus what breaks without it*,
+  earns a place below as *the rule plus what breaks without it*,
   and every new project inherits it. Read `docs/roadmap.md` for the
   current order.
 - A project sends its own reports under `docs/feedback/<project>/` on a
@@ -388,7 +387,7 @@ Two projects found several of them on their own.
   game, and nothing asserted it. Ask in `open()`, when the answer is
   knowable.
 - **Connect autoload signals to a method, not a lambda.** Godot drops a
-  connection when it frees the bound object, but a lambda is bound to
+  connection after your code frees the bound object, but a lambda is bound to
   nothing. It merely captures `self`. A scene node's lambda connected to an
   autoload signal outlives the scene and fails on the next emit with
   "Lambda capture at index 0 was freed". Connect a METHOD and disconnect
@@ -440,7 +439,7 @@ whenever you make a judgment call that the code alone would not explain.
 
 - Binding a key already taken in the same conflict group is *refused*, not
   stolen (`test_conflict_within_group_is_refused_not_stolen`).
-- Bus volume 0 means *muted*. AudioManager must never store `-inf` dB
+- Bus volume 0 means *muted*. No code may store `-inf` dB
   (`test_zero_is_mute_not_negative_infinity`).
 - A missing UI sound, translation, or asset is silence/fallback, never an
   error (`test_ui_event_with_no_sound_is_silence`).
