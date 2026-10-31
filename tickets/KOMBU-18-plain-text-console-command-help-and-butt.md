@@ -1,10 +1,9 @@
 ---
 id: KOMBU-18
 title: Plain text: console command help and button tips
-status: claimed
+status: done
 priority: 3
 owner: kombucha-worker
-pid: 2496951
 depends_on: []
 touches: [data/console_commands.json, data/console_commands.project.json, tools/seeds/console_commands.project.json, tests/test_debug_console.gd, docs/feedback/README.md]
 batch: KOMBU-B2
@@ -44,5 +43,9 @@ If you are unsure whether something reads a line, leave the line as it is and li
 - 2026-10-31 21:24 PM, from TextCleaner: before the push, also run one synced project's quick check against this change. Clone a project into scratch (like git clone ~/godot-projects/Mapledot <scratch>). Never sync into a live project tree. Sync it from your worktree with tools/sync-tooling.sh, import it, then run its tools/check.sh --quick under a heavy slot. tools/check.sh --ci already runs the self-test here. Put both results in your report.
 - 2026-10-31 22:46 claimed with KOMBU-B2; worktree ../Kombucha-wt-b2 on branch kombu-b2-text
 - 2026-10-31 22:46 PM, from TextCleaner's review of KOMBU-17: in docs/feedback/README.md, change "how you misread it at first" to "how it was first misread". A report can describe someone else's misreading, like Alex's or a worker's. Added the file to touches.
+- 2026-10-31 22:58 edits committed. Passive before->after: data/console_commands.json 0->0 (646->655 words), data/console_commands.project.json 0->0 (182->183), docs/feedback/README.md 1->1. tools/seeds/console_commands.project.json is [] and needed nothing. Changed: help, volume, state, console_release descriptions; seed and goto usage notes. test_debug_console.gd's volume check now looks for 'Set the volume of one sound bus'. Kept 'the fixture's own row', which the test checks. No other project's tests or scenarios check these strings (grep of ~/godot-projects).
+- 2026-10-31 23:08 gate green: tools/check.sh --ci on f2bac4b (146 tests, all scenarios). Synced-project check: I cloned Mapledot to scratch, synced it from the worktree, imported it, and ran check.sh --quick. 1779 tests pass, and the boot passes. One item is red: project map stale. The clone's map was fresh before the sync. The sync copied the KOMBU-17 seed .gd files, whose line counts the map stores. Filed KOMBU-23.
+- 2026-10-31 23:09 done on main at f2bac4b
 
 ## Left for later
+- [[KOMBU-23]] a sync does not regenerate the project map, so a synced project's check goes red after any change to a synced .gd file
