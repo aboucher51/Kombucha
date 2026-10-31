@@ -5,7 +5,7 @@ status: ready
 priority: 3
 owner: 
 depends_on: []
-touches: [localization/game.csv, localization/game.en.translation, localization/game.xa.translation]
+touches: [localization/game.csv, localization/game.en.translation, localization/game.xa.translation, scripts/ui/volume_sliders.gd, scripts/ui/pause_menu.gd]
 batch: KOMBU-B2
 created: 2026-10-31
 updated: 2026-10-31
@@ -33,5 +33,6 @@ Load `writing-ui-labels-and-tooltips`.
 - The gate is `tools/check.sh --ci`, green.
 
 ## Progress
+- 2026-10-31 22:13 PM: Swarm already made this change in SWARM-12. Match its wording, so the kit and Swarm agree: ui.bus_master is "All sound", ui.bus_sfx is "Sound effects", and ui.resume_hint is "Close this menu and keep playing". Change the English fallbacks in code too: scripts/ui/pause_menu.gd line 62 (ui.resume_hint), and scripts/ui/volume_sliders.gd line 17, which falls back to the raw bus name ("Master", "SFX"). Give volume_sliders.gd plain fallback names for each bus (SWARM-16 asks for this). Keep the bus names themselves and the slider node names (MasterSlider, SFXSlider).
 
 ## Left for later

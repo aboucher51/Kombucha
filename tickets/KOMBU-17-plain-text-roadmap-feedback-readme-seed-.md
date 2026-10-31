@@ -1,11 +1,12 @@
 ---
 id: KOMBU-17
 title: Plain text: roadmap, feedback README, seed comments
-status: ready
+status: claimed
 priority: 3
-owner: 
+owner: kombucha-worker
+pid: 2496951
 depends_on: []
-touches: [docs/roadmap.md, docs/feedback/README.md, tools/seeds/check.local.sh, tools/seeds/check.local.env, tools/seeds/dev_hooks.gd, tools/seeds/dev_driver.gd]
+touches: [.godot-map/graph.json, docs/roadmap.md, docs/feedback/README.md, tools/seeds/check.local.sh, tools/seeds/check.local.env, tools/seeds/dev_hooks.gd, tools/seeds/dev_driver.gd]
 created: 2026-10-31
 updated: 2026-10-31
 ---
@@ -32,5 +33,9 @@ Load `writing-instructions` for all of these files.
 - The gate is `tools/check.sh --ci`, green.
 
 ## Progress
+- 2026-10-31 21:35 claimed; worktree ../Kombucha-wt-kombu17 on branch kombu-17-text
+- 2026-10-31 21:37 edits done and committed. Passive before->after (readability.py): roadmap.md 12->9 (the Landed sections are unchanged), feedback/README.md 1->1, check.local.sh 2->0, check.local.env 0->0, dev_hooks.gd 2->0, dev_driver.gd 2->0. Words: roadmap 1589->1637, README 448->470, check.local.sh 385->392, check.local.env 83->91, dev_hooks 662->711, dev_driver 268->273.
+- 2026-10-31 21:42 first gate red on one item: project map stale. The map stores each script's line count, and the seed comments changed two seeds' lengths. Added .godot-map/graph.json to touches and regenerated it.
 
 ## Left for later
+- [[KOMBU-22]] the roadmap's Next list has out-of-date facts (item 2 landed, Template retired)
