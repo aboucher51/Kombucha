@@ -34,5 +34,6 @@ Load `writing-ui-labels-and-tooltips`.
 
 ## Progress
 - 2026-10-31 22:13 PM: Swarm already made this change in SWARM-12. Match its wording, so the kit and Swarm agree: ui.bus_master is "All sound", ui.bus_sfx is "Sound effects", and ui.resume_hint is "Close this menu and keep playing". Change the English fallbacks in code too: scripts/ui/pause_menu.gd line 62 (ui.resume_hint), and scripts/ui/volume_sliders.gd line 17, which falls back to the raw bus name ("Master", "SFX"). Give volume_sliders.gd plain fallback names for each bus (SWARM-16 asks for this). Keep the bus names themselves and the slider node names (MasterSlider, SFXSlider).
+- 2026-10-31 22:14 PM: SWARM-16 waits on this ticket. When it lands, the PM tells swarm-pm, so Swarm can copy volume_sliders.gd from Kombucha.
 
 ## Left for later
