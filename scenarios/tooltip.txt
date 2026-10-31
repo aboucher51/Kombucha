@@ -3,7 +3,7 @@
 wait 5
 press pause
 hover ResumeButton
-assert_tooltip ResumeButton Resume the game
+assert_tooltip ResumeButton Close this menu and keep playing
 expect_fail assert_tooltip ResumeButton Nope
 expect_fail assert_tooltip QuitButton Quit
 expect_fail hover Nowhere

@@ -59,7 +59,7 @@ func _ready() -> void:
 	var resume := Button.new()
 	resume.name = "ResumeButton"
 	resume.text = L10n.tr_or_fallback("ui.resume", "Resume")
-	resume.tooltip_text = L10n.tr_or_fallback("ui.resume_hint", "Resume the game")
+	resume.tooltip_text = L10n.tr_or_fallback("ui.resume_hint", "Close this menu and keep playing")
 	resume.pressed.connect(close)
 	AudioManager.bind_button(resume)
 	box.add_child(resume)

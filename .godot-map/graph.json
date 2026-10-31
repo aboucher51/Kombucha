@@ -851,7 +851,7 @@
    "node_paths": [],
    "groups_joined": [],
    "groups_queried": [],
-   "lines": 33
+   "lines": 46
   },
   "res://scripts/util/bbcode.gd": {
    "path": "res://scripts/util/bbcode.gd",
@@ -1676,6 +1676,28 @@
    "groups_queried": [],
    "lines": 88
   },
+  "res://tests/test_volume_sliders.gd": {
+   "path": "res://tests/test_volume_sliders.gd",
+   "lang": "gdscript",
+   "class_name": null,
+   "global": true,
+   "extends": "GutTest",
+   "tool": false,
+   "loads": [],
+   "refs": [],
+   "signals": [],
+   "funcs": [
+    "test_every_bus_has_a_plain_fallback_label",
+    "test_the_english_rows_match_the_fallbacks",
+    "test_every_slider_starts_at_the_same_x"
+   ],
+   "emits": [],
+   "connects": [],
+   "node_paths": [],
+   "groups_joined": [],
+   "groups_queried": [],
+   "lines": 36
+  },
   "res://tools/seeds/dev_driver.gd": {
    "path": "res://tools/seeds/dev_driver.gd",
    "lang": "gdscript",
@@ -1871,7 +1893,8 @@
    "res://scripts/ui/volume_sliders.gd",
    "res://tests/test_audio_manager.gd",
    "res://tests/test_debug_console.gd",
-   "res://tests/test_localization.gd"
+   "res://tests/test_localization.gd",
+   "res://tests/test_volume_sliders.gd"
   ],
   "res://scripts/autoloads/event_bus.gd": [
    "autoload:EventBus",
@@ -1973,7 +1996,8 @@
   ],
   "res://scripts/ui/volume_sliders.gd": [
    "res://scripts/ui/pause_menu.gd",
-   "res://tests/test_localization.gd"
+   "res://tests/test_localization.gd",
+   "res://tests/test_volume_sliders.gd"
   ],
   "res://scripts/util/bbcode.gd": [
    "res://tests/test_kit_utils.gd",
@@ -2012,7 +2036,8 @@
    "res://scripts/ui/pause_menu.gd",
    "res://scripts/ui/volume_sliders.gd",
    "res://tests/test_l10n.gd",
-   "res://tests/test_localization.gd"
+   "res://tests/test_localization.gd",
+   "res://tests/test_volume_sliders.gd"
   ],
   "res://scripts/util/pad_router.gd": [
    "res://scripts/autoloads/pads.gd",
