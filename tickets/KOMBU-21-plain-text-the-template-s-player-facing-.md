@@ -1,9 +1,10 @@
 ---
 id: KOMBU-21
 title: Plain text: the template's player-facing strings
-status: ready
+status: claimed
 priority: 3
-owner: 
+owner: kombucha-worker
+pid: 2496951
 depends_on: []
 touches: [localization/game.csv, localization/game.en.translation, localization/game.xa.translation, scripts/ui/volume_sliders.gd, scripts/ui/pause_menu.gd]
 batch: KOMBU-B2

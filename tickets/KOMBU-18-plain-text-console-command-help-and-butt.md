@@ -1,11 +1,12 @@
 ---
 id: KOMBU-18
 title: Plain text: console command help and button tips
-status: ready
+status: claimed
 priority: 3
-owner: 
+owner: kombucha-worker
+pid: 2496951
 depends_on: []
-touches: [data/console_commands.json, data/console_commands.project.json, tools/seeds/console_commands.project.json, tests/test_debug_console.gd]
+touches: [data/console_commands.json, data/console_commands.project.json, tools/seeds/console_commands.project.json, tests/test_debug_console.gd, docs/feedback/README.md]
 batch: KOMBU-B2
 created: 2026-10-31
 updated: 2026-10-31
@@ -41,5 +42,7 @@ If you are unsure whether something reads a line, leave the line as it is and li
 
 ## Progress
 - 2026-10-31 21:24 PM, from TextCleaner: before the push, also run one synced project's quick check against this change. Clone a project into scratch (like git clone ~/godot-projects/Mapledot <scratch>). Never sync into a live project tree. Sync it from your worktree with tools/sync-tooling.sh, import it, then run its tools/check.sh --quick under a heavy slot. tools/check.sh --ci already runs the self-test here. Put both results in your report.
+- 2026-10-31 22:46 claimed with KOMBU-B2; worktree ../Kombucha-wt-b2 on branch kombu-b2-text
+- 2026-10-31 22:46 PM, from TextCleaner's review of KOMBU-17: in docs/feedback/README.md, change "how you misread it at first" to "how it was first misread". A report can describe someone else's misreading, like Alex's or a worker's. Added the file to touches.
 
 ## Left for later
