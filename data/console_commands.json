@@ -6,7 +6,7 @@
 			"?"
 		],
 		"usage": "help [command]",
-		"description": "Show the commands; help <command> shows how to type one.",
+		"description": "List every command. help <command> shows how to type one.",
 		"args": [
 			{
 				"name": "command",
@@ -77,7 +77,7 @@
 		"id": "volume",
 		"handler": "volume",
 		"usage": "volume <bus> <0-100>",
-		"description": "Set a sound bus's volume.",
+		"description": "Set the volume of one sound bus: Master, Music or SFX.",
 		"args": [
 			{
 				"name": "bus",
@@ -192,7 +192,7 @@
 		"id": "state",
 		"handler": "state",
 		"usage": "state",
-		"description": "Print the state every state provider reports."
+		"description": "Print the state that each node in the state group reports."
 	},
 	{
 		"id": "assert",
@@ -256,7 +256,7 @@
 		"id": "console_release",
 		"handler": "console_release",
 		"usage": "console_release <on|off>",
-		"description": "Make the console act as in a player build, where it cannot open (for tests).",
+		"description": "Make the console act like a player build, where it cannot open (for tests).",
 		"args": [
 			{
 				"name": "on",

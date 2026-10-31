@@ -226,7 +226,7 @@ func test_the_first_word_suggests_commands_with_usage_and_description() -> void:
 	var got := DebugConsole.suggest("vol")
 	assert_eq(str(got["items"][0]["insert"]), "volume ")
 	assert_string_contains(str(got["items"][0]["text"]), "volume <bus> <0-100>")
-	assert_string_contains(str(got["items"][0]["text"]), "Set a sound bus", "the description rides the row")
+	assert_string_contains(str(got["items"][0]["text"]), "Set the volume of one sound bus", "the description rides the row")
 	var inside := DebugConsole.suggest("ave")
 	var inserts: Array = []
 	for row: Dictionary in inside["items"]:

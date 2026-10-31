@@ -23,7 +23,7 @@ git add docs/feedback && git commit -m "Feedback from <Project>: <one line>"
 
 Write each numbered finding from the project's side only:
 
-1. **What happened.** Give the symptom, how you misread it at first, and
+1. **What happened.** Give the symptom, how it was first misread, and
    how long it cost.
 2. **What broke without it.** Give the rule the project had to learn.
 3. **What the project wants.** Describe the change as behaviour. Name the
