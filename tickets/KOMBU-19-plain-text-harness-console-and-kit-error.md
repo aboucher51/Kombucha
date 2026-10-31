@@ -49,5 +49,6 @@ If you are unsure whether something reads a line, leave the line as it is and li
 - The gate is `tools/check.sh --ci`, green.
 
 ## Progress
+- 2026-10-31 21:24 PM, from TextCleaner: before the push, also run one synced project's quick check against this change. Clone a project into scratch (like git clone ~/godot-projects/Mapledot <scratch>). Never sync into a live project tree. Sync it from your worktree with tools/sync-tooling.sh, import it, then run its tools/check.sh --quick under a heavy slot. tools/check.sh --ci already runs the self-test here. Put both results in your report.
 
 ## Left for later
