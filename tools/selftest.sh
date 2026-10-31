@@ -401,6 +401,25 @@ if "$SRC2/tools/sync-tooling.sh" "$DEST2" --no-check >/dev/null 2>&1; then
 else
 	say ok "sync refuses a dirty source"
 fi
+# 3c. A git worktree of the source is a git checkout too. Its .git is a
+#     file, and a folder-only test took it for a plugin install: the sync
+#     stamped "plugin-<version>" and skipped the dirty-source refusal
+#     (KOMBU-24). Every ticket worker syncs from a worktree.
+WT2="$(mktemp -d)/wt"
+trap 'rm -rf "$SCRATCH" "$STUB" "$SRC2" "$DEST2" "$(dirname "$DEST3")" "$(dirname "$WT2")"' EXIT
+git -C "$SRC2" worktree add -q --detach "$WT2" HEAD
+OUT="$(GODOT_TEMPLATE=/nonexistent "$WT2/tools/sync-tooling.sh" "$DEST2" --no-check 2>&1)"; CODE=$?
+if [[ $CODE -eq 0 && "$(head -1 "$DEST2/tools/TOOLING_VERSION")" == "$(git -C "$WT2" rev-parse HEAD)" ]]; then
+	say ok "a sync from a git worktree stamps the worktree's commit"
+else
+	say FAIL "a sync from a git worktree stamped '$(head -1 "$DEST2/tools/TOOLING_VERSION" 2>/dev/null)' (exit $CODE)"; FAILED=1
+fi
+echo "# dirty" >> "$WT2/tools/shoot.sh"
+if GODOT_TEMPLATE=/nonexistent "$WT2/tools/sync-tooling.sh" "$DEST2" --no-check >/dev/null 2>&1; then
+	say FAIL "sync accepted a worktree with uncommitted owned changes"; FAILED=1
+else
+	say ok "sync refuses a dirty worktree"
+fi
 # 4. An installed plugin is the source without .git: the stamp must be
 #    the sha Claude Code recorded for that install, never "unknown".
 rm -rf "$SRC2/.git"

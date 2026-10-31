@@ -47,6 +47,16 @@ if [[ -z "$DEST" || ! -f "$DEST/project.godot" ]]; then
 	exit 2
 fi
 TEMPLATE="${GODOT_TEMPLATE:-$HOME/godot-projects/Template}"
+
+# has_git says whether a folder is the top of a git checkout. In a git
+# worktree, .git is a file that points at the main checkout, so test that
+# .git exists, not that it is a folder. A folder-only test took every
+# worker's worktree for a plugin install: the sync stamped
+# "plugin-<version>" and skipped the dirty-source refusal. Do not use
+# `git rev-parse` here, because an installed plugin inside another repo
+# (a tracked ~/.claude) would pass it.
+has_git() { [[ -e "$1/.git" ]]; }
+
 DEST="$(cd "$DEST" && pwd)"
 if [[ "$DEST" == "$SRC" ]]; then
 	echo "sync-tooling: '$DEST' is the source; nothing to sync" >&2
@@ -63,12 +73,12 @@ mapfile -t OWNED < <(grep -vE '^\s*(#|$)' "$SRC/tools/tooling-manifest.txt")
 # Template repo is measured against that history too, where a clone of it
 # exists ($GODOT_TEMPLATE); the source needs git either way.
 if [[ "$MODE" == "--kit" ]]; then
-	if [[ ! -d "$SRC/.git" ]]; then
+	if ! has_git "$SRC"; then
 		echo "sync-tooling: the kit report needs a clone of Kombucha with its history (set GODOT_TOOLING)" >&2
 		exit 2
 	fi
 	repos=("$SRC")
-	[[ -d "$TEMPLATE/.git" ]] && repos+=("$TEMPLATE")
+	has_git "$TEMPLATE" && repos+=("$TEMPLATE")
 	tmp="$(mktemp)"
 	behind_total=0
 	while read -r file; do
@@ -119,7 +129,7 @@ fi
 # the self-test), else the manifest's version: the stamp must always say
 # something a person can act on.
 source_commit() {
-	if [[ -d "$SRC/.git" ]]; then git -C "$SRC" rev-parse HEAD; return; fi
+	if has_git "$SRC"; then git -C "$SRC" rev-parse HEAD; return; fi
 	local sha
 	sha="$(python3 - "$SRC" "${INSTALLED_PLUGINS_JSON:-$HOME/.claude/plugins/installed_plugins.json}" <<-'PY' 2>/dev/null
 		import json, os, sys
@@ -135,7 +145,7 @@ source_commit() {
 }
 
 # A dirty source would stamp a commit the copied files do not match.
-if [[ "$MODE" != "--check" && -d "$SRC/.git" ]] && [[ -n "$(git -C "$SRC" status --porcelain -- "${OWNED[@]}")" ]]; then
+if [[ "$MODE" != "--check" ]] && has_git "$SRC" && [[ -n "$(git -C "$SRC" status --porcelain -- "${OWNED[@]}")" ]]; then
 	echo "sync-tooling: Kombucha has uncommitted changes to owned files — commit them first" >&2
 	exit 2
 fi
@@ -152,7 +162,7 @@ explain_drift() { # entry
 	local entry="$1" best=999999 best_ref="" best_repo="" tmp
 	tmp="$(mktemp)"
 	for repo in "$SRC" "$TEMPLATE"; do
-		[[ -d "$repo/.git" ]] || continue
+		has_git "$repo" || continue
 		while read -r commit; do
 			git -C "$repo" show "$commit:$entry" > "$tmp" 2>/dev/null || continue
 			local n
@@ -252,7 +262,7 @@ fi
 # own notes ("blocked on the next sync") just went stale. Needs a source
 # with history; a plugin install prints nothing here.
 OLD_STAMP="$(head -1 "$DEST/tools/TOOLING_VERSION" 2>/dev/null || true)"
-if [[ -d "$SRC/.git" && "$OLD_STAMP" =~ ^[0-9a-f]{40}$ ]] && git -C "$SRC" cat-file -e "$OLD_STAMP" 2>/dev/null; then
+if has_git "$SRC" && [[ "$OLD_STAMP" =~ ^[0-9a-f]{40}$ ]] && git -C "$SRC" cat-file -e "$OLD_STAMP" 2>/dev/null; then
 	PULLED="$(git -C "$SRC" log --oneline "$OLD_STAMP..HEAD" 2>/dev/null | head -30)"
 	if [[ -n "$PULLED" ]]; then
 		echo "pulled $(wc -l <<<"$PULLED") Kombucha commit(s) since ${OLD_STAMP:0:7}:"
