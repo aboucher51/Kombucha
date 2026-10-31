@@ -1,16 +1,16 @@
 # Giving Kombucha feedback from a project
 
-A project that hits a tooling or kit problem writes it up here, and
-Kombucha decides what to do with it. The two halves are deliberately
-separate: **the project reports what it hit; Kombucha assesses it.**
+When a project hits a problem in the tooling or the kit, the project writes
+it up here. Kombucha then decides what to do with it. The two jobs stay
+apart on purpose: **the project reports what it hit, and Kombucha judges it.**
 
 ## Where and how
 
-One file per session: `docs/feedback/<project>/session_<id>.md`, on a
-branch `feedback/<project>-session-<id>`, committed in Kombucha and left
-for a Kombucha session to pick up. Nothing else in Kombucha changes on
-that branch. The project's own files are the reference implementations,
-named by path; do not copy code into the report.
+Write one file per session: `docs/feedback/<project>/session_<id>.md`.
+Commit it in Kombucha on a branch named `feedback/<project>-session-<id>`,
+and leave it there for a Kombucha session to pick up. Change nothing else
+in Kombucha on that branch. Name the project's own files by path as the
+reference implementations. Do not copy code into the report.
 
 ```bash
 cd ~/godot-projects/Kombucha
@@ -21,33 +21,36 @@ git add docs/feedback && git commit -m "Feedback from <Project>: <one line>"
 
 ## What a finding says
 
-Each numbered finding, from the project's side only:
+Write each numbered finding from the project's side only:
 
-1. **What happened**, concretely: the symptom, how it was misread at
-   first, how long it cost.
-2. **What broke without it**: the rule the project had to learn.
-3. **What the project wants**: the change, described as behaviour, and
-   the project file that already does it (the reference).
-4. **Tooling stamp**: the first line of `tools/TOOLING_VERSION` at the
-   top of the file, once.
+1. **What happened.** Give the symptom, how you misread it at first, and
+   how long it cost.
+2. **What broke without it.** Give the rule the project had to learn.
+3. **What the project wants.** Describe the change as behaviour. Name the
+   project file that already does it (the reference).
+4. **Tooling stamp.** Copy the first line of `tools/TOOLING_VERSION` once,
+   at the top of the file.
 
-Say what you would delete on the day Kombucha has it (a hook override,
-a local check), so the sync afterwards knows what became redundant.
+Say what you would delete on the day Kombucha has the change (a hook
+override, a local check). Then the sync after it knows what became
+redundant.
 
 ## What a finding does not do
 
-**Do not read Kombucha to write it.** Do not open Kombucha's harness,
-scripts or docs to check whether the thing already exists, whether it is
-easy, or how it should be built there. A project reporting from its own
-experience is the signal; a project that has read Kombucha reports what
-it guessed Kombucha has, and that assessment goes stale the day it is
-written. Kombucha's session reads the report against its own current
-state, decides per finding, and appends a **Disposition** section to the
-same file: done, deferred, split, or not ported, and why. That section is
-Kombucha's to write, never the project's.
+**Do not read Kombucha to write a finding.** Do not open Kombucha's
+harness, scripts or docs to check whether the thing already exists,
+whether it is easy, or how Kombucha should build it. A project that reports
+from its own experience gives Kombucha the signal. A project that has read
+Kombucha reports what it guessed Kombucha has. That guess goes stale the
+day the project writes it.
 
-Findings that turn out to be already fixed cost nothing; findings that
-were never written cost the next project the same debugging pass.
+Kombucha's session reads the report against Kombucha's current state and
+decides on each finding. The session appends a **Disposition** section to
+the same file: done, deferred, split, or not ported, and why. Only Kombucha
+writes that section, never the project.
+
+A finding that turns out to be fixed already costs nothing. A finding
+nobody wrote costs the next project the same debugging pass.
 
 ## Template
 
@@ -74,4 +77,4 @@ Delete on sync: <the override or local check that becomes redundant>.
 ```
 
 `froggame/session_011iWApC2cXzNibzH87ZQbNN.md` is a complete example,
-disposition included.
+with its disposition.

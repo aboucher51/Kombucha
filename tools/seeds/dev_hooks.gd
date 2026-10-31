@@ -1,33 +1,36 @@
 extends Node
-## Project dev hooks — the ONE file where a project extends the shared debug
-## console and screenshot harness. Those two scripts are owned by Kombucha
-## and overwritten by /sync-godot-tooling; this file is yours and never
-## touched by a sync. Every method below is optional: delete what you do
-## not need, the tooling checks `has_method()` before calling.
+## Project dev hooks. This is the one file where a project extends the
+## shared debug console and screenshot harness. Kombucha owns those two
+## scripts, and /sync-godot-tooling overwrites them. This file is yours, and
+## a sync never touches it. Every method below is optional. Delete what you
+## do not need, because the tooling checks `has_method()` before it calls.
 ##
-## Loaded lazily by DebugConsole after the autoloads are up (so it may name
-## game classes freely) and added as its child, so `get_tree()` and `await`
-## work here. The harness reaches it through `DebugConsole.hooks`.
+## DebugConsole loads this file lazily, after the autoloads are up, so this
+## file may name game classes freely. DebugConsole adds it as its child, so
+## `get_tree()` and `await` work here. The harness reaches it through
+## `DebugConsole.hooks`.
 
 
-## Reset the PROJECT's global state so every scenario starts the same:
-## autoload fields, static vars, files written through to disk. Runs after
-## the shared sandbox (saves, settings, keybinds, volumes, time_scale). Any
-## global left set here poisons every scenario after the one that set it.
+## Reset the project's own global state so every scenario starts the same:
+## autoload fields, static vars, files written through to disk. The harness
+## calls this after the shared sandbox (saves, settings, keybinds, volumes,
+## time_scale). Any global you leave set here poisons every scenario after
+## the one that set it.
 ##
-## The shared sandbox wipes SAVES but not SETTINGS: the redirected settings
-## file survives the whole batch, so anything a console command can write
-## there must be re-defaulted HERE, after the redirect (never before, or
-## you write the player's real file) — and re-APPLIED, not only rewritten:
-## a frame cap, vsync, a window mode, a UI scale, a rebuilt palette are
-## engine state a scene reload does not touch (one scenario's 150% UI
-## scale poisoned six after it, and the failures pointed at clicks).
-## Shapes that have leaked in real
-## projects: a renderer setting, a zoom level, campaign progress, the
-## editor's last-opened mod, a match config held in statics, an AI policy
-## held in a static, a "watching" flag on ambient NPCs, a weather state.
+## The shared sandbox wipes saves but not settings. The redirected settings
+## file survives the whole batch. So reset here anything a console command
+## can write there, after the redirect. Never reset it before the redirect,
+## or you write the player's real file. Re-apply each setting too, not only
+## rewrite it. A frame cap, vsync, a window mode, a UI scale and a rebuilt
+## palette are engine state, and a scene reload does not touch them. (One
+## scenario's 150% UI scale poisoned six after it, and the failures pointed
+## at clicks.)
+## These have leaked in real projects: a renderer setting, a zoom level,
+## campaign progress, the editor's last-opened mod, a match config held in
+## statics, an AI policy held in a static, a "watching" flag on ambient
+## NPCs, a weather state.
 ## Ambient real-time systems (spawners, roamers, watchers) need a console
-## OFF switch a scenario can call first, and this hook turns them back on.
+## off switch that a scenario can call first. This hook turns them back on.
 func sandbox() -> void:
 	pass
 
@@ -37,50 +40,52 @@ func restore() -> void:
 	pass
 
 
-## A scenario is about to run its first line (after the sandbox and the
-## return to the boot scene). For recording what each scenario loads.
+## The harness calls this just before a scenario runs its first line
+## (after the sandbox and the return to the boot scene). Use it to record
+## what each scenario loads.
 #func scenario_started(_path: String) -> void:
 #	pass
 
 
-## A scenario ran its last line; `ok` is false if any line failed.
+## The harness calls this after a scenario runs its last line. `ok` is
+## false if any line failed.
 #func scenario_finished(_path: String, _ok: bool) -> void:
 #	pass
 
 
-## Every scenario line, asked BEFORE the harness's built-ins, so a project
-## may take one over (a `settle` that knows its own busy nodes). Return ""
-## for success, "ERROR: ..." for failure (the harness fails on exactly that
-## shape), or null to say "not mine" and let the built-ins, then the debug
-## console, try it. Assertions MUST return an error, never a "false" answer
-## that passes.
+## The harness asks this about every scenario line before its own
+## built-ins, so a project may take a built-in over (a `settle` that knows
+## its own busy nodes). Return "" for success. Return "ERROR: ..." for
+## failure, because the harness fails on exactly that shape. Return null to
+## say "not mine", and the built-ins, then the debug console, try the line.
+## An assertion must return an error, never a "false" answer that passes.
 func scenario_command(_parts: PackedStringArray, _line: String) -> Variant:
 	return null
 
 
-## Every console command by handler id, asked BEFORE the shared console's
-## own handlers, so a project may take over a core command (its own
-## `saves` text, a `locale` that persists). Project commands declare their
-## surface in data/console_commands.project.json. Return the reply, or null
-## for "not mine".
+## The console asks this about every command, by handler id, before its
+## own handlers. So a project may take over a core command (its own `saves`
+## text, a `locale` that persists). Declare a project command's surface in
+## data/console_commands.project.json. Return the reply, or null for "not
+## mine".
 func console_dispatch(_handler: String, _args: Dictionary) -> Variant:
 	return null
 
 
-## The console's dev gate, asked BEFORE the default (a debug build, or an
-## export with the `dev` custom feature). Return true or false to decide,
-## or null to keep the default. `DebugConsole.default_allowed()` is the
-## default, for a hook that only adds a case. A player export must answer
-## false, or the cheats the console reaches ship.
+## The console's dev gate. The console asks this before its default (a
+## debug build, or an export with the `dev` custom feature). Return true or
+## false to decide, or null to keep the default. A hook that only adds a
+## case can call `DebugConsole.default_allowed()`, which is the default. A
+## player export must answer false, or the cheats the console reaches ship.
 func console_allowed() -> Variant:
 	return null
 
 
 ## Values for an argument that declares `"complete": "<source>"` in
 ## data/console_commands.project.json: unit ids, map ids, anything from the
-## live registry. Asked BEFORE the core sources (commands, saves, actions,
-## locales); return an Array of strings, or null for "not mine". `prefix`
-## is what is typed so far; the console filters again, so returning the
-## whole list is fine.
+## live registry. The console asks this before the core sources (commands,
+## saves, actions, locales). Return an Array of strings, or null for "not
+## mine". `prefix` holds the text typed so far. The
+## console filters the list again, so you may return the whole list.
 func console_complete(_source: String, _prefix: String) -> Variant:
 	return null

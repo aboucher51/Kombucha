@@ -123,36 +123,41 @@ own status at the top.
 
 ## Next
 
-0. **Move projects to the Linux filesystem**
-   (`docs/plans/2026-09-05-linux-move.md`): Monmon trialled, boot 15.0 s
-   to 0.8 s, full check 395 s to 217 s, identical results. Cut-over and the
-   remaining projects are the user's call.
+0. **Move the projects to the Linux filesystem**
+   (`docs/plans/2026-09-05-linux-move.md`). Monmon was the trial. Its boot
+   went from 15.0 s to 0.8 s, and its full check from 395 s to 217 s, with
+   identical results. The cut-over and the remaining projects are the
+   user's call.
 0. **Never sync into a tree another session is editing.** The sync
-   overwrites owned files; uncommitted edits there are lost. Check
-   `git status` immediately before, and ask the tree's session first.
-1. **Migrate the remaining siblings** (`docs/plans/2026-09-05-absorb-sibling-tooling.md`,
-   last section): per project, whole-file diff of every owned path against
-   the scaffold commit, move in-file customisations into the seams (and
-   generic fixes into Kombucha), sync, full check. Order: Tandem, Zoofle,
-   Orbit, procedural-factory, BossFights, Monmon (FrogGame and NavalWar
-   are done). Not active projects; the user works in FrogGame and
-   NavalWar only, so these wait until they are picked up again. Carry the JsonLines line-base fix to Monmon.
-2. **Kit adoption by siblings**: a `--kit` report mode for
-   `sync-tooling.sh` listing kit files that differ and the Template commit
-   that last touched each, so a project can cherry-pick.
-3. **Windows binary through interop** (`GODOT=...console.exe`, `wslpath`,
-   `taskkill` on timeout) once a Windows Godot build is installed; the
-   /mnt boot cost makes it worth measuring.
-4. **`SHOOT_SLOW`** from the measured runner time: CI's scenario half ran
-   in seconds, so the default 3x is generous; revisit when a real suite
-   runs there.
-5. **Fast feedback** (`docs/plans/2026-09-05-fast-feedback.md`): one
-   engine-error extractor (`path:line: message (xN)`) under every log and
-   the `test.sh` gap it closes; `tools/lint.sh` (`--check-only` on changed
-   scripts) as the first `check.sh` gate plus a PostToolUse hook seed;
-   scoped `dump` / `assert_prop` harness commands; the GDScript LSP as
-   documented machine setup; consuming the project map from
-   `~/godot-projects/godot-map` (read before grepping, `--check` in CI).
+   overwrites owned files, so it loses any uncommitted edits there. Check
+   `git status` just before the sync, and ask the tree's session first.
+1. **Migrate the remaining siblings**
+   (`docs/plans/2026-09-05-absorb-sibling-tooling.md`, last section). For
+   each project, diff every owned path, whole file, against the scaffold
+   commit. Move the in-file customisations into the seams, and move generic
+   fixes into Kombucha. Then sync and run the full check. Go in this order:
+   Tandem, Zoofle, Orbit, procedural-factory, BossFights, Monmon (FrogGame
+   and NavalWar are done). These projects are not active. The user works in
+   FrogGame and NavalWar only, so these wait until someone picks them up
+   again. Carry the JsonLines line-base fix to Monmon.
+2. **Kit adoption by siblings.** Add a `--kit` report mode to
+   `sync-tooling.sh`. It lists the kit files that differ, and the Template
+   commit that last touched each one, so a project can cherry-pick.
+3. **Run the Windows binary through interop** (`GODOT=...console.exe`,
+   `wslpath`, `taskkill` on timeout), once a Windows Godot build is
+   installed. The boot cost on /mnt makes it worth measuring.
+4. **Set `SHOOT_SLOW` from the measured runner time.** CI's scenario half
+   ran in seconds, so the default 3x is generous. Look at it again when a
+   real suite runs there.
+5. **Fast feedback** (`docs/plans/2026-09-05-fast-feedback.md`):
+   - One engine-error extractor (`path:line: message (xN)`) under every
+     log, and the `test.sh` gap it closes.
+   - `tools/lint.sh` (`--check-only` on changed scripts) as the first
+     `check.sh` gate, plus a PostToolUse hook seed.
+   - Scoped `dump` / `assert_prop` harness commands.
+   - The GDScript LSP as documented machine setup.
+   - Use the project map from `~/godot-projects/godot-map`: read it before
+     you grep, and run `--check` in CI.
 
 ## Shared as a plugin (2026-09-06)
 
@@ -164,8 +169,8 @@ sync skill's source is the plugin checkout (`${CLAUDE_PLUGIN_ROOT}`, or
 the last sync stamped. The tooling assumes the Template kit, so the
 entry point for a stranger is `/new-godot-project`, which clones the
 Template; the Template repo must be public for that. Next: bump
-`version` in both manifests on a release, and an install-from-marketplace
-smoke in CI once the repo is public.
+`version` in both manifests on each release. Add an install-from-marketplace
+smoke test to CI once the repo is public.
 
 ## One repo (2026-09-06)
 

@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
-# Project-specific checks, run by tools/check.sh between the headless boot
-# and the scenarios. This file is yours; check.sh is owned by Kombucha.
+# Project-specific checks. tools/check.sh runs this file between the
+# headless boot and the scenarios. This file is yours. Kombucha owns check.sh.
 #
-# Print one `  ok    <name>` / `  FAIL  <name>` line per check and exit
-# non-zero if any failed. QUICK=1 means no display is available.
+# Print one `  ok    <name>` / `  FAIL  <name>` line per check. Exit
+# non-zero if any check failed. QUICK=1 means no display is available.
 set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT" || exit 2
 
 # ── which scenarios check.sh renders ───────────────────────────────────────
 # check.sh first calls this file with `--scenarios`. Print the scenario
-# paths to render, one per line, or the one word `none` to render nothing;
-# print nothing (or exit non-zero) to render all of scenarios/*.txt.
+# paths to render, one per line, or the one word `none` to render nothing.
+# Print nothing (or exit non-zero) to render all of scenarios/*.txt.
 # check.sh then says "N of M scenario(s), chosen by tools/check.local.sh".
-# A listed path that does not exist fails the check. Answer and EXIT here,
+# A listed path that does not exist fails the check. Answer and exit here,
 # before any check below, or every check runs twice.
 if [[ "${1:-}" == "--scenarios" ]]; then
 	exit 0
@@ -22,13 +22,14 @@ fi
 FAILED=0
 
 # ── the target screens ─────────────────────────────────────────────────────
-# The sizes the game must fit (a Steam Deck, 1080p, an ultrawide) and one
-# layout scenario (`window` first, then `assert_zone` lines) run at each.
-# The window manager may refuse a size (WSLg does above its virtual
-# screen): the scenario's `window` reply is the size it GOT, and a refused
-# size reads as `--` with that size, never as a silent pass. A HUD bar that
-# fit at 1280 was off the right edge the moment a button was added, and
-# only a named size caught it. Edit the sizes; write the scenario.
+# SCREEN_SIZES lists the sizes the game must fit (a Steam Deck, 1080p, an
+# ultrawide). This block runs one layout scenario at each size: `window`
+# first, then `assert_zone` lines. The window manager may refuse a size
+# (WSLg does above its virtual screen). The scenario's `window` reply is
+# the size the window manager gave. A refused size prints as `--` with that
+# size, never as a silent pass. In one project a HUD bar fit at 1280, then
+# went off the right edge when someone added a button. Only a named size
+# caught it. Edit the sizes, and write the scenario.
 SCREEN_SIZES="${SCREEN_SIZES:-1280x800 1920x1080 3440x1440}"
 LAYOUT_SCENARIO="${LAYOUT_SCENARIO:-scenarios/layout.txt}"
 if [[ ! -f "$LAYOUT_SCENARIO" ]]; then
