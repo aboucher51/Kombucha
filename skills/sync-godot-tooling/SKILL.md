@@ -76,8 +76,13 @@ three files a sync never touches:
    ```
 
    It copies the owned paths, seeds any missing extension file from
-   `tools/seeds/`, writes `tools/TOOLING_VERSION`, re-imports, and runs the
-   project's `tools/check.sh --quick`. Run `tools/check.sh` in full when a
+   `tools/seeds/`, and regenerates the project map when the project has
+   one. It writes `tools/TOOLING_VERSION`, re-imports, and runs the
+   project's `tools/check.sh --quick`. The map stores each script's line
+   count, so a sync that copies a changed `.gd` file makes the old map
+   stale. When `godot-map` is not installed, the sync prints a `--` line.
+   Then run `godot-map .` in the project yourself, or `check.sh` fails on
+   the map. Run `tools/check.sh` in full when a
    display is available, because harness changes show up in the scenarios.
 
 4. **Reconcile CLAUDE.md.** The tooling rules are ONE owned text,
@@ -90,7 +95,8 @@ three files a sync never touches:
    the project's CLAUDE.md beside the import.
 
 5. **Commit in the project** with a message naming the Kombucha commit
-   (first line of `tools/TOOLING_VERSION`).
+   (first line of `tools/TOOLING_VERSION`). Commit `PROJECT_MAP.md` and
+   `.godot-map/` in the same commit when the sync regenerated them.
 
 ## What this skill is not for
 

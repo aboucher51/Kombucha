@@ -356,6 +356,22 @@ if "$SRC2/tools/sync-tooling.sh" "$DEST2" --check >/dev/null 2>&1; then
 else
 	say FAIL "sync --check still reports drift after a sync"; FAILED=1
 fi
+# 3a. The sync regenerates the project's map. The map stores each script's
+#     line count, so a longer seed .gd made every synced project's check
+#     fail on a stale map (KOMBU-23).
+if command -v godot-map >/dev/null 2>&1; then
+	(cd "$DEST2" && godot-map . >/dev/null 2>&1)
+	printf '\n## a longer seed comment\n' >> "$SRC2/tools/seeds/dev_driver.gd"
+	git -C "$SRC2" -c user.name=selftest -c user.email=selftest@example.invalid commit -qam "a longer seed"
+	OUT="$(GODOT_TEMPLATE=/nonexistent "$SRC2/tools/sync-tooling.sh" "$DEST2" --no-check 2>&1)"; CODE=$?
+	if [[ $CODE -eq 0 ]] && grep -q 'regenerated the project map' <<<"$OUT" && (cd "$DEST2" && godot-map . --check >/dev/null 2>&1); then
+		say ok "sync regenerates the project map after it copies a changed .gd file"
+	else
+		say FAIL "the project map is stale after a sync that changed a .gd file (exit $CODE)"; FAILED=1
+	fi
+else
+	say -- "the sync regenerates the project map (godot-map not installed)"
+fi
 # 3b. The scaffolder, from the scratch source: Kombucha-only paths stay
 #     behind, the fenced sections are gone, the project is named, stamped
 #     and committed once.

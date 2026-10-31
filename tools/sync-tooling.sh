@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Copies the tooling Kombucha owns (tools/tooling-manifest.txt) into a
-# project, seeds the project's extension files if absent, stamps the
-# Kombucha commit it came from, and runs the project's quick check.
+# project, seeds the project's extension files if absent, regenerates the
+# project map if the project has one, stamps the Kombucha commit it came
+# from, and runs the project's quick check.
 #
 #   tools/sync-tooling.sh <project-dir>            sync, then check --quick
 #   tools/sync-tooling.sh <project-dir> --check    report drift only, no writes:
@@ -230,6 +231,20 @@ seed check.local.env tools/check.local.env
 # stale rules from before the ownership split.
 if [[ -f "$DEST/CLAUDE.md" ]] && ! grep -q '^@docs/godot-tooling.md' "$DEST/CLAUDE.md"; then
 	echo "note: CLAUDE.md does not import the tooling rules — replace its tooling sections with a line reading @docs/godot-tooling.md"
+fi
+
+# The project map stores each script's line count, so a sync that copies a
+# changed .gd file (a seed, the harness, the console) makes the map stale.
+# Without this step, check.sh fails on the map after every such sync.
+# A project with no map yet gets none here: adopting one is its own step.
+if [[ -f "$DEST/PROJECT_MAP.md" ]]; then
+	if ! command -v godot-map >/dev/null 2>&1; then
+		echo "  --     project map not regenerated (godot-map not installed): run godot-map . in the project"
+	elif (cd "$DEST" && godot-map . >/dev/null 2>&1); then
+		echo "  map    regenerated the project map: commit PROJECT_MAP.md and .godot-map/ with the sync"
+	else
+		echo "  FAIL   godot-map . failed in the project: run it there to see why"
+	fi
 fi
 
 # What this sync PULLS, as headlines: the Kombucha commits between the
