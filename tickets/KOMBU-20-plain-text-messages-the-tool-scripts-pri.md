@@ -6,6 +6,7 @@ priority: 3
 owner: 
 depends_on: []
 touches: [tools/check.sh, tools/test.sh, tools/shoot.sh, tools/serve.sh, tools/export.sh, tools/setup.sh, tools/sync-tooling.sh, tools/new-project.sh, tools/parse-error.sh, tools/selftest.sh]
+batch: KOMBU-B3
 created: 2026-10-31
 updated: 2026-10-31
 ---
