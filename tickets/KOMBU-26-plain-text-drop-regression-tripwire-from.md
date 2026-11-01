@@ -1,9 +1,9 @@
 ---
 id: KOMBU-26
 title: Plain text: drop "regression tripwire" from the frame_budget docs
-status: ready
+status: done
 priority: 4
-owner: 
+owner: kombucha-worker
 depends_on: []
 touches: [docs/godot-tooling.md, scripts/dev/screenshot_harness.gd, .godot-map/graph.json]
 created: 2026-11-01
@@ -19,5 +19,8 @@ Make the frame_budget docs use the same words as the note `tools/check.sh` now p
 Load `writing-instructions`. Check both files with `python3 ~/.claude/skills/writing-plain-core/scripts/readability.py -f FILE --max 25`. The gate is `tools/check.sh --ci`, green.
 
 ## Progress
+- 2026-11-01 00:29 godot-tooling.md bullet and screenshot_harness.gd comment changed; godot-map shows no change (same line count). Passive: godot-tooling.md 6 -> 6, harness 35 -> 35. Committed with KOMBU-22; running the gate.
+- 2026-11-01 02:21 Gate green with KOMBU-22 (one run, 'check: all green'). Ready to play: none. A scenario author reads the new frame_budget wording in docs/godot-tooling.md; no behaviour changed. Handed to kombucha-pm as db14e98 on kombu-22.
+- 2026-11-01 02:21 done on main at db14e98
 
 ## Left for later
