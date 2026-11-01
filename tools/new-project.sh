@@ -9,7 +9,9 @@
 #                                              import, map or check run)
 #
 # What stays behind: the plugin and skills, the tooling's own tests and
-# scenarios, the self-test, the research docs and roadmap, and the
+# scenarios, the self-test, the research docs and roadmap, Kombucha's
+# ticket board (the new project's PM runs tk init with its own key, and
+# only Alex sets its PUSH_POLICY), and the
 # sections of CLAUDE.md and LICENSES.md fenced by
 # <!-- kombucha-only --> ... <!-- /kombucha-only -->, so the conventions
 # have ONE source and the new project reads as its own. The copy is then
@@ -55,6 +57,7 @@ cat > "$EXCLUDES" <<'EOF'
 /docs/plans
 /docs/roadmap.md
 /docs/feedback
+/tickets
 /tools/selftest.sh
 /tools/TOOLING_VERSION
 /scripts/dev/selftest_driver.gd

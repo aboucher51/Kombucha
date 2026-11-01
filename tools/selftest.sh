@@ -412,6 +412,25 @@ if [[ $CODE -eq 0 && -f "$DEST3/tools/TOOLING_VERSION" && -f "$DEST3/scripts/dev
 else
 	say FAIL "new-project.sh scaffold is wrong (exit $CODE): $(tail -3 <<<"$OUT")"; FAILED=1
 fi
+# The board is Kombucha's. A scaffold once carried every KOMBU ticket,
+# the batches, PUSH_POLICY and KEY, and a copied claim kept a live pid.
+# The new project's PM runs tk init with its own key (KOMBU-30).
+if [[ -z "$(find "$DEST3/tickets" -mindepth 1 2>/dev/null | head -1)" ]]; then
+	say ok "the scaffold carries no tickets from Kombucha"
+else
+	say FAIL "the scaffold copied Kombucha's tickets/: $(find "$DEST3/tickets" -mindepth 1 | head -3 | tr '\n' ' ')"; FAILED=1
+fi
+# The scaffold's own tests pass. --no-check skips them above, and a test
+# that read the fixture's own console row (a file the scaffold leaves
+# out) made every new project's first check red (KOMBU-30). Headless,
+# so it runs in --quick too.
+(cd "$DEST3" && "${GODOT:-godot4}" --headless --path . --import >/dev/null 2>&1)
+OUT="$(cd "$DEST3" && tools/test.sh 2>&1)"; CODE=$?
+if [[ $CODE -eq 0 ]]; then
+	say ok "the scaffold's own tests pass ($(grep -m1 -oE 'Passing Tests +[0-9]+' <<<"$OUT" | grep -oE '[0-9]+$') tests)"
+else
+	say FAIL "the scaffold's own tests are red (exit $CODE): $(grep -A3 'failing assertions' <<<"$OUT" | tail -3 | tr '\n' '|')"; FAILED=1
+fi
 
 echo "# dirty" >> "$SRC2/tools/shoot.sh"
 if "$SRC2/tools/sync-tooling.sh" "$DEST2" --no-check >/dev/null 2>&1; then

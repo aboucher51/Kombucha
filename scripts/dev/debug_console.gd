@@ -64,6 +64,10 @@ const CHECK_REFUSED_EXIT := 3
 var hooks: Object = null
 ## True = behave as a player build (set by RELEASE_FLAG, or by a test).
 var simulate_release := false
+## Where the project's command rows come from. A test points it at a
+## scratch file and calls reload_commands(), so it does not depend on the
+## rows one project happens to ship (a new project's file is empty).
+var project_commands_path: String = PROJECT_COMMANDS_PATH
 
 var _commands: Array = []
 var _buttons: Array = []
@@ -114,9 +118,16 @@ func _load_all() -> void:
 	var core_buttons: Array = []
 	var project_buttons: Array = []
 	var core := _absorb(_load_commands(COMMANDS_PATH, true), core_buttons)
-	var project := _absorb(_load_commands(PROJECT_COMMANDS_PATH, false), project_buttons)
+	var project := _absorb(_load_commands(project_commands_path, false), project_buttons)
 	_commands = merge_commands(core, project)
 	_buttons = project_buttons + core_buttons
+
+
+## Reads both command files again, from project_commands_path. Help, the
+## suggestions and dispatch see the new rows at once. Button tabs the
+## console UI has already drawn stay as they are.
+func reload_commands() -> void:
+	_load_all()
 
 
 ## The command rows of one file; its button entries go to `buttons_out`.

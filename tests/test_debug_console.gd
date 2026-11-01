@@ -5,6 +5,7 @@ extends GutTest
 
 const SCRATCH_SAVES := "user://test_console_saves"
 const SCRATCH_CONFIG := "user://test_console.cfg"
+const SCRATCH_PROJECT_COMMANDS := "user://test_console_commands.project.json"
 
 
 func before_each() -> void:
@@ -21,6 +22,10 @@ func after_each() -> void:
 	SaveManager.save_root = SaveManager.DEFAULT_SAVE_ROOT
 	SaveManager.config_path = SaveManager.DEFAULT_CONFIG_PATH
 	Keybinds.apply_saved()
+	if DebugConsole.project_commands_path != DebugConsole.PROJECT_COMMANDS_PATH:
+		DebugConsole.project_commands_path = DebugConsole.PROJECT_COMMANDS_PATH
+		DebugConsole.reload_commands()
+		DirAccess.remove_absolute(SCRATCH_PROJECT_COMMANDS)
 
 
 func test_unknown_command_is_error_shaped() -> void:
@@ -107,19 +112,30 @@ func test_project_hooks_may_override_a_core_command() -> void:
 	mine.free()
 
 
-## A project row with a core row's id replaces it: the fixture's
-## console_commands.project.json declares `seed` again. Before, both rows
+## A project row with a core row's id replaces it. Before, both rows
 ## were kept, `help seed` showed the core usage and `help` listed seed
-## twice (NavalWar's `seed`).
+## twice (NavalWar's `seed`). The test writes its own project file: it
+## once read the fixture's, which a new project does not have, so every
+## scaffold's first check was red (KOMBU-30).
 func test_a_project_row_replaces_the_core_row_with_its_id() -> void:
-	assert_string_contains(DebugConsole.execute("help seed"), "the fixture's own row")
+	var rows: Array = [{
+		"id": "seed", "handler": "seed",
+		"usage": "seed <n>   (the project's own row)",
+		"args": [{"name": "n", "kind": "int", "required": true}],
+	}]
+	var file := FileAccess.open(SCRATCH_PROJECT_COMMANDS, FileAccess.WRITE)
+	file.store_string(JSON.stringify(rows))
+	file.close()
+	DebugConsole.project_commands_path = SCRATCH_PROJECT_COMMANDS
+	DebugConsole.reload_commands()
+	assert_string_contains(DebugConsole.execute("help seed"), "the project's own row")
 	var names := DebugConsole.execute("help").split(" ")
 	assert_eq(names.count("seed"), 1, "help lists seed once")
 	var items: Array = DebugConsole.suggest("seed")["items"]
 	assert_eq(items.size(), 1, "one suggestion row for seed")
 	if not items.is_empty():
-		assert_string_contains(str(items[0]["text"]), "the fixture's own row")
-	assert_string_contains(DebugConsole.execute("seed"), "the fixture's own row",
+		assert_string_contains(str(items[0]["text"]), "the project's own row")
+	assert_string_contains(DebugConsole.execute("seed"), "the project's own row",
 		"a usage error quotes the project row")
 
 

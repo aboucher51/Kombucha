@@ -453,6 +453,7 @@
     "_ready",
     "_report_gate",
     "_load_all",
+    "reload_commands",
     "_absorb",
     "merge_commands",
     "_load_commands",
@@ -542,7 +543,7 @@
    "groups_queried": [
     "state"
    ],
-   "lines": 1385
+   "lines": 1396
   },
   "res://scripts/dev/dev_hooks.gd": {
    "path": "res://scripts/dev/dev_hooks.gd",
@@ -1304,7 +1305,7 @@
    "node_paths": [],
    "groups_joined": [],
    "groups_queried": [],
-   "lines": 304
+   "lines": 320
   },
   "res://tests/test_dev_hooks.gd": {
    "path": "res://tests/test_dev_hooks.gd",
