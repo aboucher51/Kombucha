@@ -25,5 +25,7 @@ What to do:
 When it lands, the PM tells forgemaster that main scaffolds green. The gate is `tools/check.sh --ci`, green.
 
 ## Progress
+- 2026-11-01 04:30 PM: forgemaster pushed emblem-autobattler with the red test anyway (Alex wanted to start). When this lands, tell forgemaster and emblem-autobattler-pm. tests/test_debug_console.gd is not in tools/tooling-manifest.txt, so a sync will not carry the fix. emblem-autobattler must copy the fixed test by hand. Say so in your report.
+- 2026-11-01 04:31 PM, second scaffold bug in the same files (from emblem-autobattler-pm): new-project.sh copied Kombucha's whole tickets/ folder into the new repo. That was 28 KOMBU-* tickets, the batches, PUSH_POLICY ("pm") and KEY ("KOMBU"). A copied claim kept kombucha-worker's real pid. Fix: leave tickets/ out of the scaffold entirely (tickets/*.md, tickets/batches/, PUSH_POLICY, HOLD, KEY). The new project's PM runs tk init with its own key, and only Alex sets PUSH_POLICY. Prove it in the self-test's new-project step: the scaffold has no tickets/ files from Kombucha. emblem-autobattler already removed its copies in 8241499.
 
 ## Left for later
