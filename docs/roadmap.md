@@ -123,11 +123,13 @@ own status at the top.
 
 ## Next
 
-0. **Move the projects to the Linux filesystem**
+0. **Finish the move to the Linux filesystem**
    (`docs/plans/2026-09-05-linux-move.md`). Monmon was the trial. Its boot
    went from 15.0 s to 0.8 s, and its full check from 395 s to 217 s, with
-   identical results. The cut-over and the remaining projects are the
-   user's call.
+   identical results. Every project was copied to `~/godot-projects` on
+   2026-09-05, and the Linux copies are the working set. Two steps are
+   left, and both are Alex's call: delete the `/mnt/c` copies, and map a
+   Windows drive to `~/godot-projects`.
 0. **Never sync into a tree another session is editing.** The sync
    overwrites owned files, so it loses any uncommitted edits there. Check
    `git status` just before the sync, and ask the tree's session first.
@@ -135,29 +137,29 @@ own status at the top.
    (`docs/plans/2026-09-05-absorb-sibling-tooling.md`, last section). For
    each project, diff every owned path, whole file, against the scaffold
    commit. Move the in-file customisations into the seams, and move generic
-   fixes into Kombucha. Then sync and run the full check. Go in this order:
-   Tandem, Zoofle, Orbit, procedural-factory, BossFights, Monmon (FrogGame
-   and NavalWar are done). These projects are not active. The user works in
-   FrogGame and NavalWar only, so these wait until someone picks them up
-   again. Carry the JsonLines line-base fix to Monmon.
-2. **Kit adoption by siblings.** Add a `--kit` report mode to
-   `sync-tooling.sh`. It lists the kit files that differ, and the Template
-   commit that last touched each one, so a project can cherry-pick.
-3. **Run the Windows binary through interop** (`GODOT=...console.exe`,
+   fixes into Kombucha. Then sync and run the full check. FrogGame,
+   NavalWar, Digit, Zoofle, Orbit and procedural-factory were migrated by
+   2026-09-06, and Tandem on 2026-10-25. The shared tooling note of
+   2026-09-06 lists BossFights and Monmon as left, in that order. Nobody
+   has checked their desktop copies since. These projects are not active, so
+   they wait until someone picks them up again. Carry the JsonLines
+   line-base fix to Monmon.
+2. **Run the Windows binary through interop** (`GODOT=...console.exe`,
    `wslpath`, `taskkill` on timeout), once a Windows Godot build is
    installed. The boot cost on /mnt makes it worth measuring.
-4. **Set `SHOOT_SLOW` from the measured runner time.** CI's scenario half
+3. **Set `SHOOT_SLOW` from the measured runner time.** CI's scenario half
    ran in seconds, so the default 3x is generous. Look at it again when a
    real suite runs there.
-5. **Fast feedback** (`docs/plans/2026-09-05-fast-feedback.md`):
+4. **Fast feedback** (`docs/plans/2026-09-05-fast-feedback.md`):
    - One engine-error extractor (`path:line: message (xN)`) under every
      log, and the `test.sh` gap it closes.
    - `tools/lint.sh` (`--check-only` on changed scripts) as the first
      `check.sh` gate, plus a PostToolUse hook seed.
    - Scoped `dump` / `assert_prop` harness commands.
    - The GDScript LSP as documented machine setup.
-   - Use the project map from `~/godot-projects/godot-map`: read it before
-     you grep, and run `--check` in CI.
+   - The project map from `~/godot-projects/godot-map`: `check.sh` fails
+     on a stale map where the tool is installed (62c6a5c). CI does not
+     install `godot-map` yet, so CI skips that check.
 
 ## Shared as a plugin (2026-09-06)
 
@@ -166,11 +168,11 @@ The repo is a Claude Code plugin and its own marketplace
 aboucher51/Kombucha` then `claude plugin install kombucha@kombucha`. The
 sync skill's source is the plugin checkout (`${CLAUDE_PLUGIN_ROOT}`, or
 `GODOT_TOOLING` for a clone); `check.sh` finds the source from the path
-the last sync stamped. The tooling assumes the Template kit, so the
-entry point for a stranger is `/new-godot-project`, which clones the
-Template; the Template repo must be public for that. Next: bump
-`version` in both manifests on each release. Add an install-from-marketplace
-smoke test to CI once the repo is public.
+the last sync stamped. The entry point for a stranger is
+`/new-godot-project`, which runs Kombucha's own `tools/new-project.sh`, so
+it needs no Template repo (see "One repo" below). Next: bump `version` in
+both manifests on each release. The repo is public now, so an
+install-from-marketplace smoke test can go into CI.
 
 ## One repo (2026-09-06)
 

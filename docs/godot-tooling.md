@@ -580,12 +580,12 @@ Rules that keep the harness useful:
 - **A frame captured mid-tween is not the same twice** on any rasterizer.
   (We measured `pop_in` varying from run to run.) Use `settle` or `wait`
   past the animation before `expect_shot`.
-- **`frame_budget` is a regression tripwire, not a device target.** It
-  turns vsync off for the measurement, because with vsync on every scene
-  reads 16.7 ms and the gate can never fail. It prints the number on pass,
-  so you see the trend before the gate goes red. On CI the renderer is
-  llvmpipe, software. What it catches is the same scene on the same machine
-  becoming several times more expensive.
+- **`frame_budget` catches a slowdown on this renderer.** It is not a
+  target for a real device. It turns vsync off for the measurement,
+  because with vsync on every scene reads 16.7 ms and the gate can never
+  fail. It prints the number on pass, so you see the trend before the gate
+  goes red. On CI the renderer is llvmpipe, software. What it catches is
+  the same scene on the same machine becoming several times more expensive.
 - **The real cursor is global state.** `_sandbox()` parks it at (2, 2).
   Left over a control, it feeds hover and tooltips into every later
   scenario. On the virtual display each shard has its own X server, and so

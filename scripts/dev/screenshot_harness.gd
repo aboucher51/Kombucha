@@ -1136,10 +1136,10 @@ func _assert_tooltip(parts: PackedStringArray) -> String:
 
 ## Average frame time over a window, with vsync and the FPS cap OFF for the
 ## measurement (with vsync on every scene measures 16.7 ms and the gate can
-## never fail). Read it as a REGRESSION tripwire on this machine's renderer,
-## not a device target: the number is printed even on pass, because a gate
-## you only see when it goes red says nothing about the change that used
-## half the remaining headroom.
+## never fail). Read it as a check that catches a slowdown on this machine's
+## renderer, not a target for a real device: the number is printed even on
+## pass, because a gate you only see when it goes red says nothing about the
+## change that used half the remaining headroom.
 func _frame_budget(parts: PackedStringArray) -> String:
 	if parts.size() < 2:
 		return "ERROR: usage: frame_budget <ms> [frames]"
