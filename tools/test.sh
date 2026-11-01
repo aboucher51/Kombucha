@@ -57,6 +57,11 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 GODOT="${GODOT:-godot4}"
 cd "$ROOT" || exit 2
 
+# A stale class cache fails every engine below with parse errors though
+# the code is fine. tools/class-cache.sh re-imports when it is stale, and
+# prints nothing when it is not.
+[[ -x "$ROOT/tools/class-cache.sh" ]] && "$ROOT/tools/class-cache.sh"
+
 DEFAULT_TIMEOUT=180
 TIMEOUT="${TEST_TIMEOUT:-$DEFAULT_TIMEOUT}"
 TIMINGS="$ROOT/.godot/test-timings"

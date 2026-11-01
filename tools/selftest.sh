@@ -23,10 +23,10 @@
 #      freed lambda capture) turns the boot gate and the scenario gate
 #      red — 738 of them once sat under an all-green check; check.sh
 #      renders only the scenarios `check.local.sh --scenarios` chooses;
-#      check.sh re-imports a stale class cache before the tests and leaves
-#      a matching one alone; check.sh takes its boot memory budget from
-#      tools/check.local.env,
-#      the caller's variable beats it, and the file is never run;
+#      check.sh, and a named test.sh run, re-import a stale class cache
+#      before the tests and leave a matching one alone; check.sh takes
+#      its boot memory budget from tools/check.local.env, the caller's
+#      variable beats it, and the file is never run;
 #   5. a release-flavoured run cannot open the debug console;
 #   6. a served engine that never starts serving (no import) is stopped,
 #      and serve.sh start fails.
@@ -80,6 +80,21 @@ else
 	say FAIL "several names did not run together"; FAILED=1
 fi
 rm -f "$SCRATCH/tests/test_smoke_sibling.gd"
+
+# 2i. A named run re-imports a stale class cache before its engine
+#     starts. Only check.sh did, so a named run after a pull failed with
+#     parse errors though the code was fine (KOMBU-28). The cache here
+#     lists no classes, as one project's did on a server.
+cp "$SCRATCH/.godot/global_script_class_cache.cfg" "$SCRATCH/class-cache.bak"
+printf 'list=[]\n' > "$SCRATCH/.godot/global_script_class_cache.cfg"
+OUT="$(cd "$SCRATCH" && tools/test.sh test_smoke 2>&1)"; CODE=$?
+if [[ $CODE -eq 0 ]] && grep -q 'Re-importing the project' <<<"$OUT"; then
+	say ok "a named test run re-imports a stale class cache first"
+else
+	say FAIL "a named test run did not re-import a stale class cache (exit $CODE): $(grep -m2 -E 'note:|Parse' <<<"$OUT" | tr '\n' '|')"; FAILED=1
+	cp "$SCRATCH/class-cache.bak" "$SCRATCH/.godot/global_script_class_cache.cfg"
+fi
+rm -f "$SCRATCH/class-cache.bak"
 
 # 2e. A NAMED run gets a private `user://` like a shard's. It used to boot
 #     against the developer's real data home, so whatever a boot reads
@@ -205,7 +220,7 @@ if [[ $CODE -ne 0 ]] && grep -qE 'FAIL +headless boot \(clean, [1-9][0-9]* engin
 else
 	say FAIL "boot gate stayed green on a plain engine ERROR line (exit $CODE)"; FAILED=1
 fi
-if grep -q 'check.sh is re-importing the project' <<<"$OUT" && grep -qE 'ok +class cache re-imported \([1-9][0-9]* classes\)' <<<"$OUT"; then
+if grep -q 'Re-importing the project' <<<"$OUT" && grep -qE 'ok +class cache re-imported \([1-9][0-9]* classes\)' <<<"$OUT"; then
 	say ok "a stale class cache is re-imported before the tests"
 else
 	say FAIL "a stale class cache was not re-imported: $(grep -A1 'class cache' <<<"$OUT" | tr '\n' '|')"; FAILED=1
@@ -291,7 +306,7 @@ else
 	say FAIL "a chosen scenario list was not rendered alone (rendered: $(tr '\n' ' ' <<<"$ARGS"))"; FAILED=1
 fi
 # The cache the run above re-imported now matches, so no import runs.
-if grep -qE 'ok +class cache matches' <<<"$OUT" && ! grep -q 're-importing' <<<"$OUT"; then
+if grep -qE 'ok +class cache matches' <<<"$OUT" && ! grep -q 'Re-importing' <<<"$OUT"; then
 	say ok "a matching class cache is left alone"
 else
 	say FAIL "a matching class cache was not left alone: $(grep 'class cache' <<<"$OUT" | tr '\n' '|')"; FAILED=1

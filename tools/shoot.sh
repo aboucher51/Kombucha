@@ -98,6 +98,11 @@ for scenario in "${SCENARIOS[@]}"; do
 	fi
 done
 
+# A stale class cache fails every engine below with parse errors though
+# the code is fine. tools/class-cache.sh re-imports when it is stale, and
+# prints nothing when it is not.
+[[ -x "$ROOT/tools/class-cache.sh" ]] && "$ROOT/tools/class-cache.sh"
+
 # The watchdog exists for error loops, not to cap honest work — the budget
 # scales with the batch so a growing suite is not killed mid-scenario.
 TIMEOUT="${SHOOT_TIMEOUT:-$((30 + 10 * ${#SCENARIOS[@]}))}"
