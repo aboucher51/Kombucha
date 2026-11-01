@@ -14,7 +14,8 @@ extends Control
 ##
 ## open() grabs focus (UIFocus.first): a menu that opens without focus is
 ## unreachable by keyboard and pad, and the focus ring in UITheme is what
-## makes that navigation visible.
+## makes that navigation visible. It also keeps focus inside the panel
+## (UIFocus.keep_inside), or ui_down from Quit lands on the screen behind.
 
 var _panel: PanelContainer
 ## The hand-made lever's value, 0 to 100 (main.gd's `lever` state key).
@@ -132,6 +133,7 @@ func open() -> void:
 	visible = true
 	GameManager.set_paused(true)
 	UITheme.pop_in(_panel)
+	UIFocus.keep_inside(_panel)
 	UIFocus.first(_panel)
 	AudioManager.ui_event("menu_open")
 

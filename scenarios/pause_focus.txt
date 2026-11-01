@@ -1,0 +1,29 @@
+# Keyboard and pad focus stays inside the pause menu while it is open, and
+# wraps from the last control to the first and back. Without the wrap,
+# ui_down from Quit moved focus to the boot screen's Row01 behind the dim,
+# and ui_accept then pressed it (one project's Play button, KOMBU-33).
+wait 10
+press pause
+until 5 assert focus MasterSlider
+press ui_down
+press ui_down
+press ui_down
+press ui_down
+assert focus QuitButton
+press ui_down
+assert focus MasterSlider
+press ui_up
+assert focus QuitButton
+# Tab walks the same ring.
+press ui_focus_next
+assert focus MasterSlider
+press ui_focus_prev
+assert focus QuitButton
+# Left and right do not leave a button either: the rows sit to the left.
+press ui_left
+assert focus QuitButton
+press ui_up
+press ui_accept
+assert last_row ""
+expect_fail assert_visible ResumeButton
+shot after-resume

@@ -701,6 +701,7 @@
     "state_text",
     "assert_key",
     "_master_volume",
+    "_focus",
     "_yes_no",
     "_point"
    ],
@@ -719,7 +720,7 @@
     "settle"
    ],
    "groups_queried": [],
-   "lines": 137
+   "lines": 144
   },
   "res://scripts/ui/pause_menu.gd": {
    "path": "res://scripts/ui/pause_menu.gd",
@@ -751,7 +752,7 @@
    "node_paths": [],
    "groups_joined": [],
    "groups_queried": [],
-   "lines": 143
+   "lines": 145
   },
   "res://scripts/ui/ui_focus.gd": {
    "path": "res://scripts/ui/ui_focus.gd",
@@ -767,6 +768,8 @@
     "first",
     "grab",
     "_grab_deferred",
+    "keep_inside",
+    "_collect_focusable",
     "pad_spin"
    ],
    "emits": [],
@@ -776,7 +779,7 @@
    "node_paths": [],
    "groups_joined": [],
    "groups_queried": [],
-   "lines": 70
+   "lines": 106
   },
   "res://scripts/ui/ui_scale_root.gd": {
    "path": "res://scripts/ui/ui_scale_root.gd",
@@ -1650,6 +1653,28 @@
    "groups_queried": [],
    "lines": 26
   },
+  "res://tests/test_ui_focus_ring.gd": {
+   "path": "res://tests/test_ui_focus_ring.gd",
+   "lang": "gdscript",
+   "class_name": null,
+   "global": true,
+   "extends": "GutTest",
+   "tool": false,
+   "loads": [],
+   "refs": [],
+   "signals": [],
+   "funcs": [
+    "_panel",
+    "test_focus_wraps_through_the_visible_controls_only",
+    "test_left_and_right_stay_on_a_button_but_not_on_a_slider"
+   ],
+   "emits": [],
+   "connects": [],
+   "node_paths": [],
+   "groups_joined": [],
+   "groups_queried": [],
+   "lines": 47
+  },
   "res://tests/test_ui_kit.gd": {
    "path": "res://tests/test_ui_kit.gd",
    "lang": "gdscript",
@@ -1982,6 +2007,7 @@
   "res://scripts/ui/ui_focus.gd": [
    "res://scripts/ui/pause_menu.gd",
    "res://tests/test_localization.gd",
+   "res://tests/test_ui_focus_ring.gd",
    "res://tests/test_ui_kit.gd"
   ],
   "res://scripts/ui/ui_scale_root.gd": [

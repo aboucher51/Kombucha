@@ -52,6 +52,42 @@ static func _grab_deferred(control_id: int) -> void:
 		control.grab_focus()
 
 
+## Keep keyboard and pad focus inside `root`, a modal panel laid out as
+## one column. Godot picks a focus neighbour by screen position across the
+## WHOLE viewport, so ui_down from a pause menu's last button found the
+## screen behind the dim (one project's Play button), and ui_accept pressed
+## it. This points every visible focusable control's up, down, next and
+## previous neighbours at the panel's own controls, wrapping from the last
+## to the first. Left and right stay on the control itself, except on a
+## Range (a slider uses them to change its value). Call it when the panel
+## opens, so a control that is hidden then is left out of the ring.
+static func keep_inside(root: Control) -> void:
+	var ring: Array[Control] = []
+	_collect_focusable(root, ring)
+	for index in ring.size():
+		var control := ring[index]
+		var previous := control.get_path_to(ring[(index - 1 + ring.size()) % ring.size()])
+		var next := control.get_path_to(ring[(index + 1) % ring.size()])
+		control.focus_neighbor_top = previous
+		control.focus_neighbor_bottom = next
+		control.focus_previous = previous
+		control.focus_next = next
+		if not control is Range:
+			control.focus_neighbor_left = NodePath(".")
+			control.focus_neighbor_right = NodePath(".")
+
+
+static func _collect_focusable(node: Node, out: Array[Control]) -> void:
+	for child in node.get_children():
+		if child is Control:
+			var control: Control = child
+			if not control.visible or control.is_queued_for_deletion():
+				continue
+			if control.focus_mode == Control.FOCUS_ALL:
+				out.append(control)
+		_collect_focusable(child, out)
+
+
 ## A SpinBox does not answer ui_up / ui_down on its own — focus lands in
 ## its inner LineEdit, which consumes them. Without this a pad cannot
 ## change a single number in the whole editor.

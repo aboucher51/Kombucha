@@ -99,9 +99,9 @@ func is_busy() -> bool:
 
 
 func state_text() -> String:
-	return "title=%s paused=%s busy=%s last_click=%s last_row=%s quality=%s master_volume=%s lever=%d" % [
+	return "title=%s paused=%s busy=%s last_click=%s last_row=%s quality=%s master_volume=%s lever=%d focus=%s" % [
 		%TitleLabel.text, _yes_no(get_tree().paused), _yes_no(is_busy()),
-		_point(last_click), last_row, quality, _master_volume(), $PauseMenu.lever]
+		_point(last_click), last_row, quality, _master_volume(), $PauseMenu.lever, _focus()]
 
 
 func assert_key(key: String, value: String) -> String:
@@ -115,6 +115,7 @@ func assert_key(key: String, value: String) -> String:
 		"quality": actual = quality
 		"master_volume": actual = _master_volume()
 		"lever": actual = str($PauseMenu.lever)
+		"focus": actual = _focus()
 		"built_save_root": actual = built_save_root
 		_: return "ERROR: unknown key '%s'" % key
 	if actual != value:
@@ -126,6 +127,12 @@ func assert_key(key: String, value: String) -> String:
 ## harness's `drag` proves the slider follows the pointer through this).
 static func _master_volume() -> String:
 	return str(roundi(AudioManager.get_bus_volume(&"Master") * 100.0))
+
+
+## The name of the control that has keyboard and pad focus, or "none".
+func _focus() -> String:
+	var owner := get_viewport().gui_get_focus_owner()
+	return str(owner.name) if owner != null else "none"
 
 
 static func _yes_no(flag: bool) -> String:
