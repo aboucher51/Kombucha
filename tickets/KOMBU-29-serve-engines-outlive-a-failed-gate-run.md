@@ -1,11 +1,11 @@
 ---
 id: KOMBU-29
 title: Serve engines outlive a failed gate run
-status: ready
+status: done
 priority: 2
-owner: 
+owner: kombucha-worker
 depends_on: []
-touches: [tools/check.local.sh, tools/serve.sh, tools/selftest.sh]
+touches: [tools/check.local.sh, tools/serve.sh, tools/selftest.sh, docs/godot-tooling.md]
 created: 2026-11-01
 updated: 2026-11-01
 ---
@@ -24,5 +24,8 @@ What to do:
 Read `docs/godot-tooling.md` ("A served engine waiting for a command draws at 10 fps") and the serve parts of `scripts/dev/screenshot_harness.gd` first. The gate is `tools/check.sh --ci`, green.
 
 ## Progress
+- 2026-11-01 04:52 added docs/godot-tooling.md to touches: SERVE_START_S needs its doc line. Red proofs: old serve.sh start in a copy with no import exited 1 after 20 s and left xvfb-run+Xvfb+godot running; old check.local.sh TERMed mid-serve left 2 processes. Fixed: start stops the tree after SERVE_START_S (60) and names the first error; check.local.sh EXIT/INT/TERM trap stops every serve folder it used; TERM test left 0.
+- 2026-11-01 04:55 gate green on 627112e: check.sh --ci, 146 tests; new selftest line 'a served engine that never starts serving is stopped, and start fails' ok; no serve engine left after the run. Handed to kombucha-pm.
+- 2026-11-01 04:55 done on main at 627112e
 
 ## Left for later
