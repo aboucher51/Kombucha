@@ -111,6 +111,69 @@ else
 	fi
 fi
 
+# Godot keeps the list of class_name scripts in
+# .godot/global_script_class_cache.cfg. A headless run reads that list and
+# never rebuilds it. After a pull that adds, renames or moves a class_name
+# script, or in a fresh worktree with no .godot/ at all, the list is wrong.
+# The tests and the boot below then fail with parse errors ("Identifier
+# Cmdline not declared") though the code is fine. One project's cache on a
+# server was a week old and listed no classes. So the check compares the
+# (class, path) pairs in the cache with the class_name lines on disk, and
+# re-imports when they differ, before anything boots. It skips what the
+# engine skips: hidden files and folders, folders with a .gdignore, and a
+# folder holding another project.godot. It walks the disk, not git, because
+# the engine sees untracked and ignored files too.
+class_cache_on_disk() {
+	local skip
+	skip="$(find . -mindepth 2 \( -name .gdignore -o -name project.godot \) -not -path '*/.*/*' 2>/dev/null | sed 's#/[^/]*$#/#')"
+	find . -mindepth 1 -name '.*' -prune -o -type f -name '*.gd' -print0 2>/dev/null \
+		| { if [[ -n "$skip" ]]; then grep -zv -F -f <(printf '%s\n' "$skip"); else cat; fi; } \
+		| xargs -0 -r awk '
+			FNR == 1 { found = 0 }
+			!found && match($0, /^(@[a-z_]+[ \t]+)*class_name[ \t]+[A-Za-z_][A-Za-z0-9_]*/) {
+				n = split(substr($0, RSTART, RLENGTH), w, /[ \t]+/)
+				f = FILENAME; sub(/^\.\//, "", f)
+				print w[n] "\t" f
+				found = 1
+			}' | sort
+}
+class_cache_in_file() {
+	[[ -f .godot/global_script_class_cache.cfg ]] || return 0
+	grep -oE '"class": &"[A-Za-z0-9_]+"|"path": "res://[^"]+"' .godot/global_script_class_cache.cfg \
+		| sed -E 's/"class": &"([^"]+)"/\1/; s#"path": "res://([^"]+)"#\1#' | paste - - | sort
+}
+echo "── class cache ──"
+CACHE_DIFF="$(diff <(class_cache_in_file) <(class_cache_on_disk))"
+if [[ -z "$CACHE_DIFF" ]]; then
+	printf '  ok    class cache matches the class_name scripts (%s classes)\n' "$(class_cache_on_disk | grep -c .)"
+else
+	if [[ -f .godot/global_script_class_cache.cfg ]]; then
+		printf 'note: %s line(s) of the class cache differ from the class_name scripts on disk. check.sh is re-importing the project.\n' \
+			"$(grep -c '^[<>]' <<<"$CACHE_DIFF")"
+	else
+		printf 'note: this checkout has no class cache yet. check.sh is importing the project.\n'
+	fi
+	# The import can rewrite project.godot (one project lost a setting on
+	# every import), so say so when a clean file came out changed.
+	GODOT_FILE_WAS_CLEAN=0
+	git diff --quiet -- project.godot 2>/dev/null && GODOT_FILE_WAS_CLEAN=1
+	mkdir -p .godot
+	"$GODOT" --headless --path . --import > .godot/class-cache-import.log 2>&1
+	IMPORT_STATUS=$?
+	if [[ $GODOT_FILE_WAS_CLEAN -eq 1 ]] && ! git diff --quiet -- project.godot 2>/dev/null; then
+		printf 'note: the import changed project.godot. Check git diff project.godot before you commit.\n'
+	fi
+	CACHE_DIFF="$(diff <(class_cache_in_file) <(class_cache_on_disk))"
+	if [[ -z "$CACHE_DIFF" ]]; then
+		printf '  ok    class cache re-imported (%s classes)\n' "$(class_cache_on_disk | grep -c .)"
+	else
+		# Not a failure: the tests below say whether the code is broken.
+		# A difference that survives an import means this comparison
+		# missed an engine rule, and that must not block a project.
+		printf '  --    class cache still differs after the import (exit %s, log in .godot/class-cache-import.log). < is the cache, > is the disk:\n' "$IMPORT_STATUS"
+		printf '%s\n' "$CACHE_DIFF" | grep '^[<>]' | head -10 | sed 's/^/        /'
+	fi
+fi
 
 echo "── tests ──"
 OUT="$(tools/test.sh 2>&1)"; STATUS=$?

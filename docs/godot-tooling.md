@@ -46,6 +46,17 @@ had to `git checkout project.godot` after each one. It did not happen in this
 fixture, so treat it as a problem of that project's shape. Check the diff
 while the change is small, not at commit time.
 
+**`check.sh` re-imports for you when the class cache is stale.** Godot keeps
+the list of `class_name` scripts in `.godot/global_script_class_cache.cfg`.
+A headless run reads that list and never rebuilds it. So after a pull that
+adds or moves a `class_name` script, the tests fail with parse errors like
+"Identifier Cmdline not declared", though the code is fine. Before the
+tests, `check.sh` compares the list with the `class_name` lines on disk. When
+they differ, it prints a `note:` line and runs the import. `check.sh` also
+says when that import changed `project.godot`. `test.sh` and `shoot.sh` do
+not do this, so run the import yourself before you call them on a fresh pull
+or worktree.
+
 Smoke-test by running headless for a fixed duration:
 
 ```bash

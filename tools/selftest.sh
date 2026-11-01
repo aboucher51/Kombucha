@@ -23,7 +23,9 @@
 #      freed lambda capture) turns the boot gate and the scenario gate
 #      red — 738 of them once sat under an all-green check; check.sh
 #      renders only the scenarios `check.local.sh --scenarios` chooses;
-#      check.sh takes its boot memory budget from tools/check.local.env,
+#      check.sh re-imports a stale class cache before the tests and leaves
+#      a matching one alone; check.sh takes its boot memory budget from
+#      tools/check.local.env,
 #      the caller's variable beats it, and the file is never run;
 #   5. a release-flavoured run cannot open the debug console.
 set -uo pipefail
@@ -192,11 +194,19 @@ printf '\n\nfunc _plant_engine_error() -> void:\n\tConfigFile.new().get_value("n
 sed -i 's/^\t_build_rows()$/\t_build_rows()\n\t_plant_engine_error()/' "$SCRATCH/scripts/main.gd"
 printf '#!/usr/bin/env bash\necho "Passing Tests 0"\n' > "$SCRATCH/tools/test.sh"
 printf '#!/usr/bin/env bash\nexit 0\n' > "$SCRATCH/tools/check.local.sh"
+# The same run starts from a class cache that lists no classes, as one
+# project's did on a server: check.sh must re-import before the boot.
+printf 'list=[]\n' > "$SCRATCH/.godot/global_script_class_cache.cfg"
 OUT="$(cd "$SCRATCH" && tools/check.sh --quick 2>&1)"; CODE=$?
 if [[ $CODE -ne 0 ]] && grep -qE 'FAIL +headless boot \(clean, [1-9][0-9]* engine errors\)' <<<"$OUT"; then
 	say ok "boot gate is red on a plain engine ERROR line"
 else
 	say FAIL "boot gate stayed green on a plain engine ERROR line (exit $CODE)"; FAILED=1
+fi
+if grep -q 'check.sh is re-importing the project' <<<"$OUT" && grep -qE 'ok +class cache re-imported \([1-9][0-9]* classes\)' <<<"$OUT"; then
+	say ok "a stale class cache is re-imported before the tests"
+else
+	say FAIL "a stale class cache was not re-imported: $(grep -A1 'class cache' <<<"$OUT" | tr '\n' '|')"; FAILED=1
 fi
 if [[ "${QUICK:-0}" -eq 0 ]]; then
 	# TWO scenarios: the boot error falls before the first header, so a
@@ -260,6 +270,12 @@ if [[ "$ARGS" == "scenarios/example.txt" ]] && grep -q "1 of $ALL_COUNT scenario
 	say ok "check.local.sh --scenarios chooses what check.sh renders, and check.sh says so"
 else
 	say FAIL "a chosen scenario list was not rendered alone (rendered: $(tr '\n' ' ' <<<"$ARGS"))"; FAILED=1
+fi
+# The cache the run above re-imported now matches, so no import runs.
+if grep -qE 'ok +class cache matches' <<<"$OUT" && ! grep -q 're-importing' <<<"$OUT"; then
+	say ok "a matching class cache is left alone"
+else
+	say FAIL "a matching class cache was not left alone: $(grep 'class cache' <<<"$OUT" | tr '\n' '|')"; FAILED=1
 fi
 chosen_run '[[ "$1" == "--scenarios" ]] && exit 3; exit 0'
 if [[ $(wc -l <<<"$ARGS") -eq $ALL_COUNT ]] && ! grep -q 'chosen by' <<<"$OUT"; then
