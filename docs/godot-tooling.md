@@ -521,6 +521,15 @@ reinvented this seam under its own prefix before Kombucha shared it.
 back to a menu without an error, followed by more clicks that also do
 nothing. That scenario is a run of silent cancels, and it passes.
 
+**`shoot.sh` fails a run when a scenario does not reach its last line.**
+The harness writes a summary row at the end of `shots/<stem>.jsonl`, and
+`shoot.sh` names every scenario that has none. A scenario that quits the
+game (a console `quit`, or a pressed Quit button) stops the engine with
+exit code 0. So the run used to read green. Its FAIL lines sat unread in
+the log, and the scenarios dealt after it on that shard never ran. To
+test a Quit button, assert that it is visible, but never press it in a
+scenario.
+
 Rules that keep the harness useful:
 
 - **Waits are three verbs, on purpose.** `wait` is frames, `ticks` is

@@ -26,7 +26,8 @@
 #      check.sh, and a named test.sh run, re-import a stale class cache
 #      before the tests and leave a matching one alone; check.sh takes
 #      its boot memory budget from tools/check.local.env, the caller's
-#      variable beats it, and the file is never run;
+#      variable beats it, and the file is never run; shoot.sh is red
+#      when a scenario quits the game before its last line;
 #   5. a release-flavoured run cannot open the debug console;
 #   6. serve.sh start imports a fresh worktree and serves; a served
 #      engine that never starts serving (a broken harness) is stopped,
@@ -253,6 +254,9 @@ if [[ "${QUICK:-0}" -eq 0 ]]; then
 	: > "$TKLOG"
 	OUT="$(cd "$SCRATCH" && TK_STUB_LOG="$TKLOG" AGENT_TICKETS_SCRIPT="$TKSTUB" SHOOT_JOBS=1 \
 		tools/shoot.sh scenarios/example.txt 2>&1)"
+	if grep -q 'did not finish' <<<"$OUT"; then
+		say FAIL "a scenario that finished was named as unfinished: $(grep 'did not finish' <<<"$OUT")"; FAILED=1
+	fi
 	if grep -q '^slot take render' "$TKLOG" && grep -q '^slot give render render-0$' "$TKLOG"; then
 		say ok "a batch takes the render slot and gives it back"
 	else
@@ -266,6 +270,19 @@ if [[ "${QUICK:-0}" -eq 0 ]]; then
 	else
 		say FAIL "SHOOT_RENDER_SLOT=0 still asked for a slot"; FAILED=1
 	fi
+	# A scenario that quits the game ends the engine with exit 0 mid-run.
+	# shoot.sh read that as green, with no summary and "0 shot(s)", and the
+	# scenario dealt after it never ran (KOMBU-34). Both must be named.
+	printf 'shot before\nquit\nshot after\n' > "$SCRATCH/scenarios/selftest_quits.txt"
+	OUT="$(cd "$SCRATCH" && SHOOT_RENDER_SLOT=0 SHOOT_JOBS=1 \
+		tools/shoot.sh scenarios/selftest_quits.txt scenarios/example.txt 2>&1)"; CODE=$?
+	if [[ $CODE -ne 0 ]] && grep -q '^shoot: scenarios/selftest_quits.txt did not finish' <<<"$OUT" \
+			&& grep -q '^shoot: scenarios/example.txt did not finish' <<<"$OUT"; then
+		say ok "a scenario that quits the game is red, and so is the one it kept from running"
+	else
+		say FAIL "a scenario that quit the game was not named as unfinished (exit $CODE): $(grep 'did not finish' <<<"$OUT" | tr '\n' '|')"; FAILED=1
+	fi
+	rm -f "$SCRATCH/scenarios/selftest_quits.txt"
 	# A served engine in a fresh worktree used to fail: the class cache
 	# was missing, so the harness could not load. serve.sh start now
 	# imports first (KOMBU-32). A copy with no .godot/ is that worktree.

@@ -287,6 +287,9 @@ fi
 	}
 '
 
+# Each finished scenario writes shots/<stem>.jsonl with a summary row last.
+# A file older than this stamp is from an earlier run (SHOOT_KEEP keeps them).
+: > "$WORK/started"
 PIDS=()
 for ((i = 0; i < JOBS; i++)); do
 	[[ -s "$WORK/list.$i" ]] || continue
@@ -334,6 +337,29 @@ done
 FAILED=$(grep -h '^FAIL ' "$WORK"/shard.*.log | awk '{print $2}' | cut -d: -f1 | sort -u | wc -l)
 if [[ $JOBS -gt 1 ]]; then
 	echo "── batch: ${#SCENARIOS[@]} scenario(s) in $JOBS process(es), $FAILED failed ──"
+fi
+
+# A scenario that quits the game (a console `quit`, a pressed Quit button)
+# ends the engine with exit 0 in the middle of its lines. The harness then
+# writes no summary for it and never runs the scenarios dealt after it on
+# that shard. Exit 0 and "0 shot(s)" read as green, and the FAIL lines
+# printed before the quit went unnoticed (KOMBU-34). So every scenario
+# dealt must leave a fresh summary row, or the run is red.
+UNFINISHED=()
+for scenario in "${SCENARIOS[@]}"; do
+	trace="$ROOT/shots/$(basename "$scenario" .txt).jsonl"
+	if [[ ! -f "$trace" || "$trace" -ot "$WORK/started" ]] \
+			|| ! tail -n 1 "$trace" | grep -q '"scenario":'; then
+		UNFINISHED+=("$scenario")
+	fi
+done
+if [[ ${#UNFINISHED[@]} -gt 0 ]]; then
+	for scenario in "${UNFINISHED[@]}"; do
+		echo "shoot: $scenario did not finish. It wrote no summary." >&2
+	done
+	echo "  The engine stopped before the end: a scenario quit the game, or the engine crashed or timed out." >&2
+	echo "  The scenarios after it on the same shard never ran. Read shots/shard.*.log for the last line that ran." >&2
+	[[ $STATUS -eq 0 ]] && STATUS=1
 fi
 
 # Per-scenario seconds for the NEXT run's deal, only from a run that
