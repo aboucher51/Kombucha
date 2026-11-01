@@ -1,14 +1,15 @@
 ---
 id: KOMBU-20
 title: Plain text: messages the tool scripts print
-status: ready
+status: claimed
 priority: 3
-owner: 
+owner: kombucha-worker
+pid: 2749458
 depends_on: []
 touches: [tools/check.sh, tools/test.sh, tools/shoot.sh, tools/serve.sh, tools/export.sh, tools/setup.sh, tools/sync-tooling.sh, tools/new-project.sh, tools/parse-error.sh, tools/selftest.sh]
 batch: KOMBU-B3
 created: 2026-10-31
-updated: 2026-10-31
+updated: 2026-11-01
 ---
 
 Rewrite the messages the tool scripts print in plain words. This is part of TextCleaner's cleanup of how Claude writes, which Alex approved on 2026-10-29.
@@ -47,5 +48,6 @@ If you are unsure whether something reads a line, leave the line as it is and li
 
 ## Progress
 - 2026-10-31 21:24 PM, from TextCleaner: before the push, also run one synced project's quick check against this change. Clone a project into scratch (like git clone ~/godot-projects/Mapledot <scratch>). Never sync into a live project tree. Sync it from your worktree with tools/sync-tooling.sh, import it, then run its tools/check.sh --quick under a heavy slot. tools/check.sh --ci already runs the self-test here. Put both results in your report.
+- 2026-11-01 00:17 PM, from TextCleaner's review of KOMBU-19: never cut off a cross-project grep with head, a match limit or a sample. For every printed line you change, grep ~/.claude, ~/vscodeprojects, Kombucha's tests and every project under ~/godot-projects with no limit. Save the output to a file. In your report, list every match that reads the line (test, scenario, script, brief, watchdog) and say what you did about each one.
 
 ## Left for later

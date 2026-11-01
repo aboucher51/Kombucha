@@ -1,14 +1,15 @@
 ---
 id: KOMBU-25
 title: check.sh: the 'tooling is behind' note misses a worktree source
-status: ready
+status: claimed
 priority: 3
-owner: 
+owner: kombucha-worker
+pid: 2749458
 depends_on: []
 touches: [tools/check.sh, tools/selftest.sh, CLAUDE.md]
 batch: KOMBU-B3
 created: 2026-10-31
-updated: 2026-10-31
+updated: 2026-11-01
 ---
 
 Make the "tooling is N Kombucha commit(s) behind" note in `tools/check.sh` work when the project was synced from a Kombucha git worktree.
