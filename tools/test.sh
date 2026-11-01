@@ -171,7 +171,7 @@ if [[ $# -gt 0 ]]; then
 		if [[ -n "$exact" ]]; then
 			SELECTED+=("$exact")
 			(( ${#matches[@]} > 1 )) && \
-				echo "test: '$wanted' also matches ${#matches[@]} scripts; running the exact one — name the others to include them" >&2
+				echo "test: '$wanted' also matches ${#matches[@]} scripts. This run uses only the exact match. Name the others to run them too." >&2
 		elif (( ${#matches[@]} == 0 )); then
 			echo "test: no test script matches '$wanted'" >&2
 			exit 2
@@ -201,7 +201,7 @@ if [[ $# -gt 0 ]]; then
 	STATUS=$?
 	paint "$LOG"
 	echo "Ran ${#SELECTED[@]} script(s): ${SELECTED[*]#tests/}"
-	[[ $STATUS -eq 124 ]] && echo "test: timed out after ${TIMEOUT}s — a test is probably awaiting something that never comes" >&2
+	[[ $STATUS -eq 124 ]] && echo "test: timed out after ${TIMEOUT}s. A test is probably waiting for something that never happens." >&2
 	if [[ $STATUS -ne 0 ]]; then
 		report_failures "$LOG"
 		keep "$LOG" named.log
@@ -319,7 +319,7 @@ for ((i = 0; i < JOBS; i++)); do
 	wait "${PIDS[$i]}"
 	CODE=$?
 	if [[ $CODE -eq 124 ]]; then
-		echo "test: shard $i timed out after ${TIMEOUT}s — a test awaiting something that never comes, or a suite bigger than the budget (TEST_TIMEOUT)" >&2
+		echo "test: shard $i timed out after ${TIMEOUT}s. Either a test waits for something that never happens, or the suite needs more time (raise TEST_TIMEOUT)." >&2
 		TIMED_OUT=1
 	fi
 	FAILS=$(load_fails "$WORK/shard.$i.log")
@@ -345,10 +345,10 @@ if [[ $RAN -lt $COUNT ]]; then
 	if [[ $TIMED_OUT -eq 1 ]]; then
 		# A killed shard never reached its remaining scripts: that is the
 		# timeout's doing, not a parse error's, and must not read as one.
-		echo "test: only $RAN of $COUNT test scripts ran — a shard timed out before the rest" >&2
+		echo "test: only $RAN of $COUNT test scripts ran. A shard timed out before it reached the rest." >&2
 		echo "Failing Tests         $((COUNT - RAN)) (scripts a timed-out shard never reached)"
 	else
-		echo "test: only $RAN of $COUNT test scripts ran — the rest failed to load" >&2
+		echo "test: only $RAN of $COUNT test scripts ran. The rest failed to load." >&2
 		grep -hE 'Failed to load script' "$WORK"/shard.*.log | sed 's/^/  /' >&2
 		report_parse_error "$WORK"/shard.*.log
 		echo "Failing Tests         $((COUNT - RAN)) (scripts that did not load)"

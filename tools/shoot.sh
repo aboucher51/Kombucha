@@ -145,7 +145,7 @@ case "${SHOOT_DISPLAY:-auto}" in
 		if command -v xvfb-run >/dev/null; then
 			virtual_display
 		elif have_display; then
-			echo "shoot: real display — the window takes focus; sudo apt install xvfb for a virtual one"
+			echo "shoot: real display. The window takes focus. Install xvfb (sudo apt install xvfb) for a virtual display."
 		else
 			echo "shoot: no display and no xvfb-run — install xvfb (sudo apt install xvfb) or run under WSLg" >&2
 			exit 2
@@ -306,7 +306,7 @@ for pid in "${PIDS[@]}"; do
 	wait "$pid"
 	CODE=$?
 	if [[ $CODE -eq 124 ]]; then
-		echo "shoot: timed out after ${TIMEOUT}s — a scenario never reached its end" >&2
+		echo "shoot: timed out after ${TIMEOUT}s. A scenario never reached its end." >&2
 		STATUS=124
 	elif [[ $CODE -ne 0 && $STATUS -eq 0 ]]; then
 		STATUS=$CODE
@@ -360,7 +360,7 @@ ERROR_PATTERN="SCRIPT ERROR|Parse Error|shader|^ERROR:"
 EXIT_NOISE="resources still in use at exit|were leaked at exit|Texture with GL ID of [0-9]+: leaked"
 ENGINE_ERRORS=$(cat "$WORK"/shard.*.log | grep -vE "$EXIT_NOISE|^ERROR: scenario " | grep -cE "$ERROR_PATTERN")
 if [[ $ENGINE_ERRORS -gt 0 ]]; then
-	echo "shoot: $ENGINE_ERRORS engine error(s) — a green scenario does not mean a clean run" >&2
+	echo "shoot: $ENGINE_ERRORS engine error(s). A scenario can pass and still log engine errors." >&2
 	# Named by the scenario they fell under: the shard log carries the
 	# scenario headers in the same stream, and an unattributed
 	# `Condition "!is_inside_tree()" is true` under "0 failed" cost one

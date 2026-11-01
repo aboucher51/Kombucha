@@ -59,7 +59,7 @@ send() { # name, source-file
 	local waited=0
 	while [[ ! -f "$SERVE/$name.done" ]]; do
 		if ! running; then
-			grep -m1 '^harness: stopping' "$LOG" >&2 || echo "serve: engine died — see $LOG" >&2
+			grep -m1 '^harness: stopping' "$LOG" >&2 || echo "serve: the engine stopped. See $LOG" >&2
 			return 2
 		fi
 		sleep 0.05; waited=$((waited + 1))
@@ -117,12 +117,12 @@ case "${1:-}" in
 		if [[ ${#RUNNER[@]} -gt 0 ]]; then
 			[[ "${GALLIUM_DRIVER:-}" == "d3d12" ]] && echo "serve: virtual display (Xvfb), GPU" || echo "serve: virtual display (Xvfb), llvmpipe"
 		else
-			echo "serve: real display — the window takes focus; sudo apt install xvfb for a virtual one"
+			echo "serve: real display. The window takes focus. Install xvfb (sudo apt install xvfb) for a virtual display."
 		fi
 		XDG_DATA_HOME="$SERVE/user" nohup "${RUNNER[@]}" "$GODOT" "${ARGS[@]}" -- --serve "$SERVE" --serve-idle "$IDLE_S" --serve-idle-fps "$IDLE_FPS" "${SEED[@]}" >"$LOG" 2>&1 &
 		echo $! > "$PIDFILE"
 		for i in $(seq 1 200); do grep -q '^harness: serving' "$LOG" 2>/dev/null && break; sleep 0.1; done
-		grep -q '^harness: serving' "$LOG" || { echo "serve: engine did not start — see $LOG" >&2; exit 1; }
+		grep -q '^harness: serving' "$LOG" || { echo "serve: the engine did not start. See $LOG" >&2; exit 1; }
 		grep -m1 '^harness: renderer' "$LOG"
 		echo "serve: running (pid $(cat "$PIDFILE"))" ;;
 	run)

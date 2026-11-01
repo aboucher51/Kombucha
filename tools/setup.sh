@@ -143,9 +143,9 @@ echo "── project map (optional) ──"
 if command -v godot-map >/dev/null 2>&1; then
 	ok "godot-map"
 elif [[ $WITH_MAP -eq 0 ]]; then
-	skip "not installed; re-run with --with-map (Claude reads the map before grepping; check.sh keeps it fresh)"
+	skip "not installed. Run setup again with --with-map to install it. Claude reads the map before it searches, and check.sh keeps it up to date."
 elif ! command -v uv >/dev/null 2>&1; then
-	fail "godot-map installs with uv (https://docs.astral.sh/uv/); install uv and re-run with --with-map"
+	fail "godot-map needs uv to install (https://docs.astral.sh/uv/). Install uv, then run setup again with --with-map."
 else
 	mkdir -p "$PROJECTS"
 	if [[ ! -d "$PROJECTS/godot-map" ]]; then
@@ -154,17 +154,17 @@ else
 	if [[ -d "$PROJECTS/godot-map" ]] && uv tool install -q --editable "$PROJECTS/godot-map" >/dev/null 2>&1; then
 		did "godot-map from $PROJECTS/godot-map"
 	else
-		fail "uv tool install of godot-map failed"
+		fail "could not install godot-map with uv tool install"
 	fi
 fi
 
 echo
 if [[ $FAILED -eq 1 ]]; then
-	echo "setup: something failed above; fix it and re-run (every step is safe to repeat)"
+	echo "setup: a step above failed. Fix it and run setup again. Every step is safe to repeat."
 	exit 1
 fi
 if [[ ${#TODO[@]} -gt 0 ]]; then
-	echo "setup: nearly there —"
+	echo "setup: almost done. Do these steps:"
 	for item in "${TODO[@]}"; do echo "  - $item"; done
 fi
-echo "setup: then, in Claude Code, /new-godot-project MyGame scaffolds a project under $PROJECTS that starts green."
+echo "setup: next, run /new-godot-project MyGame in Claude Code. It makes a project under $PROJECTS that passes its checks from the start."

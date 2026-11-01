@@ -427,8 +427,10 @@ project imports here. Edit that file, never a project's copy.
 `tools/selftest.sh` runs against scratch copies. It proves the runner's
 guards: a broken test file is red, shards agree with one process, a named run
 has a private `user://`, and the default shard count follows `nproc`. It also
-proves the sync script: it stamps, seeds, sets the execute bit, reports drift
-and refuses a dirty source. `tools/check.local.sh` here is the fixture's own
+proves the sync script: it stamps, seeds, sets the execute bit, reports drift,
+regenerates the project map, and refuses a dirty source, from a clone or from
+a git worktree. It proves that `check.sh` says "tooling is behind" for a
+project synced from a worktree. `tools/check.local.sh` here is the fixture's own
 gate. It runs the self-test, plus the manifest check, the driver skeleton
 both ways, and the ordered scenario pair. A game project has nothing to
 prove there.

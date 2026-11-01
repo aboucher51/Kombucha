@@ -16,7 +16,9 @@
 #      switches off GUT's error check is warned about by file and line;
 #   3. the sync script stamps, seeds, sets the execute bit, reports drift
 #      (with the project's own lines), notes a missing CLAUDE.md import,
-#      and refuses a dirty source — against a scratch source and project;
+#      and refuses a dirty source — against a scratch source and project,
+#      from a clone and from a git worktree; check.sh says the tooling is
+#      behind a worktree source;
 #   4. a plain engine `ERROR:` line (a ConfigFile key with no default, a
 #      freed lambda capture) turns the boot gate and the scenario gate
 #      red — 738 of them once sat under an all-green check; check.sh
@@ -419,6 +421,22 @@ if GODOT_TEMPLATE=/nonexistent "$WT2/tools/sync-tooling.sh" "$DEST2" --no-check 
 	say FAIL "sync accepted a worktree with uncommitted owned changes"; FAILED=1
 else
 	say ok "sync refuses a dirty worktree"
+fi
+# 3d. check.sh tells a project its tooling is behind by reading the
+#     source's history. A folder-only .git test took a worktree source for
+#     a plugin install, so the note never came (KOMBU-25). The project's
+#     test runner is stubbed and its boot fails at once: only the note
+#     at the end is read.
+git -C "$WT2" checkout -q -- tools/shoot.sh
+GODOT_TEMPLATE=/nonexistent "$WT2/tools/sync-tooling.sh" "$DEST2" --no-check >/dev/null 2>&1
+echo "# one owned commit ahead of the stamp" >> "$WT2/tools/shoot.sh"
+git -C "$WT2" -c user.name=selftest -c user.email=selftest@example.invalid commit -qam "an owned change"
+printf '#!/usr/bin/env bash\necho "Passing Tests 1"\n' > "$DEST2/tools/test.sh"
+OUT="$(cd "$DEST2" && env -u GODOT_TOOLING GODOT=false tools/check.sh --quick 2>&1)"
+if grep -q '^note: tooling is 1 Kombucha commit(s) behind' <<<"$OUT"; then
+	say ok "check.sh says the tooling is behind a worktree source"
+else
+	say FAIL "check.sh gave no 'behind' note for a worktree source: $(grep '^note:' <<<"$OUT" | tr '\n' ' ')"; FAILED=1
 fi
 # 4. An installed plugin is the source without .git: the stamp must be
 #    the sha Claude Code recorded for that install, never "unknown".

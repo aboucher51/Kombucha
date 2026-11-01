@@ -69,7 +69,7 @@ setting_source() { # key
 # from the Linux filesystem in under a second (measured on a 428 MB game:
 # 10.8 s vs 0.8 s). Every test shard, boot check and scenario shard pays it.
 if [[ "$ROOT" == /mnt/* ]]; then
-	echo "note: this checkout is on /mnt — a clone under the Linux filesystem boots ~10x faster (or point GODOT at a Windows binary)"
+	echo "note: this checkout is on /mnt. A clone on the Linux filesystem boots about 10x faster. Or point GODOT at a Windows binary."
 fi
 
 FAILED=()
@@ -238,7 +238,7 @@ if [[ $QUICK -eq 0 ]]; then
 			FRAMES="$(printf '%s\n' "$OUT" | grep -m1 'frames:' || true)"
 			if [[ -n "$FRAMES" ]]; then
 				printf '  ok    %s\n' "${FRAMES#*frames: }"
-				printf '  note  a regression tripwire on this renderer, not a device target\n'
+				printf '  note  this number catches a slowdown on this renderer. It is not a target for a real device.\n'
 			else
 				printf '  --    no frame measurement in this run\n'
 			fi
@@ -289,7 +289,10 @@ fi
 if [[ -n "$TOOLING_SRC" && -f tools/TOOLING_VERSION && -f tools/tooling-manifest.txt \
 		&& -d "$TOOLING_SRC" && "$ROOT" != "$TOOLING_SRC" ]]; then
 	SYNCED="$(head -1 tools/TOOLING_VERSION)"
-	if [[ -d "$TOOLING_SRC/.git" ]]; then
+	# A clone has a .git folder, and a git worktree has a .git file. Test
+	# for either, as sync-tooling.sh's has_git does (KOMBU-25). Do not use
+	# git rev-parse here: an installed plugin inside another repo passes it.
+	if [[ -e "$TOOLING_SRC/.git" ]]; then
 		mapfile -t OWNED < <(grep -vE '^\s*(#|$)' tools/tooling-manifest.txt)
 		BEHIND="$(git -C "$TOOLING_SRC" rev-list --count "$SYNCED"..HEAD -- "${OWNED[@]}" 2>/dev/null || echo "?")"
 		if [[ "$BEHIND" == "?" ]]; then

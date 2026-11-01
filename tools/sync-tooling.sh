@@ -59,7 +59,7 @@ has_git() { [[ -e "$1/.git" ]]; }
 
 DEST="$(cd "$DEST" && pwd)"
 if [[ "$DEST" == "$SRC" ]]; then
-	echo "sync-tooling: '$DEST' is the source; nothing to sync" >&2
+	echo "sync-tooling: '$DEST' is the tooling source itself, so the sync has nothing to copy." >&2
 	exit 2
 fi
 
@@ -146,7 +146,7 @@ source_commit() {
 
 # A dirty source would stamp a commit the copied files do not match.
 if [[ "$MODE" != "--check" ]] && has_git "$SRC" && [[ -n "$(git -C "$SRC" status --porcelain -- "${OWNED[@]}")" ]]; then
-	echo "sync-tooling: Kombucha has uncommitted changes to owned files — commit them first" >&2
+	echo "sync-tooling: Kombucha has uncommitted changes to owned files. Commit them first." >&2
 	exit 2
 fi
 
@@ -240,7 +240,7 @@ seed check.local.env tools/check.local.env
 # project's CLAUDE.md imports; without the import line the project reads
 # stale rules from before the ownership split.
 if [[ -f "$DEST/CLAUDE.md" ]] && ! grep -q '^@docs/godot-tooling.md' "$DEST/CLAUDE.md"; then
-	echo "note: CLAUDE.md does not import the tooling rules — replace its tooling sections with a line reading @docs/godot-tooling.md"
+	echo "note: CLAUDE.md does not import the tooling rules. Replace its tooling sections with the line @docs/godot-tooling.md"
 fi
 
 # The project map stores each script's line count, so a sync that copies a

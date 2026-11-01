@@ -66,7 +66,7 @@ ensure_templates() {
 	echo "── fetching export templates ($GODOT_VERSION): ${missing[*]#templates/} ──"
 	local tpz
 	tpz="$(mktemp --suffix=.tpz)"
-	curl -fL --retry 3 -o "$tpz" "$TEMPLATE_URL" || { echo "template download failed"; return 1; }
+	curl -fL --retry 3 -o "$tpz" "$TEMPLATE_URL" || { echo "export: could not download the export templates"; return 1; }
 	mkdir -p "$TEMPLATE_DIR"
 	# A .tpz is a zip with everything under templates/; take only what the
 	# declared presets need rather than unpacking a gigabyte of platforms.
@@ -120,7 +120,7 @@ for preset in "${PRESETS[@]}"; do
 		"Web")
 			export_preset "Web" "builds/web/index.html" ;;
 		*)
-			echo "  --    preset '$preset' is not one this script builds (Linux, Windows Desktop, Web); skipped" ;;
+			echo "  --    preset '$preset' skipped. This script builds only Linux, Windows Desktop and Web." ;;
 	esac
 done
 
