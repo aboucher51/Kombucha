@@ -28,7 +28,8 @@
 #      its boot memory budget from tools/check.local.env, the caller's
 #      variable beats it, and the file is never run;
 #   5. a release-flavoured run cannot open the debug console;
-#   6. a served engine that never starts serving (no import) is stopped,
+#   6. serve.sh start imports a fresh worktree and serves; a served
+#      engine that never starts serving (a broken harness) is stopped,
 #      and serve.sh start fails.
 set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -265,13 +266,24 @@ if [[ "${QUICK:-0}" -eq 0 ]]; then
 	else
 		say FAIL "SHOOT_RENDER_SLOT=0 still asked for a slot"; FAILED=1
 	fi
-	# A served engine whose harness cannot load never reaches its serve
-	# loop, so no idle limit stops it. One red gate in a worktree with no
-	# import left three that ran 3 hours on 8 cores (KOMBU-29). A copy
-	# with no .godot/ is that worktree: serve.sh start must fail and take
-	# the engine, xvfb-run and all, with it.
+	# A served engine in a fresh worktree used to fail: the class cache
+	# was missing, so the harness could not load. serve.sh start now
+	# imports first (KOMBU-32). A copy with no .godot/ is that worktree.
 	NOIMPORT="$(mktemp -d)"
 	rsync -a --exclude '.git' --exclude '.godot' --exclude 'shots/*.png' "$ROOT/" "$NOIMPORT/p/"
+	OUT="$(cd "$NOIMPORT/p" && SERVE_DIR="$NOIMPORT/serve" SERVE_IDLE_S=30 tools/serve.sh start 2>&1)"; CODE=$?
+	if [[ $CODE -eq 0 ]] && grep -q 'Importing the project' <<<"$OUT"; then
+		say ok "serve.sh start imports a fresh worktree, then serves"
+	else
+		say FAIL "serve.sh start did not serve a fresh worktree (exit $CODE): $(tail -2 <<<"$OUT" | tr '\n' '|')"; FAILED=1
+	fi
+	(cd "$NOIMPORT/p" && SERVE_DIR="$NOIMPORT/serve" tools/serve.sh stop >/dev/null 2>&1)
+	# A served engine whose harness cannot load never reaches its serve
+	# loop, so no idle limit stops it. One red gate left three that ran
+	# 3 hours on 8 cores (KOMBU-29). A parse error planted in the harness
+	# is that engine: serve.sh start must fail and take the engine,
+	# xvfb-run and all, with it.
+	printf '\n\nfunc _selftest_broken() -> void:\n\tvar x = 1 if true\n' >> "$NOIMPORT/p/scripts/dev/screenshot_harness.gd"
 	OUT="$(cd "$NOIMPORT/p" && SERVE_DIR="$NOIMPORT/serve" SERVE_START_S=10 SERVE_IDLE_S=2 tools/serve.sh start 2>&1)"; CODE=$?
 	sleep 1
 	LEFT="$(pgrep -f -- "--serve $NOIMPORT/serve ")"

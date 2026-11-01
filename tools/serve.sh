@@ -31,9 +31,11 @@
 #
 # `start` waits SERVE_START_S seconds (default 60) for the engine to say it
 # is serving. If it never does, `start` stops the engine and its virtual
-# display and exits 1. An engine whose harness cannot load never reaches
-# the serve loop, so neither the idle limit nor the gone-folder exit can
-# stop it: three such engines from one red gate ran 3 hours on 8 cores.
+# display and exits 1. Before it starts the engine, it re-imports a stale
+# class cache (tools/class-cache.sh). An engine whose harness cannot load
+# never reaches the serve loop, so neither the idle limit nor the
+# gone-folder exit can stop it: three such engines from one red gate ran
+# 3 hours on 8 cores.
 #
 # OWNED BY KOMBUCHA (tools/tooling-manifest.txt); do not edit in a project.
 set -uo pipefail
@@ -88,6 +90,10 @@ send() { # name, source-file
 case "${1:-}" in
 	start)
 		running && { echo "serve: already running (pid $(cat "$PIDFILE"))"; exit 0; }
+		# A stale class cache (a fresh worktree, a pull that moved a
+		# class_name script) would leave the harness unable to load, so the
+		# engine could never serve. tools/class-cache.sh re-imports first.
+		[[ -x "$ROOT/tools/class-cache.sh" ]] && "$ROOT/tools/class-cache.sh"
 		# The editor never imports the shots (shoot.sh says why).
 		mkdir -p "$ROOT/shots"; [[ -e "$ROOT/shots/.gdignore" ]] || : > "$ROOT/shots/.gdignore"
 		mkdir -p "$SERVE/user"; rm -f "$SERVE"/*.cmd "$SERVE"/*.done "$SERVE/quit" "$SERVE/counter"; : > "$LOG"
@@ -146,7 +152,7 @@ case "${1:-}" in
 			rm -f "$PIDFILE"
 			echo "serve: the engine did not start serving within ${START_S} s, so serve.sh stopped it. The first error it logged:" >&2
 			grep -m1 -E 'SCRIPT ERROR|^ERROR' "$LOG" | sed 's/^/  /' >&2
-			echo "serve: the full log is $LOG. A fresh checkout may need godot4 --headless --path . --import first." >&2
+			echo "serve: fix that error and start again. The full log is $LOG." >&2
 			exit 1
 		fi
 		grep -m1 '^harness: renderer' "$LOG"

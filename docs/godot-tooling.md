@@ -53,9 +53,9 @@ adds or moves a `class_name` script, the tests fail with parse errors like
 "Identifier Cmdline not declared", though the code is fine.
 `tools/class-cache.sh` compares the list with the `class_name` lines on
 disk. When they differ, it prints a `note:` line and runs the import. It
-also says when that import changed `project.godot`. `check.sh`, `test.sh`
-and `shoot.sh` run it before their first engine starts, so you need no
-import of your own on a fresh pull or worktree.
+also says when that import changed `project.godot`. `check.sh`, `test.sh`,
+`shoot.sh` and `serve.sh start` run it before their first engine starts, so
+you need no import of your own on a fresh pull or worktree.
 
 Smoke-test by running headless for a fixed duration:
 
@@ -391,8 +391,8 @@ by a removed worktree ran for 17 hours.
 `SERVE_START_S` seconds (60 by default) for the engine's `harness: serving`
 line. If the line never comes, `serve.sh` stops the engine and its virtual
 display, prints the first error the engine logged, and exits 1. An engine
-whose harness cannot load (a fresh worktree with no import) never reaches
-its serve loop, so the idle limit cannot stop it. Three such engines from
+whose harness cannot load (a parse error in it) never reaches its serve
+loop, so the idle limit cannot stop it. Three such engines from
 one red gate ran for 3 hours on 8 cores.
 
 **`SERVE_IDLE_FPS` sets that rate** (default 10). It trades CPU for reply
