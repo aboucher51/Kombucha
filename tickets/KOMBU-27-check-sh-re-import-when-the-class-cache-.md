@@ -1,10 +1,9 @@
 ---
 id: KOMBU-27
 title: check.sh: re-import when the class cache does not match the class_name scripts
-status: claimed
+status: done
 priority: 3
 owner: kombucha-worker
-pid: 2996295
 depends_on: []
 touches: [tools/check.sh, tools/selftest.sh, docs/godot-tooling.md]
 created: 2026-11-01
@@ -20,6 +19,8 @@ What to do: before the tests, compare the (class, path) pairs in the cache with 
 - 2026-11-01 03:49 added tools/selftest.sh (the fixture must prove the new step fires) and docs/godot-tooling.md (the step needs its doc line) to touches
 - 2026-11-01 03:51 committed 01b2d33; comparison matches Kombucha, IceEngine, NavalWar, Tandem; found real stale caches in Mapledot (57 lines) and Swarm (1, leader.gd newer than cache). Running the gate.
 - 2026-11-01 04:11 PM: when this lands, tell tandem-pm, so Tandem can sync and drop its check.local.sh workaround (TAND-95).
+- 2026-11-01 04:42 gate green: tools/check.sh --ci (TEST_JOBS=8, shared slots), 146 tests, 20 scenarios; selftest 'a stale class cache is re-imported before the tests' and 'a matching class cache is left alone' ok. Handed to kombucha-pm.
+- 2026-11-01 04:43 done on main at 292ff6e
 
 ## Left for later
 - [[KOMBU-28]] test.sh and shoot.sh re-import a stale class cache too, through one shared helper

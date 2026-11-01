@@ -1,11 +1,12 @@
 ---
 id: KOMBU-30
 title: A new project fails its first check: a console test needs the fixture's own command row
-status: ready
+status: claimed
 priority: 1
-owner: 
+owner: kombucha-worker
+pid: 2996295
 depends_on: []
-touches: [tests/test_debug_console.gd, tools/selftest.sh, tools/new-project.sh]
+touches: [tests/test_debug_console.gd, tools/selftest.sh, tools/new-project.sh, scripts/dev/debug_console.gd]
 created: 2026-11-01
 updated: 2026-11-01
 ---
@@ -27,5 +28,8 @@ When it lands, the PM tells forgemaster that main scaffolds green. The gate is `
 ## Progress
 - 2026-11-01 04:30 PM: forgemaster pushed emblem-autobattler with the red test anyway (Alex wanted to start). When this lands, tell forgemaster and emblem-autobattler-pm. tests/test_debug_console.gd is not in tools/tooling-manifest.txt, so a sync will not carry the fix. emblem-autobattler must copy the fixed test by hand. Say so in your report.
 - 2026-11-01 04:31 PM, second scaffold bug in the same files (from emblem-autobattler-pm): new-project.sh copied Kombucha's whole tickets/ folder into the new repo. That was 28 KOMBU-* tickets, the batches, PUSH_POLICY ("pm") and KEY ("KOMBU"). A copied claim kept kombucha-worker's real pid. Fix: leave tickets/ out of the scaffold entirely (tickets/*.md, tickets/batches/, PUSH_POLICY, HOLD, KEY). The new project's PM runs tk init with its own key, and only Alex sets PUSH_POLICY. Prove it in the self-test's new-project step: the scaffold has no tickets/ files from Kombucha. emblem-autobattler already removed its copies in 8241499.
+- 2026-11-01 04:44 red proof: scaffold from main carries tickets/ (KEY, KOMBU-*) and its tests fail 1 of 105 (test_a_project_row_replaces_the_core_row_with_its_id). Added scripts/dev/debug_console.gd to touches: the console had no seam for the project-commands path; added project_commands_path + reload_commands() (synced file, so projects get the seam on sync).
+- 2026-11-01 04:47 gate green on ded6377: check.sh --ci, 146 tests; selftest 'the scaffold carries no tickets from Kombucha' and 'the scaffold's own tests pass (105 tests)' ok (both red on main before the fix). Handed to kombucha-pm.
 
 ## Left for later
+- [[KOMBU-31]] sync the tests that check owned tooling (test_debug_console.gd first)
