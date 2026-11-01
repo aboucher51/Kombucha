@@ -1,13 +1,14 @@
 ---
 id: KOMBU-22
 title: Roadmap: bring the Next list up to date
-status: ready
+status: claimed
 priority: 4
-owner: 
+owner: kombucha-worker
+pid: 2749458
 depends_on: []
 touches: [docs/roadmap.md]
 created: 2026-10-31
-updated: 2026-10-31
+updated: 2026-11-01
 ---
 
 Update the facts in the "Next" section of `docs/roadmap.md`. KOMBU-17 rewrote its wording only and kept every fact, but several facts are out of date.
