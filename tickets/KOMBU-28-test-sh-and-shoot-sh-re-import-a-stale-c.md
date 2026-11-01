@@ -1,10 +1,9 @@
 ---
 id: KOMBU-28
 title: test.sh and shoot.sh re-import a stale class cache too, through one shared helper
-status: claimed
+status: done
 priority: 3
 owner: kombucha-worker
-pid: 2996295
 depends_on: []
 touches: [tools/check.sh, tools/test.sh, tools/shoot.sh, tools/selftest.sh, tools/tooling-manifest.txt, docs/godot-tooling.md, tools/class-cache.sh]
 created: 2026-11-01
@@ -18,6 +17,7 @@ What to do: move the comparison out of check.sh into one shared helper (like too
 ## Progress
 - 2026-11-01 04:57 added tools/class-cache.sh to touches (the shared helper). Moved the comparison out of check.sh into it; test.sh and shoot.sh call it before their first engine; manifest lists it; selftest 2i: a named test.sh run from an empty cache re-imports and passes. Filed KOMBU-32 for serve.sh.
 - 2026-11-01 05:00 gate green on 9beea86: check.sh --ci, 146 tests; selftest 'a named test run re-imports a stale class cache first' ok, KOMBU-27 cases still ok. Handed to kombucha-pm.
+- 2026-11-01 05:01 done on main at 66813ab
 
 ## Left for later
 - [[KOMBU-32]] serve.sh start re-imports a stale class cache too
