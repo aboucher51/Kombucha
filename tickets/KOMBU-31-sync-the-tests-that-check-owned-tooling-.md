@@ -1,7 +1,7 @@
 ---
 id: KOMBU-31
 title: Sync the tests that check owned tooling (test_debug_console.gd first)
-status: ready
+status: waiting-on-user
 priority: 3
 owner: 
 depends_on: []
@@ -15,5 +15,6 @@ KOMBU-30 fixed tests/test_debug_console.gd, but tools/tooling-manifest.txt does 
 What to do: decide which tests in tests/ check only owned files, and list those in the manifest so a sync carries them. A test that checks kit files a project may change (autoloads, UI) stays a copy. Prove it in the self-test's sync step: a sync refreshes a listed test.
 
 ## Progress
+- 2026-11-01 05:01 PM: asked Alex first. Projects have added their own lines to their copies (NavalWar's tests/test_debug_console.gd checks its own spawn command), so syncing the file as it is would erase them. PM's suggestion: sync the tooling tests into their own folder, like tests/kombucha/, which the manifest owns, and leave each project's tests/ files as the project's own.
 
 ## Left for later
