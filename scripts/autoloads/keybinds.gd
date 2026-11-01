@@ -212,7 +212,7 @@ func begin_capture(action: String, slot: int = 0) -> String:
 	if not _slots.has(action):
 		return "ERROR: no action '%s'" % action
 	if slot < 0 or slot >= SLOTS:
-		return "ERROR: slot must be 0..%d" % (SLOTS - 1)
+		return "ERROR: slot must be a number from 0 to %d" % (SLOTS - 1)
 	_capture = {"action": action, "slot": slot}
 	capturing = true
 	return ""
@@ -296,13 +296,13 @@ func capture_event(event: InputEvent) -> bool:
 ## Error-shaped on a refusal so a scenario that expects one can say so.
 func capture_text(text: String) -> String:
 	if _capture.is_empty():
-		return "ERROR: not listening for a key (begin_capture first)"
+		return "ERROR: Keybinds is not waiting for a key. Call begin_capture first."
 	match text.to_lower():
 		"escape", "esc": return cancel_capture()
 		"clear", "backspace": return _apply_capture(null)
 	var event := parse_binding_text(text)
 	if event == null:
-		return "ERROR: '%s' names no key" % text
+		return "ERROR: '%s' is not a key name" % text
 	return _apply_capture(event)
 
 
@@ -317,7 +317,7 @@ func _apply_capture(event: InputEvent) -> String:
 	if not set_binding(action, slot, event):
 		var holder := holder_of(event, _group_of(action))
 		if holder.is_empty():
-			result = "ERROR: '%s' cannot be bound" % describe_event(event)
+			result = "ERROR: Keybinds cannot bind '%s'" % describe_event(event)
 		else:
 			result = "ERROR: %s already means %s" % [describe_event(event), holder]
 	capture_ended.emit(action, slot, result)

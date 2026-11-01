@@ -47,9 +47,9 @@ static func _read_json(path: String) -> Dictionary:
 		return {}
 	var json := JSON.new()
 	if json.parse(FileAccess.get_file_as_string(path)) != OK:
-		push_warning("ContentDB: %s line %d: %s — ignored" % [path, json.get_error_line() + 1, json.get_error_message()])
+		push_warning("ContentDB: %s line %d: %s. ContentDB skips this file." % [path, json.get_error_line() + 1, json.get_error_message()])
 		return {}
 	if json.data is not Dictionary:
-		push_warning("ContentDB: %s is not a JSON object — ignored" % path)
+		push_warning("ContentDB: %s is not a JSON object. ContentDB skips this file." % path)
 		return {}
 	return json.data

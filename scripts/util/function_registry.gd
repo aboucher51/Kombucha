@@ -40,6 +40,6 @@ func ids() -> Array:
 func invoke(id: String, args: Array = [], default: Variant = null) -> Variant:
 	var callable: Callable = _functions.get(id, Callable())
 	if not callable.is_valid():
-		push_error("FunctionRegistry: no function registered for id \"%s\" — returning default" % id)
+		push_error("FunctionRegistry: no function registered for id \"%s\". FunctionRegistry returns the default instead." % id)
 		return default
 	return callable.callv(args)

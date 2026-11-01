@@ -69,7 +69,7 @@ static func attach_if_outermost(control: Control) -> UiScaleRoot:
 func _ready() -> void:
 	_target = get_parent() as Control
 	if _target == null:
-		push_warning("UiScaleRoot: nothing to scale — its parent is not a Control")
+		push_warning("UiScaleRoot: its parent is not a Control, so it has nothing to scale")
 		return
 	# Top-left with no stretch: the parent's rect is written explicitly in
 	# _apply_scale, so anchors must not fight it.

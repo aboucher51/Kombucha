@@ -137,7 +137,7 @@ func test_until_watches_a_line_until_it_passes_and_names_the_last_error_when_it_
 	DebugConsole.hooks = mine
 	assert_eq(await harness._execute("until 5 arrives"), "", "passes once the state arrives")
 	assert_eq(mine.asks, 3, "asked once a frame until it answered without an error")
-	assert_eq(await harness._execute("until 0.05 never"), "ERROR: after 0.05s still: ERROR: still waiting")
+	assert_eq(await harness._execute("until 0.05 never"), "ERROR: still failing after 0.05s. Last reply: ERROR: still waiting")
 	assert_eq(await harness._execute('until 1 echo "" x'), 'echo [echo "" x]', "the inner line keeps its quotes")
 	assert_string_starts_with(await harness._execute("until soon never"), "ERROR: usage")
 	DebugConsole.hooks = previous

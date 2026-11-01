@@ -38,7 +38,7 @@ func scenario_command(parts: PackedStringArray, _line: String) -> Variant:
 				return "ERROR: usage: assert_note <text>"
 			var wanted := " ".join(parts.slice(1))
 			if not notes.has(wanted):
-				return "ERROR: no note '%s' (have: %s)" % [wanted, notes]
+				return "ERROR: no note '%s'. The notes are: %s" % [wanted, notes]
 			return ""
 	return null
 
@@ -50,7 +50,7 @@ func console_dispatch(handler: String, args: Dictionary) -> Variant:
 			# for this many frames.
 			var main := get_tree().get_first_node_in_group("settle")
 			if main == null or not main.has_method("set_busy"):
-				return "ERROR: nothing in the 'settle' group to make busy"
+				return "ERROR: no node in the 'settle' group to make busy"
 			main.set_busy(int(args["frames"]))
 			return "Busy for %d frames." % int(args["frames"])
 		"note":

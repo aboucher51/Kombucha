@@ -181,7 +181,7 @@ func _load_commands(path: String, required: bool) -> Array:
 	var data: Variant = JSON.parse_string(text) if not text.is_empty() else null
 	if data is Array:
 		return data
-	push_error("DebugConsole: cannot parse %s" % path)
+	push_error("DebugConsole: could not read %s as JSON. Check it for a typo." % path)
 	return []
 
 
@@ -193,7 +193,7 @@ func _load_hooks() -> Object:
 		return null
 	var script: Script = load(HOOKS_PATH)
 	if script == null:
-		push_error("DebugConsole: %s failed to load" % HOOKS_PATH)
+		push_error("DebugConsole: could not load %s" % HOOKS_PATH)
 		return null
 	var instance: Object = script.new()
 	if instance is Node:
@@ -326,7 +326,7 @@ func execute(line: String) -> String:
 		return ""
 	var command := _find_command(tokens[0])
 	if command.is_empty():
-		return "ERROR: unknown command '%s'. Try 'help'." % tokens[0]
+		return "ERROR: unknown command '%s'. Type 'help' to list them." % tokens[0]
 	var parsed := _parse_args(command, tokens.slice(1))
 	if parsed.has("error"):
 		return "ERROR: %s\nUsage: %s" % [parsed["error"], command.get("usage", command["id"])]
@@ -383,7 +383,7 @@ func _dispatch(command: Dictionary, args: Dictionary) -> String:
 		"save":
 			var slot := str(args.get("slot", "")) if not str(args.get("slot", "")).is_empty() else SaveManager.current_slot
 			var err := SaveManager.save_game(slot)
-			return "Saved '%s'." % slot if err == OK else "ERROR: save failed (%d)" % err
+			return "Saved '%s'." % slot if err == OK else "ERROR: could not save '%s' (error %d)" % [slot, err]
 		"load":
 			var slot := str(args.get("slot", "")) if not str(args.get("slot", "")).is_empty() else SaveManager.current_slot
 			var err := SaveManager.load_game(slot)
@@ -395,7 +395,7 @@ func _dispatch(command: Dictionary, args: Dictionary) -> String:
 			if "last_load_problem" in SaveManager \
 					and not str(SaveManager.last_load_problem).is_empty():
 				return "ERROR: " + str(SaveManager.last_load_problem)
-			return "ERROR: load failed (%d)" % err
+			return "ERROR: could not load '%s' (error %d)" % [slot, err]
 		"saves":
 			var names := _save_names()
 			return "No saves." if names.is_empty() else ", ".join(names)
@@ -434,7 +434,7 @@ func _dispatch(command: Dictionary, args: Dictionary) -> String:
 			return "Restarted."
 		"report":
 			var path := BugReport.write(str(args.get("note", "")))
-			return "Report: %s" % path if not path.is_empty() else "ERROR: report failed"
+			return "Report: %s" % path if not path.is_empty() else "ERROR: could not write the bug report"
 		"quit":
 			get_tree().quit()
 			return "Quitting."
@@ -459,7 +459,7 @@ func _dispatch(command: Dictionary, args: Dictionary) -> String:
 		"assert":
 			return _handle_assert(str(args["key"]), str(args["value"]))
 		_:
-			return "ERROR: command '%s' names unknown handler '%s'" % [command["id"], handler]
+			return "ERROR: command '%s' names the handler '%s', and no handler has that name" % [command["id"], handler]
 
 
 ## State readback before pixels. Any node in the "state" group that
@@ -481,7 +481,7 @@ func _state_providers(method: String) -> Array[Node]:
 func _handle_state() -> String:
 	var providers := _state_providers("state_text")
 	if providers.is_empty():
-		return "ERROR: nothing in the 'state' group answers state_text()"
+		return "ERROR: no node in the 'state' group answers state_text()"
 	var lines: Array[String] = []
 	for node in providers:
 		lines.append(str(node.state_text()))
@@ -491,7 +491,7 @@ func _handle_state() -> String:
 func _handle_assert(key: String, value: String) -> String:
 	var providers := _state_providers("assert_key")
 	if providers.is_empty():
-		return "ERROR: nothing in the 'state' group answers assert_key()"
+		return "ERROR: no node in the 'state' group answers assert_key()"
 	var unknown := "ERROR: unknown key '%s'" % key
 	for node in providers:
 		var reply := str(node.assert_key(key, value))
@@ -520,10 +520,10 @@ func _handle_bind(args: Dictionary) -> String:
 		return "ERROR: no rebindable action '%s'" % action
 	var event := Keybinds.parse_binding_text(str(args["key"]))
 	if event == null:
-		return "ERROR: '%s' names no key (try F5, W, mouse:3)" % args["key"]
+		return "ERROR: '%s' is not a key name. Try F5, W or mouse:3." % args["key"]
 	if not Keybinds.set_binding(action, int(args["slot"]), event):
 		var holder := Keybinds.holder_of(event, Keybinds.group_of(action))
-		return "ERROR: %s is already bound to %s — unbind it first" % [
+		return "ERROR: %s is already bound to %s. Unbind it first." % [
 			Keybinds.describe_event(event), holder]
 	return "Bound %s[%d] = %s." % [action, int(args["slot"]), Keybinds.describe_event(event)]
 

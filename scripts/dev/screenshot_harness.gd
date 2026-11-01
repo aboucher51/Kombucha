@@ -512,7 +512,7 @@ func _execute(line: String) -> String:
 				return "ERROR: usage: mask <x> <y> <w> <h>"
 			var rect := Rect2i(int(parts[1]), int(parts[2]), int(parts[3]), int(parts[4]))
 			if not rect.has_area():
-				return "ERROR: mask rect has no area"
+				return "ERROR: mask needs a width and a height above 0"
 			_masks.append(rect)
 			return ""
 		"reset":
@@ -530,7 +530,7 @@ func _execute(line: String) -> String:
 			_update_baselines = updating
 			if _is_error(inner):
 				return ""
-			return "ERROR: expected failure but got: '%s'" % inner
+			return "ERROR: expected the line to fail, but it answered: '%s'" % inner
 		_:
 			return await _project_command(parts, line)
 
@@ -563,7 +563,7 @@ func _until(parts: PackedStringArray, line: String) -> String:
 		if not _is_error(reply):
 			return reply
 		if Time.get_ticks_msec() >= deadline:
-			return "ERROR: after %ss still: %s" % [parts[1], reply]
+			return "ERROR: still failing after %ss. Last reply: %s" % [parts[1], reply]
 		await get_tree().process_frame
 	return ""
 
@@ -590,19 +590,19 @@ func _shot(parts: PackedStringArray) -> String:
 		await get_tree().process_frame
 	var image := capture(get_viewport())
 	if image == null:
-		return "ERROR: no rendered frame — this display driver has no rasterizer (--headless?)"
+		return "ERROR: no rendered frame to capture. This display driver draws nothing. Run without --headless."
 	if parts.size() >= 6:
 		var rect := Rect2i(int(parts[2]), int(parts[3]), int(parts[4]), int(parts[5]))
 		rect = rect.intersection(Rect2i(Vector2i.ZERO, image.get_size()))
 		if not rect.has_area():
-			return "ERROR: crop rect is off-image"
+			return "ERROR: the crop rect is outside the frame"
 		image = image.get_region(rect)
 	DirAccess.make_dir_recursive_absolute(SHOT_DIR)
 	_shot_index += 1
 	var file_path := "%s/%s-%02d-%s.png" % [SHOT_DIR, _scenario_stem, _shot_index, parts[1]]
 	var err := image.save_png(file_path)
 	if err != OK:
-		return "ERROR: save_png failed (%d)" % err
+		return "ERROR: could not save the shot %s (error %d)" % [file_path, err]
 	print("shot: %s" % file_path)
 	return ""
 
@@ -638,7 +638,7 @@ func _expect_shot(parts: PackedStringArray) -> String:
 		await get_tree().process_frame
 	var image := capture(get_viewport())
 	if image == null:
-		return "ERROR: no rendered frame — this display driver has no rasterizer (--headless?)"
+		return "ERROR: no rendered frame to capture. This display driver draws nothing. Run without --headless."
 	var baseline_path := "%s/%s/%s-%s.png" % [BASELINE_DIR,
 		renderer_slug(RenderingServer.get_video_adapter_name()), _scenario_stem, parts[1]]
 	if _update_baselines and not _written_baselines.has(baseline_path):
@@ -646,12 +646,12 @@ func _expect_shot(parts: PackedStringArray) -> String:
 		DirAccess.make_dir_recursive_absolute(baseline_path.get_base_dir())
 		var err := image.save_png(baseline_path)
 		if err != OK:
-			return "ERROR: could not write baseline %s (%d)" % [baseline_path, err]
+			return "ERROR: could not write the baseline %s (error %d)" % [baseline_path, err]
 		print("baseline: wrote %s" % baseline_path)
 		return ""
 	var baseline := load_png(baseline_path)
 	if baseline == null:
-		return "ERROR: no baseline %s — SHOOT_BASELINES=update tools/shoot.sh <scenario> writes it; commit it" % baseline_path
+		return "ERROR: no baseline %s. Run SHOOT_BASELINES=update tools/shoot.sh <scenario> to write it, then commit it." % baseline_path
 	var result := compare(image, baseline, masks)
 	if result.has("error"):
 		return str(result["error"])
@@ -664,7 +664,7 @@ func _expect_shot(parts: PackedStringArray) -> String:
 		var diff_path := "%s/%s-diff-%s.png" % [SHOT_DIR, _scenario_stem, parts[1]]
 		image.save_png(actual_path)
 		(result["diff"] as Image).save_png(diff_path)
-		return "ERROR: %d of %d pixels (%.3f%%) differ from %s, tolerance %.3f%% — see %s" % [
+		return "ERROR: %d of %d pixels (%.3f%%) differ from %s, over the %.3f%% tolerance. See %s" % [
 			differing, total, fraction * 100.0, baseline_path, tolerance * 100.0, diff_path]
 	print("expect_shot: %s matches %s (%d pixel(s) differ)" % [parts[1], baseline_path, differing])
 	return ""
@@ -706,7 +706,7 @@ static func load_png(path: String) -> Image:
 ## diff image. Static and renderer-free so a headless GUT test can pin it.
 static func compare(actual: Image, baseline: Image, masks: Array[Rect2i]) -> Dictionary:
 	if actual.get_size() != baseline.get_size():
-		return {"error": "ERROR: frame is %s but the baseline is %s" % [
+		return {"error": "ERROR: the frame is %s, but the baseline is %s" % [
 			actual.get_size(), baseline.get_size()]}
 	var a := actual.duplicate() as Image
 	var b := baseline.duplicate() as Image
@@ -1026,8 +1026,8 @@ func _hover(parts: PackedStringArray) -> String:
 		if hovered != null and (hovered == target or target.is_ancestor_of(hovered)):
 			return ""
 	if hovered == null:
-		return "ERROR: hover did not register at %s (over %s)" % [at, parts[1]]
-	return "ERROR: hover landed on '%s', wanted '%s' at %s" % [hovered.name, parts[1], at]
+		return "ERROR: hover at %s over '%s' reached no control" % [at, parts[1]]
+	return "ERROR: hover at %s reached '%s', not '%s'" % [at, hovered.name, parts[1]]
 
 
 ## A layout RULE as a line: the whole rect of the named visible Control in
@@ -1128,7 +1128,7 @@ func _assert_tooltip(parts: PackedStringArray) -> String:
 	var wanted := " ".join(parts.slice(2))
 	var text := target.get_tooltip(target.size / 2.0)
 	if text.is_empty():
-		return "ERROR: '%s' carries no tooltip" % parts[1]
+		return "ERROR: '%s' has no tooltip" % parts[1]
 	if not text.contains(wanted):
 		return "ERROR: '%s' tooltip says '%s', wanted '%s'" % [parts[1], text, wanted]
 	return ""
@@ -1167,7 +1167,7 @@ func _frame_budget(parts: PackedStringArray) -> String:
 	var report := "%.1f ms average, %.1f ms worst over %d frames (%s)" % [
 		average, worst, frames, RenderingServer.get_video_adapter_name()]
 	if average > budget:
-		return "ERROR: frame budget %.1f ms exceeded — %s" % [budget, report]
+		return "ERROR: frames took longer than the %.1f ms budget: %s" % [budget, report]
 	print("  frames: %s, budget %.1f ms" % [report, budget])
 	return ""
 
@@ -1199,7 +1199,7 @@ func _key(parts: PackedStringArray) -> String:
 	var code := OS.find_keycode_from_string(parts[1])
 	var bare: Key = code & KEY_CODE_MASK
 	if bare == KEY_NONE:
-		return "ERROR: '%s' names no key (try QuoteLeft, F12, Tab, Ctrl+R)" % parts[1]
+		return "ERROR: '%s' is not a key name. Try QuoteLeft, F12, Tab or Ctrl+R." % parts[1]
 	for pressed in [true, false]:
 		var event := InputEventKey.new()
 		event.keycode = bare
@@ -1220,7 +1220,7 @@ func _type(text: String) -> String:
 	if text.is_empty():
 		return "ERROR: usage: type <text>"
 	if get_viewport().gui_get_focus_owner() == null:
-		return "ERROR: nothing has focus to type into"
+		return "ERROR: no control has focus to type into"
 	for ch in text:
 		var event := InputEventKey.new()
 		event.unicode = ch.unicode_at(0)
@@ -1243,7 +1243,7 @@ func _assert_onscreen(parts: PackedStringArray) -> String:
 	if control != null:
 		var rect := control.get_global_rect()
 		if not view.encloses(rect):
-			return "ERROR: '%s' at %s escapes the view %s" % [parts[1], rect, view]
+			return "ERROR: '%s' at %s is outside the view %s" % [parts[1], rect, view]
 		return ""
 	var spatial := found as Node3D
 	if spatial == null:
@@ -1295,9 +1295,9 @@ static func pick_named(matches: Array[Node], node_name: String) -> Dictionary:
 	if shown.size() == 1:
 		return {"node": shown[0]}
 	if shown.is_empty():
-		return {"error": "ERROR: '%s' is not visible — %d hidden nodes share that name" % [
+		return {"error": "ERROR: '%s' is not visible. %d hidden nodes have that name." % [
 			node_name, matches.size()]}
-	return {"error": "ERROR: '%s' is ambiguous — %d visible nodes have that name" % [
+	return {"error": "ERROR: '%s' is ambiguous: %d visible nodes have that name. Give the one you mean its own name." % [
 		node_name, shown.size()]}
 
 
