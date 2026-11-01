@@ -29,6 +29,12 @@
 # its serve folder or project is gone. One forgotten engine ran 17 hours
 # at 15 cores after its worktree was removed.
 #
+# `start` waits SERVE_START_S seconds (default 60) for the engine to say it
+# is serving. If it never does, `start` stops the engine and its virtual
+# display and exits 1. An engine whose harness cannot load never reaches
+# the serve loop, so neither the idle limit nor the gone-folder exit can
+# stop it: three such engines from one red gate ran 3 hours on 8 cores.
+#
 # OWNED BY KOMBUCHA (tools/tooling-manifest.txt); do not edit in a project.
 set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -39,8 +45,17 @@ PIDFILE="$SERVE/engine.pid"
 TIMEOUT="${SERVE_TIMEOUT:-120}"
 IDLE_S="${SERVE_IDLE_S:-1800}"
 IDLE_FPS="${SERVE_IDLE_FPS:-10}"
+START_S="${SERVE_START_S:-60}"
 
 running() { [[ -f "$PIDFILE" ]] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; }
+
+# The engine runs under xvfb-run on a virtual display, with Xvfb beside it,
+# so a stop must take the whole tree, children first.
+kill_tree() { # pid
+	local child
+	for child in $(pgrep -P "$1"); do kill_tree "$child"; done
+	kill "$1" 2>/dev/null
+}
 
 # Commands are numbered, so shots and traces read 0007-example-01-boot.png
 # and the engine takes them in the order they were sent.
@@ -121,8 +136,19 @@ case "${1:-}" in
 		fi
 		XDG_DATA_HOME="$SERVE/user" nohup "${RUNNER[@]}" "$GODOT" "${ARGS[@]}" -- --serve "$SERVE" --serve-idle "$IDLE_S" --serve-idle-fps "$IDLE_FPS" "${SEED[@]}" >"$LOG" 2>&1 &
 		echo $! > "$PIDFILE"
-		for i in $(seq 1 200); do grep -q '^harness: serving' "$LOG" 2>/dev/null && break; sleep 0.1; done
-		grep -q '^harness: serving' "$LOG" || { echo "serve: the engine did not start. See $LOG" >&2; exit 1; }
+		for i in $(seq 1 $((START_S * 10))); do
+			grep -q '^harness: serving' "$LOG" 2>/dev/null && break
+			running || break
+			sleep 0.1
+		done
+		if ! grep -q '^harness: serving' "$LOG"; then
+			running && kill_tree "$(cat "$PIDFILE")"
+			rm -f "$PIDFILE"
+			echo "serve: the engine did not start serving within ${START_S} s, so serve.sh stopped it. The first error it logged:" >&2
+			grep -m1 -E 'SCRIPT ERROR|^ERROR' "$LOG" | sed 's/^/  /' >&2
+			echo "serve: the full log is $LOG. A fresh checkout may need godot4 --headless --path . --import first." >&2
+			exit 1
+		fi
 		grep -m1 '^harness: renderer' "$LOG"
 		echo "serve: running (pid $(cat "$PIDFILE"))" ;;
 	run)
@@ -141,7 +167,7 @@ case "${1:-}" in
 		: > "$SERVE/quit"
 		for i in $(seq 1 100); do running || break; sleep 0.1; done
 		# A forced stop must take the engine AND a virtual X server with it.
-		running && { pkill -P "$(cat "$PIDFILE")" 2>/dev/null; kill "$(cat "$PIDFILE")" 2>/dev/null; }
+		running && kill_tree "$(cat "$PIDFILE")"
 		rm -f "$PIDFILE"; echo "serve: stopped" ;;
 	*) echo "usage: tools/serve.sh start|run <scenario>|say \"<line>\"|status|stop" >&2; exit 2 ;;
 esac

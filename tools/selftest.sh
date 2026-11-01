@@ -27,7 +27,9 @@
 #      a matching one alone; check.sh takes its boot memory budget from
 #      tools/check.local.env,
 #      the caller's variable beats it, and the file is never run;
-#   5. a release-flavoured run cannot open the debug console.
+#   5. a release-flavoured run cannot open the debug console;
+#   6. a served engine that never starts serving (no import) is stopped,
+#      and serve.sh start fails.
 set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SCRATCH="$(mktemp -d)"
@@ -248,6 +250,23 @@ if [[ "${QUICK:-0}" -eq 0 ]]; then
 	else
 		say FAIL "SHOOT_RENDER_SLOT=0 still asked for a slot"; FAILED=1
 	fi
+	# A served engine whose harness cannot load never reaches its serve
+	# loop, so no idle limit stops it. One red gate in a worktree with no
+	# import left three that ran 3 hours on 8 cores (KOMBU-29). A copy
+	# with no .godot/ is that worktree: serve.sh start must fail and take
+	# the engine, xvfb-run and all, with it.
+	NOIMPORT="$(mktemp -d)"
+	rsync -a --exclude '.git' --exclude '.godot' --exclude 'shots/*.png' "$ROOT/" "$NOIMPORT/p/"
+	OUT="$(cd "$NOIMPORT/p" && SERVE_DIR="$NOIMPORT/serve" SERVE_START_S=10 SERVE_IDLE_S=2 tools/serve.sh start 2>&1)"; CODE=$?
+	sleep 1
+	LEFT="$(pgrep -f -- "--serve $NOIMPORT/serve ")"
+	if [[ $CODE -ne 0 && -z "$LEFT" ]] && grep -q 'did not start serving' <<<"$OUT"; then
+		say ok "a served engine that never starts serving is stopped, and start fails"
+	else
+		say FAIL "serve.sh start left an engine that never served (exit $CODE, pids: $(tr '\n' ' ' <<<"$LEFT"))"; FAILED=1
+		for p in $LEFT; do pkill -P "$p"; kill "$p"; done 2>/dev/null
+	fi
+	rm -rf "$NOIMPORT"
 else
 	say -- "scenario gate on an engine ERROR line (no display)"
 fi

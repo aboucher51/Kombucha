@@ -98,6 +98,25 @@ PY
 		printf '  FAIL  a single-scenario run wiped another scenario shots\n'; MISSING=1
 	fi
 
+	# Every engine the serve checks start is stopped when this script ends,
+	# red, green or interrupted, with its xvfb-run and Xvfb. One red gate
+	# (a worktree with no import) left three engines that ran 3 hours on
+	# 8 cores: their harness never loaded, so no idle limit could stop them.
+	# A folder already gone has no pid file, so its engine is found by its
+	# command line.
+	SERVE_DIRS=("$PWD/.godot/serve")
+	kill_tree() { local c; for c in $(pgrep -P "$1"); do kill_tree "$c"; done; kill "$1" 2>/dev/null; }
+	stop_served() {
+		local d p
+		for d in "${SERVE_DIRS[@]}"; do
+			SERVE_DIR="$d" tools/serve.sh stop >/dev/null 2>&1
+			for p in $(pgrep -f -- "--serve $d "); do kill_tree "$p"; done
+		done
+	}
+	trap stop_served EXIT
+	trap 'exit 130' INT
+	trap 'exit 143' TERM
+
 	# Serve mode: one engine, commands as files, verdict per command. A
 	# passing run, a failing line (the gate's own red), and a clean stop.
 	if tools/serve.sh start >/dev/null 2>&1 \
@@ -116,6 +135,7 @@ PY
 	serve_pid() { pgrep -f -- "--serve $1" | while read -r p; do
 		[[ "$(cat /proc/$p/comm 2>/dev/null)" == godot* ]] && echo "$p"; done | head -1; }
 	SCRATCH="$(mktemp -d)"
+	SERVE_DIRS+=("$SCRATCH/a" "$SCRATCH/b" "$SCRATCH/c")
 	if SERVE_DIR="$SCRATCH/a" tools/serve.sh start >/dev/null 2>&1; then
 		P=$(serve_pid "$SCRATCH/a")
 		T0=$(awk '{print $14+$15}' "/proc/$P/stat"); sleep 3
@@ -146,6 +166,8 @@ PY
 			printf '  FAIL  a served engine outlived SERVE_IDLE_S=2\n'; MISSING=1
 			SERVE_DIR="$SCRATCH/b" tools/serve.sh stop >/dev/null 2>&1
 		fi
+	else
+		printf '  FAIL  serve mode did not start in %s\n' "$SCRATCH/b"; MISSING=1
 	fi
 	# ...and a nonsense rate (0 would mean no cap at all) gets the default.
 	if SERVE_DIR="$SCRATCH/c" SERVE_IDLE_FPS=0 tools/serve.sh start >/dev/null 2>&1; then
@@ -163,6 +185,8 @@ PY
 			printf '  FAIL  a served engine outlived its serve folder\n'; MISSING=1
 			kill "$P" 2>/dev/null
 		fi
+	else
+		printf '  FAIL  serve mode did not start in %s\n' "$SCRATCH/c"; MISSING=1
 	fi
 	rm -rf "$SCRATCH"
 	# The CI path (virtual display, software GL) exercised HERE when the

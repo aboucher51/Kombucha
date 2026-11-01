@@ -387,6 +387,14 @@ when its serve folder or its project is gone. Uncapped, one waiting
 engine took about 20 cores on a software renderer. One engine left behind
 by a removed worktree ran for 17 hours.
 
+**`serve.sh start` stops an engine that never starts serving.** It waits
+`SERVE_START_S` seconds (60 by default) for the engine's `harness: serving`
+line. If the line never comes, `serve.sh` stops the engine and its virtual
+display, prints the first error the engine logged, and exits 1. An engine
+whose harness cannot load (a fresh worktree with no import) never reaches
+its serve loop, so the idle limit cannot stop it. Three such engines from
+one red gate ran for 3 hours on 8 cores.
+
 **`SERVE_IDLE_FPS` sets that rate** (default 10). It trades CPU for reply
 time. The engine picks up a command within one idle frame, so 5 fps answers
 within 0.2 s. One project's waiting sessions used about 80% CPU at 5 fps and
