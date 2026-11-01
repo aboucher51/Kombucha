@@ -26,8 +26,9 @@
 #      check.sh, and a named test.sh run, re-import a stale class cache
 #      before the tests and leave a matching one alone; check.sh takes
 #      its boot memory budget from tools/check.local.env, the caller's
-#      variable beats it, and the file is never run; shoot.sh is red
-#      when a scenario quits the game before its last line;
+#      variable beats it, and the file is never run; a scenario that
+#      quits the game fails and keeps its trace, and shoot.sh names the
+#      scenarios it kept from running;
 #   5. a release-flavoured run cannot open the debug console;
 #   6. serve.sh start imports a fresh worktree and serves; a served
 #      engine that never starts serving (a broken harness) is stopped,
@@ -271,16 +272,26 @@ if [[ "${QUICK:-0}" -eq 0 ]]; then
 		say FAIL "SHOOT_RENDER_SLOT=0 still asked for a slot"; FAILED=1
 	fi
 	# A scenario that quits the game ends the engine with exit 0 mid-run.
-	# shoot.sh read that as green, with no summary and "0 shot(s)", and the
-	# scenario dealt after it never ran (KOMBU-34). Both must be named.
+	# shoot.sh read that as green, with no summary and "0 shot(s)". The
+	# scenario's own trace was lost, and the scenario dealt after it never
+	# ran (KOMBU-34, EMBL-20). The harness must fail the quitting scenario
+	# at its quit line and still write its trace, and shoot.sh must name
+	# the scenario that never ran.
 	printf 'shot before\nquit\nshot after\n' > "$SCRATCH/scenarios/selftest_quits.txt"
 	OUT="$(cd "$SCRATCH" && SHOOT_RENDER_SLOT=0 SHOOT_JOBS=1 \
 		tools/shoot.sh scenarios/selftest_quits.txt scenarios/example.txt 2>&1)"; CODE=$?
-	if [[ $CODE -ne 0 ]] && grep -q '^shoot: scenarios/selftest_quits.txt did not finish' <<<"$OUT" \
-			&& grep -q '^shoot: scenarios/example.txt did not finish' <<<"$OUT"; then
-		say ok "a scenario that quits the game is red, and so is the one it kept from running"
+	TRACE="$SCRATCH/shots/selftest_quits.jsonl"
+	if [[ $CODE -ne 0 ]] && grep -q '^FAIL scenarios/selftest_quits.txt:2 .*the game quit during the scenario' <<<"$OUT" \
+			&& grep -q 'the game quit during the scenario' "$TRACE" 2>/dev/null \
+			&& tail -n 1 "$TRACE" | grep -q '"scenario":'; then
+		say ok "a scenario that quits the game fails at its quit line and keeps its trace"
 	else
-		say FAIL "a scenario that quit the game was not named as unfinished (exit $CODE): $(grep 'did not finish' <<<"$OUT" | tr '\n' '|')"; FAILED=1
+		say FAIL "a scenario that quit the game was not failed with its trace kept (exit $CODE): $(grep '^FAIL' <<<"$OUT" | tr '\n' '|')"; FAILED=1
+	fi
+	if grep -q '^shoot: scenarios/example.txt did not finish' <<<"$OUT"; then
+		say ok "a scenario that a quit kept from running is named"
+	else
+		say FAIL "the scenario after a quit was not named as unfinished: $(grep 'did not finish' <<<"$OUT" | tr '\n' '|')"; FAILED=1
 	fi
 	rm -f "$SCRATCH/scenarios/selftest_quits.txt"
 	# A served engine in a fresh worktree used to fail: the class cache

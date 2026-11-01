@@ -340,11 +340,11 @@ if [[ $JOBS -gt 1 ]]; then
 fi
 
 # A scenario that quits the game (a console `quit`, a pressed Quit button)
-# ends the engine with exit 0 in the middle of its lines. The harness then
-# writes no summary for it and never runs the scenarios dealt after it on
-# that shard. Exit 0 and "0 shot(s)" read as green, and the FAIL lines
-# printed before the quit went unnoticed (KOMBU-34). So every scenario
-# dealt must leave a fresh summary row, or the run is red.
+# ends the engine with exit 0 in the middle of its lines. The harness fails
+# that scenario as it shuts down, but the scenarios dealt after it on that
+# shard never run. A crash or a timeout leaves the same gap. Exit 0 used to
+# read as green (KOMBU-34). So every scenario dealt must leave a fresh
+# summary row, or the run is red.
 UNFINISHED=()
 for scenario in "${SCENARIOS[@]}"; do
 	trace="$ROOT/shots/$(basename "$scenario" .txt).jsonl"

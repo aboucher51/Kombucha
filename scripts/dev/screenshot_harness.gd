@@ -147,6 +147,14 @@ var _written_baselines: Dictionary = {}
 ## own input, so these see only the real cursor (`drag` waits on them).
 var _real_motion_at := Vector2(-1, -1)
 var _real_motion_frame := -1
+## The scenario now running, the number of the line it is on, the number of
+## the last line that finished, its JSONL rows so far and its start time. They are fields, not locals, so _exit_tree() can still
+## write the trace when a scenario quits the game in the middle.
+var _running_path := ""
+var _running_line := 0
+var _last_done_line := 0
+var _trace: Array[String] = []
+var _running_started := 0
 
 
 func _ready() -> void:
@@ -393,31 +401,58 @@ func _run_lines(path: String) -> void:
 		_fail(path, 0, "cannot open scenario file")
 		return
 	print("── scenario: %s ──" % path)
-	var started := Time.get_ticks_msec()
-	var line_number := 0
-	var trace: Array[String] = []
+	_running_path = path
+	_running_line = 0
+	_last_done_line = 0
+	_trace = []
+	_running_started = Time.get_ticks_msec()
 	while not file.eof_reached():
 		var line := file.get_line().strip_edges()
-		line_number += 1
+		_running_line += 1
 		if line.is_empty() or line.begins_with("#"):
 			continue
 		var began := Time.get_ticks_msec()
 		var reply := await _execute(line)
-		trace.append(JSON.stringify({"n": line_number, "line": line, "reply": reply,
+		_trace.append(JSON.stringify({"n": _running_line, "line": line, "reply": reply,
 			"ms": Time.get_ticks_msec() - began, "ok": not _is_error(reply)}))
+		_last_done_line = _running_line
 		if _is_error(reply):
-			_fail(path, line_number, "%s -> %s" % [line, reply])
-	var seconds := float(Time.get_ticks_msec() - started) / 1000.0
-	trace.append(JSON.stringify({"scenario": path, "ok": _failures == 0,
-		"failures": _failures, "seconds": seconds, "shots": _shot_index}))
-	DirAccess.make_dir_recursive_absolute(SHOT_DIR)
-	var trace_file := FileAccess.open("%s/%s.jsonl" % [SHOT_DIR, _scenario_stem], FileAccess.WRITE)
-	if trace_file != null:
-		trace_file.store_string("\n".join(trace) + "\n")
+			_fail(path, _running_line, "%s -> %s" % [line, reply])
+	var seconds := _finish_trace()
 	# The seconds are the point: with dozens of scenarios in one process,
 	# the expensive ones must be visible without a profiler.
 	if _failures == 0:
 		print("scenario ok: %s (%.1fs)" % [path, seconds])
+
+
+## Appends the summary row, writes shots/<stem>.jsonl and returns the
+## scenario's seconds. Clears _running_path, so the scenario counts as over.
+func _finish_trace() -> float:
+	var seconds := float(Time.get_ticks_msec() - _running_started) / 1000.0
+	_trace.append(JSON.stringify({"scenario": _running_path, "ok": _failures == 0,
+		"failures": _failures, "seconds": seconds, "shots": _shot_index}))
+	DirAccess.make_dir_recursive_absolute(SHOT_DIR)
+	var trace_file := FileAccess.open("%s/%s.jsonl" % [SHOT_DIR, _scenario_stem], FileAccess.WRITE)
+	if trace_file != null:
+		trace_file.store_string("\n".join(_trace) + "\n")
+	_running_path = ""
+	return seconds
+
+
+## A scenario that quits the game (a console `quit`, a pressed Quit button)
+## ends the engine with exit code 0, and the tree frees the harness before
+## the scenario's last line. GDScript cannot override SceneTree.quit(), so
+## the harness cannot stop the quit. It records the quit as a failure here
+## and writes the trace, so the failures already recorded are kept
+## (KOMBU-34, EMBL-20). shoot.sh then names the scenarios that never ran.
+func _exit_tree() -> void:
+	if _running_path.is_empty():
+		return
+	var reply := "ERROR: the game quit during the scenario, after this line. A scenario must not quit the game."
+	_trace.append(JSON.stringify({"n": _last_done_line, "line": "(quit)", "reply": reply,
+		"ms": 0, "ok": false}))
+	_fail(_running_path, _last_done_line, reply)
+	_finish_trace()
 
 
 func _execute(line: String) -> String:

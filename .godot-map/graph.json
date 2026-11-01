@@ -598,6 +598,8 @@
     "_reset_between_scenarios",
     "_run",
     "_run_lines",
+    "_finish_trace",
+    "_exit_tree",
     "_execute",
     "_project_command",
     "_until",
@@ -651,7 +653,7 @@
    "node_paths": [],
    "groups_joined": [],
    "groups_queried": [],
-   "lines": 1343
+   "lines": 1378
   },
   "res://scripts/dev/selftest_driver.gd": {
    "path": "res://scripts/dev/selftest_driver.gd",
