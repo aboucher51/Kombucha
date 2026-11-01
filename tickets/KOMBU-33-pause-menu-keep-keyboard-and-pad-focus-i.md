@@ -1,11 +1,11 @@
 ---
 id: KOMBU-33
 title: Pause menu: keep keyboard and pad focus inside the panel
-status: ready
+status: done
 priority: 2
-owner: 
+owner: kombucha-worker
 depends_on: []
-touches: [scripts/ui/pause_menu.gd, scenarios/, tests/]
+touches: [scripts/ui/pause_menu.gd, scenarios/, tests/, scripts/ui/ui_focus.gd, scripts/main.gd]
 created: 2026-11-01
 updated: 2026-11-01
 ---
@@ -25,5 +25,19 @@ What to do:
 The gate is `tools/check.sh --ci`, green.
 
 ## Progress
+- 2026-11-01 05:14 added scripts/ui/ui_focus.gd (the fix lives in UIFocus.keep_inside so other modals can use it) and scripts/main.gd (a 'focus' state key, so a scenario can assert the focus owner) to touches. The fixture already showed the bug: ui_down from Quit -> Row01, Tab -> QualityDropdown, left -> Row01; no new control needed, boot frame unchanged. scenarios/pause_focus.txt red before the fix, green after; tests/test_ui_focus_ring.gd added. Filed KOMBU-34.
+- 2026-11-01 05:17 gate green on fd9b396: check.sh --ci, 148 tests, 21 scenarios. Play pass done (Ready to play section). Handed to kombucha-pm.
+- 2026-11-01 05:18 done on main at fd9b396
+
+## Ready to play
+What changed: while the pause menu is open, the arrow keys, Tab and a pad's stick stay inside the menu. Down from Quit goes back to the top slider (All sound), and up from the top goes to Quit. Left and right on a button do nothing, and on a slider they still change the volume. Before, down from Quit jumped to Row 1 behind the dim, Tab jumped to the Medium dropdown, and Enter then pressed whatever was behind.
+
+What the scenarios and shots showed: scenarios/pause_focus.txt walks the whole ring: down, up, Tab, Shift+Tab, left, then Enter on Resume. It was red before the fix on all three escapes, and it is green after. In shots/keyboard_menu-01-focus-ring.png, the ring sits on Resume with nothing cut off. shots/pause_focus-01-after-resume.png shows the game back, with no row pressed.
+
+Questions only a person can answer:
+- With a pad, does wrapping from Quit back to the top feel right, or should focus stop at Quit?
+- The sliders still draw no focus ring (Godot has no slider focus style). Can you tell which slider has focus when you play with a pad?
+- Should Escape or the pad's back button inside the menu always resume, even while a slider has focus?
 
 ## Left for later
+- [[KOMBU-34]] shoot.sh exits 0 when a scenario quits the engine mid-run
