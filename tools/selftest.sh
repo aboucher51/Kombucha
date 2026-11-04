@@ -99,6 +99,25 @@ else
 fi
 rm -f "$SCRATCH/class-cache.bak"
 
+# 2j. class-cache.sh compares GDScript classes only. An add-on can list
+#     classes in other script languages in the cache: Godot Sandbox lists
+#     its ELF programs and SafeGDScript files. The disk side reads only
+#     .gd files, so those entries made every run re-import (KOMBU-35).
+#     The planted entries put "language" first and last. GODOT=false
+#     makes any import fail, so an import shows up as exit 1.
+cp "$SCRATCH/.godot/global_script_class_cache.cfg" "$SCRATCH/class-cache.bak"
+sed -i '1s#^list=\[{$#list=[{\n"language": \&"ELF",\n"base": \&"Node",\n"class": \&"Sandbox_AddonsGodotSandboxGdscript",\n"path": "res://addons/godot_sandbox/gdscript.elf"\n}, {\n"base": \&"RefCounted",\n"class": \&"SafeGDScript_Planted",\n"path": "res://planted.sgd",\n"language": \&"SafeGD"\n}, {#' "$SCRATCH/.godot/global_script_class_cache.cfg"
+OUT="$(cd "$SCRATCH" && GODOT=false tools/class-cache.sh --report 2>&1)"; CODE=$?
+if ! grep -q 'Sandbox_AddonsGodotSandboxGdscript' "$SCRATCH/.godot/global_script_class_cache.cfg"; then
+	say FAIL "could not plant a non-GDScript class in the class cache"; FAILED=1
+elif [[ $CODE -eq 0 ]] && grep -qE 'ok +class cache matches' <<<"$OUT" && ! grep -q 'Re-importing' <<<"$OUT"; then
+	say ok "class-cache.sh ignores classes in other script languages"
+else
+	say FAIL "class-cache.sh re-imported over a non-GDScript class (exit $CODE): $(tr '\n' '|' <<<"$OUT")"; FAILED=1
+fi
+cp "$SCRATCH/class-cache.bak" "$SCRATCH/.godot/global_script_class_cache.cfg"
+rm -f "$SCRATCH/class-cache.bak"
+
 # 2e. A NAMED run gets a private `user://` like a shard's. It used to boot
 #     against the developer's real data home, so whatever a boot reads
 #     before a before_each redirects the config (a display zoom, a

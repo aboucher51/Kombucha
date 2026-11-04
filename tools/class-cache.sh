@@ -47,10 +47,25 @@ on_disk() {
 				found = 1
 			}' | sort
 }
+# The cache also lists classes in other script languages that an add-on
+# registers (Godot Sandbox's ELF programs and SafeGDScript files), and
+# on_disk() sees only .gd files. So this keeps GDScript entries only. It
+# reads each entry whole, so the fields may come in any order. An entry
+# with no "language" field counts as GDScript.
 in_cache() {
 	[[ -f .godot/global_script_class_cache.cfg ]] || return 0
-	grep -oE '"class": &"[A-Za-z0-9_]+"|"path": "res://[^"]+"' .godot/global_script_class_cache.cfg \
-		| sed -E 's/"class": &"([^"]+)"/\1/; s#"path": "res://([^"]+)"#\1#' | paste - - | sort
+	awk 'BEGIN { RS = "}" }
+		function field(re, pre,   v) {
+			if (!match($0, re)) return ""
+			v = substr($0, RSTART + length(pre), RLENGTH - length(pre) - 1)
+			return v
+		}
+		{
+			c = field("\"class\": &\"[A-Za-z0-9_]+\"", "\"class\": &\"")
+			p = field("\"path\": \"res://[^\"]+\"", "\"path\": \"res://")
+			l = field("\"language\": &\"[^\"]*\"", "\"language\": &\"")
+			if (c != "" && p != "" && (l == "" || l == "GDScript")) print c "\t" p
+		}' .godot/global_script_class_cache.cfg | sort
 }
 
 DIFF="$(diff <(in_cache) <(on_disk))"
