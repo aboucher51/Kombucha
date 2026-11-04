@@ -1,9 +1,9 @@
 ---
 id: KOMBU-35
 title: class-cache.sh re-imports on every run when an add-on registers a non-GDScript class
-status: ready
+status: done
 priority: 2
-owner: 
+owner: kombucha-worker
 depends_on: []
 touches: [tools/class-cache.sh, tools/selftest.sh]
 created: 2026-11-04
@@ -21,5 +21,8 @@ What to do:
 The gate is `tools/check.sh --ci`, green. When this lands, the PM tells navalwar-pm.
 
 ## Progress
+- 2026-11-04 08:14 class-cache.sh reads each cache entry whole and keeps GDScript only (gawk/mawk/busybox ok). Selftest step 2j plants ELF + SafeGD entries; red on the old script, green on the new. Running the gate.
+- 2026-11-04 08:44 Gate tools/check.sh --ci green (selftest 2j ok, 21 scenarios). Commit 41ab702 on branch kombu-35, worktree ../Kombucha-kombu-35, origin/main unmoved. Handed to kombucha-pm. No play pass: nothing a player or scenario author sees changed.
+- 2026-11-04 08:44 done on main at 41ab702
 
 ## Left for later
