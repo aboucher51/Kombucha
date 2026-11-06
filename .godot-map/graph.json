@@ -161,6 +161,39 @@
    "resources": [],
    "connections": []
   },
+  "res://scenes/nested_scroll.tscn": {
+   "path": "res://scenes/nested_scroll.tscn",
+   "uid": null,
+   "root": {
+    "path": ".",
+    "name": "NestedScroll",
+    "type": "Control",
+    "script": "res://scripts/nested_scroll.gd",
+    "instance": null,
+    "groups": [],
+    "unique": false,
+    "node_paths": []
+   },
+   "inherits": null,
+   "nodes": [
+    {
+     "path": ".",
+     "name": "NestedScroll",
+     "type": "Control",
+     "script": "res://scripts/nested_scroll.gd",
+     "instance": null,
+     "groups": [],
+     "unique": false,
+     "node_paths": []
+    }
+   ],
+   "scripts": [
+    "res://scripts/nested_scroll.gd"
+   ],
+   "instances": [],
+   "resources": [],
+   "connections": []
+  },
   "res://scenes/second.tscn": {
    "path": "res://scenes/second.tscn",
    "uid": null,
@@ -621,8 +654,9 @@
     "_click_point",
     "_warp_cursor",
     "_scroll_to",
-    "_scroll_holder",
+    "_scroll_holders",
     "_scroll_into_view",
+    "_inside_every_holder",
     "_settle",
     "_hover",
     "_assert_zone",
@@ -653,7 +687,7 @@
    "node_paths": [],
    "groups_joined": [],
    "groups_queried": [],
-   "lines": 1378
+   "lines": 1404
   },
   "res://scripts/dev/selftest_driver.gd": {
    "path": "res://scripts/dev/selftest_driver.gd",
@@ -723,6 +757,35 @@
    ],
    "groups_queried": [],
    "lines": 144
+  },
+  "res://scripts/nested_scroll.gd": {
+   "path": "res://scripts/nested_scroll.gd",
+   "lang": "gdscript",
+   "class_name": null,
+   "global": true,
+   "extends": "Control",
+   "tool": false,
+   "loads": [],
+   "refs": [],
+   "signals": [],
+   "funcs": [
+    "_ready",
+    "_button",
+    "_spacer",
+    "_on_pressed",
+    "state_text",
+    "assert_key"
+   ],
+   "emits": [],
+   "connects": [
+    "button.pressed"
+   ],
+   "node_paths": [],
+   "groups_joined": [
+    "state"
+   ],
+   "groups_queried": [],
+   "lines": 78
   },
   "res://scripts/ui/pause_menu.gd": {
    "path": "res://scripts/ui/pause_menu.gd",
@@ -1847,7 +1910,8 @@
   "state": {
    "scenes": {},
    "joined_in": [
-    "res://scripts/main.gd"
+    "res://scripts/main.gd",
+    "res://scripts/nested_scroll.gd"
    ],
    "queried_in": [
     "res://scripts/dev/debug_console.gd"
@@ -1904,6 +1968,9 @@
    "res://tests/test_console_state.gd",
    "res://tests/test_dev_hooks.gd",
    "res://tests/test_smoke.gd"
+  ],
+  "res://scenes/nested_scroll.tscn": [
+   "res://scripts/dev/dev_hooks.gd"
   ],
   "res://scenes/second.tscn": [
    "res://scripts/dev/dev_hooks.gd"
@@ -2001,6 +2068,10 @@
    "res://scenes/main.tscn",
    "res://tests/test_localization.gd"
   ],
+  "res://scripts/nested_scroll.gd": [
+   "res://scenes/nested_scroll.tscn",
+   "res://tests/test_localization.gd"
+  ],
   "res://scripts/ui/pause_menu.gd": [
    "res://scenes/main.tscn",
    "res://scripts/main.gd",
@@ -2019,6 +2090,7 @@
   "res://scripts/ui/ui_theme.gd": [
    "res://scripts/dev/debug_console.gd",
    "res://scripts/main.gd",
+   "res://scripts/nested_scroll.gd",
    "res://scripts/ui/pause_menu.gd",
    "res://tests/test_localization.gd",
    "res://tests/test_ui_kit.gd"

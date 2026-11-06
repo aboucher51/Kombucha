@@ -30,8 +30,9 @@ extends Node
 ##                             answers without an error; ERROR with the last
 ##                             reply after s wall-clock seconds
 ##     click <NodeName>        synthesise a real mouse click on a named Control
-##                             (a target below a ScrollContainer's fold is
-##                             scrolled into view first; hover does the same)
+##                             (a target below the fold of any ScrollContainer
+##                             around it is scrolled into view first; hover
+##                             does the same)
 ##     click_at <x> <y>        the same at viewport coordinates (Node2D boards)
 ##     scroll_to <NodeName>    scroll a ScrollContainer row into view first
 ##     hover <NodeName>        move the real mouse over it and verify it took
@@ -973,17 +974,21 @@ func _scroll_to(parts: PackedStringArray) -> String:
 	var target := _find_control(parts[1])
 	if target == null:
 		return _lookup_error
-	if _scroll_holder(target) == null:
+	if _scroll_holders(target).is_empty():
 		return "ERROR: '%s' is not inside a ScrollContainer" % parts[1]
 	await _scroll_into_view(target, true)
 	return ""
 
 
-static func _scroll_holder(target: Control) -> ScrollContainer:
-	var holder: Node = target
-	while holder != null and holder is not ScrollContainer:
-		holder = holder.get_parent()
-	return holder as ScrollContainer
+## Every ScrollContainer around the target, nearest first.
+static func _scroll_holders(target: Control) -> Array[ScrollContainer]:
+	var holders: Array[ScrollContainer] = []
+	var node := target.get_parent()
+	while node != null:
+		if node is ScrollContainer:
+			holders.append(node)
+		node = node.get_parent()
+	return holders
 
 
 ## A target below the fold of a ScrollContainer is visible but not
@@ -992,16 +997,37 @@ static func _scroll_holder(target: Control) -> ScrollContainer:
 ## dropped below the fold when its buttons grew an icon slot; the
 ## scenario stayed green and the wrong screen was shot). So `click` and
 ## `hover` scroll the target into view themselves when its rect is not
-## inside the holder's; `scroll_to` forces it.
+## inside every holder's; `scroll_to` forces it.
+##
+## Every ScrollContainer around the target scrolls, nearest first. One
+## project had a list inside a scrolling panel: scrolling only the list
+## left the panel where it was, and the click landed on something else
+## (KOMBU-37). Nearest first, because the inner scroll moves the target
+## inside a holder the outer one then brings into view. Outermost first
+## would bring the target's old place into view, and the inner scroll
+## would then move it out again.
 func _scroll_into_view(target: Control, force: bool = false) -> void:
-	var holder := _scroll_holder(target)
-	if holder == null:
+	var holders := _scroll_holders(target)
+	if holders.is_empty():
 		return
-	if not force and holder.get_global_rect().encloses(target.get_global_rect()):
+	if not force and _inside_every_holder(target, holders):
 		return
-	holder.ensure_control_visible(target)
-	for i in 4:
-		await get_tree().process_frame
+	for holder in holders:
+		if not is_instance_valid(target) or not is_instance_valid(holder):
+			return
+		holder.ensure_control_visible(target)
+		# A ScrollContainer moves its children on the next layout pass,
+		# so the next holder must wait to see where the target went.
+		for i in 4:
+			await get_tree().process_frame
+
+
+static func _inside_every_holder(target: Control, holders: Array[ScrollContainer]) -> bool:
+	var rect := target.get_global_rect()
+	for holder in holders:
+		if not holder.get_global_rect().encloses(rect):
+			return false
+	return true
 
 
 ## Wait until nothing in the group reports is_busy(), or fail after the

@@ -65,6 +65,9 @@ cat > "$EXCLUDES" <<'EOF'
 /scripts/dev/selftest_driver.gd
 /scripts/dev/selftest_driver.gd.uid
 /scenes/second.tscn
+/scenes/nested_scroll.tscn
+/scripts/nested_scroll.gd
+/scripts/nested_scroll.gd.uid
 /tests/test_cmdline.gd
 /tests/test_cmdline.gd.uid
 /tests/test_console_state.gd
@@ -77,6 +80,7 @@ cat > "$EXCLUDES" <<'EOF'
 /tests/test_screenshot_harness.gd.uid
 /scenarios/baseline.txt
 /scenarios/baselines
+/scenarios/click_nested_scroll.txt
 /scenarios/frame_budget.txt
 /scenarios/console_ui.txt
 /scenarios/hooks.txt

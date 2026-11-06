@@ -1,0 +1,15 @@
+# A ScrollContainer inside another, with the target below both folds:
+# `click` must scroll EVERY ScrollContainer around the target, not only
+# the nearest one. Scrolling only the inner list left the outer panel
+# where it was, and the click landed on something else (KOMBU-37).
+wait 5
+goto res://scenes/nested_scroll.tscn
+wait 5
+expect_fail assert nested_pick DeepRow
+click DeepRow
+assert nested_pick DeepRow
+assert_onscreen DeepRow
+# Back up: the inner list is scrolled to its end, the row is above its fold.
+click NestedRow01
+assert nested_pick NestedRow01
+shot nested

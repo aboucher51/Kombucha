@@ -586,6 +586,12 @@ Rules that keep the harness useful:
   buttons grew an icon slot.) `click` and `hover` now scroll a target
   into view when its rect is outside its ScrollContainer's. `scroll_to`
   forces it.
+- **The harness scrolls every ScrollContainer around the target**, the
+  nearest one first. One project had a list inside a scrolling panel. The
+  harness scrolled only the list, and the click landed on another control
+  (`scenarios/click_nested_scroll.txt` checks this). The order matters too.
+  When the outer panel scrolls first, the inner scroll then moves the target
+  back out of view.
 - A menu whose only seam is a clickable button is still not fully
   scriptable once it scrolls. Give every menu action a non-click seam too.
 - **`expect_shot` is the visual regression gate, and each rasterizer has its
