@@ -2,7 +2,7 @@
 id: KOMBU-43
 title: Harness: menu reaches submenus and MenuBar menus
 status: ready
-priority: 4
+priority: 5
 owner: 
 depends_on: []
 touches: [scripts/dev/screenshot_harness.gd, docs/godot-tooling.md, scenarios/, scripts/harness_inputs.gd]
@@ -20,5 +20,6 @@ Do this when a project needs it. IceEngine's Edit menu and context menu did not.
 The gate is `tools/check.sh --ci`, green.
 
 ## Progress
+- 2026-11-06 18:41 PM: parked until a project needs submenus or MenuBar menus. iceengine-pm will say if ICE-58 does.
 
 ## Left for later
