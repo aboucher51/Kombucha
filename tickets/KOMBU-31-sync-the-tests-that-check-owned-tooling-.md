@@ -7,7 +7,7 @@ owner:
 depends_on: []
 touches: [tools/tooling-manifest.txt, tools/selftest.sh, docs/godot-tooling.md]
 created: 2026-11-01
-updated: 2026-11-01
+updated: 2026-11-06
 ---
 
 KOMBU-30 fixed tests/test_debug_console.gd, but tools/tooling-manifest.txt does not list it. So a sync never brings the fix to a project, and emblem-autobattler must copy it by hand. The same holds for every kit test that only checks owned tooling (the console, the harness parts a project keeps).
@@ -16,5 +16,6 @@ What to do: decide which tests in tests/ check only owned files, and list those 
 
 ## Progress
 - 2026-11-01 05:01 PM: asked Alex first. Projects have added their own lines to their copies (NavalWar's tests/test_debug_console.gd checks its own spawn command), so syncing the file as it is would erase them. PM's suggestion: sync the tooling tests into their own folder, like tests/kombucha/, which the manifest owns, and leave each project's tests/ files as the project's own.
+- 2026-11-06 23:03 PM: Alex said "skip this for now" on 2026-11-02. Do not ask again until Alex raises it.
 
 ## Left for later
