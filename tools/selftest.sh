@@ -488,7 +488,17 @@ fi
 #     and committed once.
 DEST3="$(mktemp -d)/Scaffolded"
 trap 'rm -rf "$SCRATCH" "$STUB" "$SRC2" "$DEST2" "$(dirname "$DEST3")"' EXIT
+# A live session leaves files git does not track (a scheduled-task lock
+# with its session id and pid). One reached a new project's first
+# commit, so the scaffold copies only tracked files (KOMBU-36).
+mkdir -p "$SRC2/.claude" && echo "session pid" > "$SRC2/.claude/test.lock"
 OUT="$("$SRC2/tools/new-project.sh" "$DEST3" "Self Test" --no-check 2>&1)"; CODE=$?
+rm -f "$SRC2/.claude/test.lock"
+if [[ $CODE -eq 0 && ! -e "$DEST3/.claude/test.lock" ]]; then
+	say ok "the scaffold leaves out a file git does not track"
+else
+	say FAIL "the scaffold copied the untracked .claude/test.lock (exit $CODE)"; FAILED=1
+fi
 # The project gets the seed, not the fixture's own settings file.
 SEEDED_ENV=0; cmp -s "$DEST3/tools/check.local.env" "$SRC2/tools/seeds/check.local.env" && SEEDED_ENV=1
 if [[ $CODE -eq 0 && -f "$DEST3/tools/TOOLING_VERSION" && -f "$DEST3/scripts/dev/dev_hooks.gd" \

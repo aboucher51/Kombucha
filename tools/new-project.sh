@@ -8,7 +8,9 @@
 #   tools/new-project.sh ../MyGame "My Game" --no-check   (self-test: no
 #                                              import, map or check run)
 #
-# What stays behind: the plugin and skills, the tooling's own tests and
+# It copies only the files git tracks, so a live session's runtime files
+# (like .claude/scheduled_tasks.lock) stay behind.
+# What else stays behind: the plugin and skills, the tooling's own tests and
 # scenarios, the self-test, the research docs and roadmap, Kombucha's
 # ticket board (the new project's PM runs tk init with its own key, and
 # only Alex sets its PUSH_POLICY), and the
@@ -93,11 +95,32 @@ cat > "$EXCLUDES" <<'EOF'
 EOF
 
 mkdir -p "$DEST"
-# rsync if present, else tar — either way skip the excluded paths.
-if command -v rsync >/dev/null; then
-	rsync -a --exclude-from="$EXCLUDES" "$ROOT/" "$DEST/"
+if [[ "$(git -C "$ROOT" rev-parse --show-toplevel 2>/dev/null)" == "$ROOT" ]]; then
+	# A git checkout: copy only the files git tracks, minus the excludes.
+	# A live session leaves runtime files in the checkout that git does
+	# not track. One scaffold carried the PM session's
+	# .claude/scheduled_tasks.lock (its id and pid) into the new
+	# project's first commit. A tracked file deleted from the working
+	# tree is skipped. An edited one is copied as it is on disk.
+	(cd "$ROOT" && git ls-files -z | python3 -c '
+import fnmatch, os, sys
+pats = [p.strip().lstrip("/") for p in open(sys.argv[1]) if p.strip()]
+def left_out(path):
+    return any(path == p or path.startswith(p + "/") or fnmatch.fnmatchcase(path, p) for p in pats)
+names = [n for n in sys.stdin.buffer.read().decode().split("\0") if n]
+sys.stdout.write("".join(n + "\0" for n in names if not left_out(n) and os.path.lexists(n)))
+' "$EXCLUDES" | tar --null --no-recursion -T - -cf -) | (cd "$DEST" && tar -xf -)
 else
-	(cd "$ROOT" && tar --exclude-from=<(sed 's|^/||' "$EXCLUDES") -cf - .) | (cd "$DEST" && tar -xf -)
+	# No git (a copy without history): copy the whole tree minus the
+	# excludes, with rsync if present, else tar. This path still lets
+	# through any runtime file the excludes do not name, like a
+	# session's .claude/*.lock. Delete such files from the new project
+	# by hand.
+	if command -v rsync >/dev/null; then
+		rsync -a --exclude-from="$EXCLUDES" "$ROOT/" "$DEST/"
+	else
+		(cd "$ROOT" && tar --exclude-from=<(sed 's|^/||' "$EXCLUDES") -cf - .) | (cd "$DEST" && tar -xf -)
+	fi
 fi
 rm -f "$EXCLUDES"
 
