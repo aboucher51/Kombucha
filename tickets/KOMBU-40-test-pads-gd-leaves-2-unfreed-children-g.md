@@ -1,11 +1,11 @@
 ---
 id: KOMBU-40
 title: test_pads.gd leaves 2 unfreed children (GUT warning)
-status: ready
+status: done
 priority: 3
-owner: 
+owner: kombucha-worker
 depends_on: []
-touches: [tests/test_pads.gd]
+touches: [tests/test_pads.gd, .godot-map/graph.json]
 created: 2026-11-06
 updated: 2026-11-06
 ---
@@ -22,5 +22,7 @@ What to do:
 The gate is `tools/check.sh --ci`, green. When this lands, the PM tells dwarf-mountain-pm.
 
 ## Progress
+- 2026-11-06 10:04 Fixed: test A frees its gate at once; the KOMBU-39 test awaits one frame at its end. Warning gone from the test_pads log. KOMBU-39 test still red with the KOMBU-39 fix taken out. Whole suite run by name in one process (22 of 22 scripts): no unfreed-children or orphan warning anywhere. Added .godot-map/graph.json to touches (it stores line counts). tools/check.sh --ci green. Commit on kombu-40-pads-orphans, worktree ~/godot-projects/Kombucha-wt-40.
+- 2026-11-06 10:04 done on main at 185223f
 
 ## Left for later
