@@ -1,9 +1,9 @@
 ---
 id: KOMBU-36
 title: new-project.sh copies untracked runtime files into a new project
-status: ready
+status: done
 priority: 3
-owner: 
+owner: kombucha-worker
 depends_on: []
 touches: [tools/new-project.sh, tools/selftest.sh]
 created: 2026-11-06
@@ -22,5 +22,8 @@ What to do:
 The gate is `tools/check.sh --ci`, green.
 
 ## Progress
+- 2026-11-06 07:28 new-project.sh copies git ls-files minus excludes (rsync/tar fallback without git). Red-proof in scratch: old script copied a planted .claude/test.lock, new one did not; otherwise same files, contents and modes. Self-test step added.
+- 2026-11-06 07:31 Gate green: tools/check.sh --ci (TEST_JOBS=16), self-test line 'the scaffold leaves out a file git does not track' ok, scaffold's own tests 107 pass. Branch kombu-36 rebased on origin/main; handed to kombucha-pm.
+- 2026-11-06 07:32 done on main at e761519
 
 ## Left for later
