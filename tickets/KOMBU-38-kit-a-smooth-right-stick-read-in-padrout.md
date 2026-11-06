@@ -1,11 +1,11 @@
 ---
 id: KOMBU-38
 title: Kit: a smooth right-stick read in PadRouter and Pads (from Dwarf Mountain)
-status: ready
+status: done
 priority: 3
-owner: 
+owner: kombucha-worker
 depends_on: []
-touches: [scripts/util/pad_router.gd, scripts/autoloads/pads.gd, tests/, scripts/dev/dev_hooks.gd, scripts/main.gd]
+touches: [scripts/util/pad_router.gd, scripts/autoloads/pads.gd, tests/, scripts/dev/dev_hooks.gd, scripts/main.gd, data/console_commands.project.json, scenarios/, tools/new-project.sh, CLAUDE.md, .godot-map/graph.json, PROJECT_MAP.md]
 created: 2026-11-06
 updated: 2026-11-06
 ---
@@ -26,5 +26,17 @@ What to do:
 The gate is `tools/check.sh --ci`, green. These are kit files, so projects copy them by hand. When this lands, the PM tells dwarf-mountain-pm.
 
 ## Progress
+- 2026-11-06 09:22 Copied stick() and right_stick() + stick_override + DM's curve test. Added right_stick_of(devices) so a test can name pads Godot does not list as connected; right_stick() calls it with the connected pads. New tests/test_pads.gd: override, capture, sum, pad gate; red with the gate and capture checks taken out. Fixture: console 'stick x y' (dev_hooks + project json, sandbox resets it), main.gd state key right_stick, scenarios/right_stick.txt (scaffold leaves it out). Added to touches: console_commands.project.json, scenarios/, tools/new-project.sh, CLAUDE.md (one pad rule: read the right stick through Pads.right_stick), map files.
+- 2026-11-06 09:25 tools/check.sh --ci green on forge. Branch kombu-38-right-stick, worktree ~/godot-projects/Kombucha-wt-38. Filed KOMBU-39. Handing to kombucha-pm.
+- 2026-11-06 09:26 done on main at 27b2853
+
+## Ready to play
+- What changed: the kit has a smooth right-stick read. `Pads.right_stick()` gives 0 inside the deadzone, then grows to 1 at the rim. It skips pads the pad gate refuses, and it reads 0 while a rebind waits for a key.
+- A scenario author can push the stick with the console line `stick <x> <y>` and read it back with `assert right_stick <x>,<y>` (two places, like `0.50,-0.25`). The harness's sandbox lets go of the stick between scenarios.
+- `scenarios/right_stick.txt` passed. It draws nothing new, so there is no shot to look at. `tests/test_pads.gd` failed with the gate check and the capture check taken out, and passed with them back.
+- Questions for a person:
+  1. With a real controller on the desktop, does the curve feel gentle enough near the deadzone in Dwarf Mountain's pan?
+  2. Should the left stick get the same smooth read some day, for a game that moves a cursor freely?
 
 ## Left for later
+- [[KOMBU-39]] the pad gate check skips a gate node on its way out
