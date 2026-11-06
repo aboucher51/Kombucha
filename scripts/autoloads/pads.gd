@@ -105,6 +105,10 @@ func _process(delta: float) -> void:
 ## May this device act right now? With no gate present, yes.
 func _allowed(device: int) -> bool:
 	for gate in get_tree().get_nodes_in_group("pad_gate"):
+		# A freed gate stays in the group until the frame ends; it no
+		# longer owns a pad, so skip it.
+		if gate.is_queued_for_deletion():
+			continue
 		if gate.has_method("pad_allowed") and not bool(gate.pad_allowed(device)):
 			return false
 	return true

@@ -412,7 +412,7 @@
    "groups_queried": [
     "pad_gate"
    ],
-   "lines": 147
+   "lines": 151
   },
   "res://scripts/autoloads/save_manager.gd": {
    "path": "res://scripts/autoloads/save_manager.gd",
@@ -1616,7 +1616,8 @@
     "test_the_override_pushes_the_stick_without_a_controller",
     "test_the_stick_reads_zero_while_a_rebind_waits_for_a_key",
     "test_every_allowed_pad_adds_in_through_the_deadzone_curve",
-    "test_a_pad_the_gate_refuses_does_not_move_the_stick"
+    "test_a_pad_the_gate_refuses_does_not_move_the_stick",
+    "test_a_gate_on_its_way_out_no_longer_refuses_pads"
    ],
    "emits": [],
    "connects": [],
@@ -1625,7 +1626,7 @@
     "pad_gate"
    ],
    "groups_queried": [],
-   "lines": 81
+   "lines": 96
   },
   "res://tests/test_save_manager.gd": {
    "path": "res://tests/test_save_manager.gd",
