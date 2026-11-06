@@ -475,12 +475,14 @@ answers without an error; ERROR with its last reply after `s` wall-clock
 seconds), `click <NodeName>` (synthesises real input — prefer it when what
 you need to prove is that the *player's* path works, not that a handler
 does), `click_at <x> <y>` (viewport coordinates, for Node2D boards),
-`drag <NodeName | x y> <to_x> <to_y> [steps]` (press at the start, move
-with the button held in `steps` moves, 8 by default, release at the end;
-use it over `click` when the thing must follow the pointer, like a
-slider or a lever; the real cursor stays still while the button is
-held, because its motions carry no button and a hand-made lever lets
-go on one, so on the real display a drag wants `SHOOT_JOBS=1`, like
+`drag <NodeName | x y> <NodeName | x y> [steps]` (press at the start,
+move with the button held in `steps` moves, 8 by default, and release at
+the end; a named end is the node's centre, scrolled into view the way
+`click` does it; use it over `click` when the thing must follow the
+pointer, like a slider or a lever, and to drag a list item onto a slot
+with Godot's own drag and drop; the real cursor stays still while the
+button is held, because its motions carry no button and a hand-made lever
+lets go on one, so on the real display a drag wants `SHOOT_JOBS=1`, like
 hover),
 `scroll_to <NodeName>` (`click` and `hover` scroll a target below a
 ScrollContainer's fold into view themselves; this forces it), `press
@@ -492,7 +494,12 @@ camera), `assert_zone <NodeName> <top|bottom|left|right>` (the whole rect
 in that zone of the viewport: a layout rule a scenario enforces instead of
 an eye), `select <Dropdown> <id-or-label>` and `select_assert` (a click
 only OPENS an OptionButton, so this is how a scenario picks; the harness
-refuses a disabled item and names its tooltip), `window` (prints the size the window
+refuses a disabled item and names its tooltip), `menu <Menu> <item text
+or id>` (menu items are not nodes, so `click` cannot reach them; the
+harness opens a `MenuButton`'s menu, or uses an open `PopupMenu`, and
+fires the item the way a click does; it refuses a disabled item, and
+lists the menu's items when the text matches none or two of them),
+`window` (prints the size the window
 manager actually granted, for a check at a named size),
 `assert_tooltip <NodeName> <text>`, `frame_budget <ms> [frames]`,
 `expect_shot <name> [tolerance]`, `mask <x> <y> <w> <h>`, `expect_fail`,

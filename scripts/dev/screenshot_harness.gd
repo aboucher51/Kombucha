@@ -55,6 +55,19 @@ extends Node
 ##                             is refused, naming its tooltip. A click only
 ##                             OPENS a dropdown, so this is the seam.
 ##     select_assert <Dropdown> <id-or-label>  fail unless that is selected
+##     menu <Menu> <item text or id>  pick a menu item as a click would
+##                             (id_pressed and index_pressed fire). <Menu> is
+##                             a MenuButton, whose popup opens first, or an
+##                             open PopupMenu. Exact text first, then the id.
+##                             A disabled item is refused, naming its
+##                             tooltip; no match or two matches is an ERROR
+##                             that lists the items. Menu items are not
+##                             nodes, so `click` cannot reach them.
+##     drag <from> <to> [steps]  press at <from>, move with the button
+##                             held, release at <to>. Each end is a node
+##                             name (its centre, scrolled into view like a
+##                             click) or an x y pair. Godot's own drag and
+##                             drop (_get_drag_data, _drop_data) works too.
 ##     window                  print "window WxH", the size the window
 ##                             manager actually granted (a launch size can
 ##                             be refused; a check reads this to say so)
@@ -531,6 +544,8 @@ func _execute(line: String) -> String:
 			return _select(parts)
 		"select_assert":
 			return _select_assert(parts)
+		"menu":
+			return await _menu(parts)
 		"window":
 			# The WINDOW's pixels, not the viewport's visible rect: below
 			# the design size the stretch keeps the canvas at design size
@@ -807,35 +822,38 @@ func _settled_centre(node_name: String) -> Variant:
 	return target.get_global_transform_with_canvas() * (target.size / 2.0)
 
 
-const DRAG_USAGE := "ERROR: usage: drag <NodeName | x y> <to_x> <to_y> [steps]"
+const DRAG_USAGE := "ERROR: usage: drag <NodeName | x y> <NodeName | x y> [steps]"
 const DEFAULT_DRAG_STEPS := 8
 
 
-## `drag` arguments as {target, from, to, steps} or {error}. A start that
-## is a number is a canvas point, anything else a node name (whose `from`
-## is resolved later). Static so a headless test can pin every shape.
+## `drag` arguments as {from_name, from, to_name, to, steps} or {error}.
+## Each end is a node name (its point is resolved later) or two numbers, a
+## canvas point. A word that is not a number is a name, so `drag Item Slot`
+## and `drag Item 10 20` both read. Static so a headless test can pin every
+## shape.
 static func parse_drag(parts: PackedStringArray) -> Dictionary:
 	var args := parts.slice(1)
-	var target := ""
-	var from := Vector2.ZERO
-	if not args.is_empty() and not args[0].is_valid_float():
-		target = args[0]
-		args = args.slice(1)
-	elif args.size() >= 2:
-		from = Vector2(float(args[0]), float(args[1]))
-		args = args.slice(2)
-	if args.size() < 2 or args.size() > 3:
-		return {"error": DRAG_USAGE}
-	for value in args:
-		if not value.is_valid_float():
+	var ends: Array[Dictionary] = []
+	for i in 2:
+		if args.is_empty():
 			return {"error": DRAG_USAGE}
+		if not args[0].is_valid_float():
+			ends.append({"name": args[0], "point": Vector2.ZERO})
+			args = args.slice(1)
+		elif args.size() >= 2 and args[1].is_valid_float():
+			ends.append({"name": "", "point": Vector2(float(args[0]), float(args[1]))})
+			args = args.slice(2)
+		else:
+			return {"error": DRAG_USAGE}
+	if args.size() > 1:
+		return {"error": DRAG_USAGE}
 	var steps := DEFAULT_DRAG_STEPS
-	if args.size() == 3:
-		if not args[2].is_valid_int() or int(args[2]) < 1:
-			return {"error": "ERROR: drag steps must be a whole number of 1 or more, not '%s'" % args[2]}
-		steps = int(args[2])
-	return {"target": target, "from": from, "to": Vector2(float(args[0]), float(args[1])),
-		"steps": steps}
+	if args.size() == 1:
+		if not args[0].is_valid_int() or int(args[0]) < 1:
+			return {"error": "ERROR: drag steps must be a whole number of 1 or more, not '%s'" % args[0]}
+		steps = int(args[0])
+	return {"from_name": ends[0]["name"], "from": ends[0]["point"],
+		"to_name": ends[1]["name"], "to": ends[1]["point"], "steps": steps}
 
 
 ## A held drag: press at the start, `steps` motion events with the left
@@ -863,12 +881,25 @@ func _drag(parts: PackedStringArray) -> String:
 	if parsed.has("error"):
 		return str(parsed["error"])
 	var from: Vector2 = parsed["from"]
-	if not str(parsed["target"]).is_empty():
-		var centre: Variant = await _settled_centre(str(parsed["target"]))
+	if not str(parsed["from_name"]).is_empty():
+		var centre: Variant = await _settled_centre(str(parsed["from_name"]))
 		if centre is String:
 			return centre
 		from = centre
+	# The target is placed BEFORE the press, so a lookup error leaves no
+	# button held. Placing it scrolls it into view, which can move the
+	# start, so a named start is placed again after it.
 	var to: Vector2 = parsed["to"]
+	if not str(parsed["to_name"]).is_empty():
+		var target_centre: Variant = await _settled_centre(str(parsed["to_name"]))
+		if target_centre is String:
+			return target_centre
+		to = target_centre
+		if not str(parsed["from_name"]).is_empty():
+			var moved: Variant = await _settled_centre(str(parsed["from_name"]))
+			if moved is String:
+				return moved
+			from = moved
 	var steps := int(parsed["steps"])
 	await _warp_and_await(from)
 	_push_drag_button(from, true)
@@ -1177,6 +1208,90 @@ static func _dropdown_index(dropdown: OptionButton, wanted: String) -> int:
 	return -1
 
 
+## Menu items are not nodes, so `click` cannot reach them: this is the
+## seam (IceEngine could not pick "Rename" from an Edit menu, ICE-58). A
+## MenuButton's popup is opened first, so a shot shows it; an open
+## PopupMenu is used as it is. The item fires id_pressed and index_pressed
+## the way a click does, and the popup closes when a click would close it.
+## Godot 4.7's PopupMenu has no public call that activates an item, so the
+## harness emits the signals itself, as `select` does for a dropdown.
+func _menu(parts: PackedStringArray) -> String:
+	if parts.size() < 3:
+		return "ERROR: usage: menu <MenuButton | PopupMenu> <item text or id>"
+	var found := _find_named(parts[1])
+	if found == null:
+		return _lookup_error
+	var popup: PopupMenu = null
+	if found is MenuButton:
+		var button := found as MenuButton
+		if not button.is_visible_in_tree():
+			return "ERROR: '%s' is not visible" % parts[1]
+		if button.disabled:
+			return "ERROR: '%s' is disabled" % parts[1]
+		popup = button.get_popup()
+		if not popup.visible:
+			button.show_popup()
+			for i in DEFAULT_SETTLE_FRAMES:
+				await get_tree().process_frame
+	elif found is PopupMenu:
+		popup = found as PopupMenu
+		if not popup.visible:
+			return "ERROR: the menu '%s' is not open. Open it first, the way a player would." % parts[1]
+	else:
+		return "ERROR: '%s' is not a MenuButton or a PopupMenu. Name the menu button, or the open menu itself." % parts[1]
+	var wanted := " ".join(parts.slice(2))
+	var picked := menu_index(popup, wanted)
+	if picked.has("error"):
+		return "ERROR: %s in the menu '%s'. %s Its items: %s." % [
+			picked["error"], parts[1], picked["fix"], ", ".join(menu_items(popup))]
+	var index := int(picked["index"])
+	if popup.is_item_disabled(index):
+		var why := popup.get_item_tooltip(index)
+		return "ERROR: '%s' is disabled in the menu '%s'%s" % [
+			wanted, parts[1], (": " + why) if not why.is_empty() else ""]
+	var closes := popup.hide_on_item_selection
+	if popup.is_item_checkable(index):
+		closes = popup.hide_on_checkable_item_selection
+	if popup.get_item_multistate_max(index) > 0:
+		closes = popup.hide_on_state_item_selection
+	popup.id_pressed.emit(popup.get_item_id(index))
+	popup.index_pressed.emit(index)
+	if closes and is_instance_valid(popup) and popup.visible:
+		popup.hide()
+	for i in DEFAULT_SETTLE_FRAMES:
+		await get_tree().process_frame
+	return ""
+
+
+## The item a `menu` line names, as {index} or {error, fix}. Exact text wins,
+## then a whole number as the item's id. Two items with the text are an
+## error, never a guess. Separators never match. Static for the tests.
+static func menu_index(popup: PopupMenu, wanted: String) -> Dictionary:
+	var by_text: Array[int] = []
+	for i in popup.item_count:
+		if not popup.is_item_separator(i) and popup.get_item_text(i) == wanted:
+			by_text.append(i)
+	if by_text.size() == 1:
+		return {"index": by_text[0]}
+	if by_text.size() > 1:
+		return {"error": "%d items are named '%s'" % [by_text.size(), wanted],
+			"fix": "Pick one by its id."}
+	if wanted.is_valid_int():
+		for i in popup.item_count:
+			if not popup.is_item_separator(i) and popup.get_item_id(i) == int(wanted):
+				return {"index": i}
+	return {"error": "no item is named '%s'" % wanted, "fix": "Use an item's text or id."}
+
+
+## Each item as `text (id N)`, for an error a scenario author can act on.
+static func menu_items(popup: PopupMenu) -> PackedStringArray:
+	var items := PackedStringArray()
+	for i in popup.item_count:
+		if not popup.is_item_separator(i):
+			items.append("'%s' (id %d)" % [popup.get_item_text(i), popup.get_item_id(i)])
+	return items
+
+
 ## Reads the tooltip the Control would show, without waiting for the
 ## engine's popup: deterministic, no dwell, and it answers headless. A game
 ## that draws hints in its own overlay asserts on that overlay instead.
@@ -1351,7 +1466,8 @@ static func pick_named(matches: Array[Node], node_name: String) -> Dictionary:
 	var shown: Array[Node] = []
 	for node in matches:
 		if (node is CanvasItem and (node as CanvasItem).is_visible_in_tree()) \
-				or (node is Node3D and (node as Node3D).is_visible_in_tree()):
+				or (node is Node3D and (node as Node3D).is_visible_in_tree()) \
+				or (node is Window and (node as Window).visible):
 			shown.append(node)
 	if shown.size() == 1:
 		return {"node": shown[0]}

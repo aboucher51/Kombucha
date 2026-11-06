@@ -68,6 +68,9 @@ cat > "$EXCLUDES" <<'EOF'
 /scenes/nested_scroll.tscn
 /scripts/nested_scroll.gd
 /scripts/nested_scroll.gd.uid
+/scenes/harness_inputs.tscn
+/scripts/harness_inputs.gd
+/scripts/harness_inputs.gd.uid
 /tests/test_cmdline.gd
 /tests/test_cmdline.gd.uid
 /tests/test_console_state.gd
@@ -81,6 +84,8 @@ cat > "$EXCLUDES" <<'EOF'
 /scenarios/baseline.txt
 /scenarios/baselines
 /scenarios/click_nested_scroll.txt
+/scenarios/menu.txt
+/scenarios/drag_drop.txt
 /scenarios/frame_budget.txt
 /scenarios/console_ui.txt
 /scenarios/hooks.txt

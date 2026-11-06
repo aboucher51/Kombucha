@@ -1,0 +1,25 @@
+# menu: pick a menu item by its text or id. Menu items are not nodes, so
+# `click` cannot reach them (IceEngine, ICE-58, KOMBU-41).
+wait 5
+goto res://scenes/harness_inputs.tscn
+wait 5
+# A MenuButton's popup opens, then the item fires as a click would.
+menu EditMenu Rename
+assert menu_pick EditMenu:Rename
+# By id, when no item has that text.
+menu EditMenu 11
+assert menu_pick EditMenu:Duplicate
+# Refusals: a disabled item, an unknown item, two items with one text.
+expect_fail menu EditMenu Delete
+expect_fail menu EditMenu Paste
+expect_fail menu EditMenu Copy
+menu EditMenu 14
+assert menu_pick EditMenu:Copy
+# A plain PopupMenu must be open first, the way a player opens it.
+expect_fail menu ContextMenu Open
+click ContextButton
+shot context-open
+menu ContextMenu Close
+assert menu_pick ContextMenu:Close
+expect_fail menu ContextButton Open
+expect_fail menu NoSuchMenu Open

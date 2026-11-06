@@ -171,24 +171,66 @@ func test_two_visible_namesakes_are_ambiguous_and_none_is_not_visible() -> void:
 	assert_string_contains(str(Harness.pick_named([] as Array[Node], "Nobody").get("error", "")), "no node named")
 
 
-# ── drag arguments: a named start or a point, then the end and the steps ──
+# ── drag arguments: each end a node name or a point, then the steps ──
 
 func test_drag_parses_a_named_start_or_a_point() -> void:
 	var named := Harness.parse_drag(PackedStringArray(["drag", "MasterSlider", "10", "20"]))
-	assert_eq(named, {"target": "MasterSlider", "from": Vector2.ZERO, "to": Vector2(10, 20),
-		"steps": Harness.DEFAULT_DRAG_STEPS})
+	assert_eq(named, {"from_name": "MasterSlider", "from": Vector2.ZERO, "to_name": "",
+		"to": Vector2(10, 20), "steps": Harness.DEFAULT_DRAG_STEPS})
 	var point := Harness.parse_drag(PackedStringArray(["drag", "1", "2", "3.5", "4", "5"]))
-	assert_eq(point, {"target": "", "from": Vector2(1, 2), "to": Vector2(3.5, 4), "steps": 5})
+	assert_eq(point, {"from_name": "", "from": Vector2(1, 2), "to_name": "", "to": Vector2(3.5, 4),
+		"steps": 5})
+
+
+func test_drag_parses_a_named_target() -> void:
+	assert_eq(Harness.parse_drag(DebugConsole.tokenise("drag Item Slot")),
+		{"from_name": "Item", "from": Vector2.ZERO, "to_name": "Slot", "to": Vector2.ZERO,
+		"steps": Harness.DEFAULT_DRAG_STEPS})
+	assert_eq(Harness.parse_drag(DebugConsole.tokenise("drag 1 2 Slot 3")),
+		{"from_name": "", "from": Vector2(1, 2), "to_name": "Slot", "to": Vector2.ZERO, "steps": 3})
 
 
 func test_drag_refuses_a_missing_end_or_a_bad_step_count() -> void:
-	for line in ["drag", "drag Slider", "drag Slider 10", "drag 1 2 3", "drag Slider x 10",
-			"drag Slider 1 2 3 4"]:
+	for line in ["drag", "drag Slider", "drag Slider 10", "drag 1 2 3", "drag Slider 10 x",
+			"drag Slider 1 2 3 4", "drag Item Slot 3 4", "drag 1 Slot"]:
 		assert_eq(Harness.parse_drag(DebugConsole.tokenise(line)).get("error", ""),
 			Harness.DRAG_USAGE, line)
-	for line in ["drag Slider 1 2 0", "drag Slider 1 2 1.5"]:
+	for line in ["drag Slider 1 2 0", "drag Slider 1 2 1.5", "drag Item Slot 0"]:
 		assert_string_contains(str(Harness.parse_drag(DebugConsole.tokenise(line)).get("error", "")),
 			"whole number", line)
+
+
+# ── menu items: exact text first, then the id; two matches refused ──
+
+func _menu_popup() -> PopupMenu:
+	var popup := PopupMenu.new()
+	popup.add_item("Rename", 10)
+	popup.add_separator()
+	popup.add_item("Copy", 13)
+	popup.add_item("Copy", 14)
+	popup.add_item("7", 20)
+	popup.add_item("Seven", 7)
+	return popup
+
+
+func test_menu_picks_by_text_then_by_id() -> void:
+	var popup := _menu_popup()
+	assert_eq(Harness.menu_index(popup, "Rename"), {"index": 0})
+	assert_eq(Harness.menu_index(popup, "14"), {"index": 3})
+	# Text wins over an id: the item named "7" is not the item with id 7.
+	assert_eq(Harness.menu_index(popup, "7"), {"index": 4})
+	popup.free()
+
+
+func test_menu_refuses_two_items_with_one_text_or_none() -> void:
+	var popup := _menu_popup()
+	assert_string_contains(str(Harness.menu_index(popup, "Copy").get("error", "")), "2 items")
+	assert_string_contains(str(Harness.menu_index(popup, "Paste").get("error", "")), "no item")
+	# The separator's id is not an item.
+	assert_true(Harness.menu_index(popup, str(popup.get_item_id(1))).has("error"))
+	assert_eq(Harness.menu_items(popup), PackedStringArray(["'Rename' (id 10)", "'Copy' (id 13)",
+		"'Copy' (id 14)", "'7' (id 20)", "'Seven' (id 7)"]))
+	popup.free()
 
 
 # ── scenario_started / scenario_finished reach the project's hooks ──

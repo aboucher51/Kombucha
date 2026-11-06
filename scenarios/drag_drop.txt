@@ -1,0 +1,20 @@
+# drag from one named node to another runs Godot's own drag and drop
+# (_get_drag_data, _can_drop_data, _drop_data). IceEngine dragged list
+# items onto slots by guessing coordinates (ICE-69, KOMBU-42).
+wait 5
+goto res://scenes/harness_inputs.tscn
+wait 5
+assert dropped ""
+drag ItemApple DropSlot
+assert dropped ItemApple
+shot dropped-apple
+# The slot refuses a rock, so the last drop stays.
+drag ItemRock DropSlot 4
+assert dropped ItemApple
+# The ends mix: a name to a point, and a point to a name.
+drag ItemPear 700 270
+assert dropped ItemPear
+drag ItemApple 10 10
+assert dropped ItemPear
+expect_fail drag ItemApple NoSuchSlot
+expect_fail drag ItemApple DropSlot 0

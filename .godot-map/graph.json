@@ -17,6 +17,39 @@
   "SelftestDriver": "res://scripts/dev/selftest_driver.gd"
  },
  "scenes": {
+  "res://scenes/harness_inputs.tscn": {
+   "path": "res://scenes/harness_inputs.tscn",
+   "uid": null,
+   "root": {
+    "path": ".",
+    "name": "HarnessInputs",
+    "type": "Control",
+    "script": "res://scripts/harness_inputs.gd",
+    "instance": null,
+    "groups": [],
+    "unique": false,
+    "node_paths": []
+   },
+   "inherits": null,
+   "nodes": [
+    {
+     "path": ".",
+     "name": "HarnessInputs",
+     "type": "Control",
+     "script": "res://scripts/harness_inputs.gd",
+     "instance": null,
+     "groups": [],
+     "unique": false,
+     "node_paths": []
+    }
+   ],
+   "scripts": [
+    "res://scripts/harness_inputs.gd"
+   ],
+   "instances": [],
+   "resources": [],
+   "connections": []
+  },
   "res://scenes/main.tscn": {
    "path": "res://scenes/main.tscn",
    "uid": null,
@@ -666,6 +699,9 @@
     "_select_assert",
     "_find_dropdown",
     "_dropdown_index",
+    "_menu",
+    "menu_index",
+    "menu_items",
     "_assert_tooltip",
     "_frame_budget",
     "_press",
@@ -681,7 +717,9 @@
     "_wipe_dir"
    ],
    "emits": [
-    "dropdown.item_selected"
+    "dropdown.item_selected",
+    "popup.id_pressed",
+    "popup.index_pressed"
    ],
    "connects": [
     "?.window_input"
@@ -689,7 +727,7 @@
    "node_paths": [],
    "groups_joined": [],
    "groups_queried": [],
-   "lines": 1404
+   "lines": 1520
   },
   "res://scripts/dev/selftest_driver.gd": {
    "path": "res://scripts/dev/selftest_driver.gd",
@@ -711,6 +749,43 @@
    "groups_joined": [],
    "groups_queried": [],
    "lines": 24
+  },
+  "res://scripts/harness_inputs.gd": {
+   "path": "res://scripts/harness_inputs.gd",
+   "lang": "gdscript",
+   "class_name": null,
+   "global": true,
+   "extends": "Control",
+   "tool": false,
+   "loads": [],
+   "refs": [],
+   "signals": [],
+   "funcs": [
+    "_ready",
+    "_fill",
+    "_open_context_menu",
+    "_on_menu_id",
+    "_build_drag_area",
+    "_drag_data",
+    "_can_drop",
+    "_drop",
+    "state_text",
+    "assert_key"
+   ],
+   "emits": [],
+   "connects": [
+    "?.id_pressed",
+    "_context_button.pressed",
+    "_context_menu.id_pressed"
+   ],
+   "node_paths": [
+    "DropSlot/DropSlotLabel"
+   ],
+   "groups_joined": [
+    "state"
+   ],
+   "groups_queried": [],
+   "lines": 129
   },
   "res://scripts/main.gd": {
    "path": "res://scripts/main.gd",
@@ -1715,7 +1790,11 @@
     "test_a_hidden_namesake_does_not_make_a_name_ambiguous",
     "test_two_visible_namesakes_are_ambiguous_and_none_is_not_visible",
     "test_drag_parses_a_named_start_or_a_point",
+    "test_drag_parses_a_named_target",
     "test_drag_refuses_a_missing_end_or_a_bad_step_count",
+    "_menu_popup",
+    "test_menu_picks_by_text_then_by_id",
+    "test_menu_refuses_two_items_with_one_text_or_none",
     "_scenario_file",
     "test_the_hooks_hear_a_scenario_start_before_its_first_line_and_finish_with_its_verdict",
     "test_serve_idle_fps_takes_a_whole_number_above_zero",
@@ -1726,7 +1805,7 @@
    "node_paths": [],
    "groups_joined": [],
    "groups_queried": [],
-   "lines": 234
+   "lines": 276
   },
   "res://tests/test_smoke.gd": {
    "path": "res://tests/test_smoke.gd",
@@ -1946,6 +2025,7 @@
   "state": {
    "scenes": {},
    "joined_in": [
+    "res://scripts/harness_inputs.gd",
     "res://scripts/main.gd",
     "res://scripts/nested_scroll.gd"
    ],
@@ -1997,6 +2077,9 @@
    "res://scripts/dev/dev_hooks.gd"
   ],
   "res://scenes/": [
+   "res://scripts/dev/dev_hooks.gd"
+  ],
+  "res://scenes/harness_inputs.tscn": [
    "res://scripts/dev/dev_hooks.gd"
   ],
   "res://scenes/main.tscn": [
@@ -2104,6 +2187,10 @@
    "autoload:SelftestDriver",
    "res://tests/test_localization.gd"
   ],
+  "res://scripts/harness_inputs.gd": [
+   "res://scenes/harness_inputs.tscn",
+   "res://tests/test_localization.gd"
+  ],
   "res://scripts/main.gd": [
    "res://scenes/main.tscn",
    "res://tests/test_localization.gd"
@@ -2129,6 +2216,7 @@
   ],
   "res://scripts/ui/ui_theme.gd": [
    "res://scripts/dev/debug_console.gd",
+   "res://scripts/harness_inputs.gd",
    "res://scripts/main.gd",
    "res://scripts/nested_scroll.gd",
    "res://scripts/ui/pause_menu.gd",
