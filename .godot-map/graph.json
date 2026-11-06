@@ -397,6 +397,8 @@
     "_input",
     "_process",
     "_allowed",
+    "right_stick",
+    "right_stick_of",
     "fire",
     "_on_joy_changed"
    ],
@@ -410,7 +412,7 @@
    "groups_queried": [
     "pad_gate"
    ],
-   "lines": 119
+   "lines": 147
   },
   "res://scripts/autoloads/save_manager.gd": {
    "path": "res://scripts/autoloads/save_manager.gd",
@@ -606,7 +608,7 @@
    "groups_queried": [
     "settle"
    ],
-   "lines": 87
+   "lines": 94
   },
   "res://scripts/dev/screenshot_harness.gd": {
    "path": "res://scripts/dev/screenshot_harness.gd",
@@ -738,6 +740,7 @@
     "assert_key",
     "_master_volume",
     "_focus",
+    "_stick",
     "_yes_no",
     "_point"
    ],
@@ -756,7 +759,7 @@
     "settle"
    ],
    "groups_queried": [],
-   "lines": 144
+   "lines": 152
   },
   "res://scripts/nested_scroll.gd": {
    "path": "res://scripts/nested_scroll.gd",
@@ -1125,6 +1128,7 @@
     "button_action",
     "tick",
     "reset",
+    "stick",
     "device_allowed",
     "_quantise",
     "_steps"
@@ -1134,7 +1138,7 @@
    "node_paths": [],
    "groups_joined": [],
    "groups_queried": [],
-   "lines": 106
+   "lines": 117
   },
   "res://scripts/util/runtime_textures.gd": {
    "path": "res://scripts/util/runtime_textures.gd",
@@ -1585,14 +1589,43 @@
     "test_a_held_direction_echoes_after_the_initial_delay_then_faster",
     "test_releasing_and_pressing_again_steps_at_once",
     "test_devices_keep_separate_clocks",
-    "test_device_gating_falls_open_unless_another_seat_owns_the_pad"
+    "test_device_gating_falls_open_unless_another_seat_owns_the_pad",
+    "test_a_stick_read_is_zero_in_the_deadzone_and_grows_to_one_at_the_rim"
    ],
    "emits": [],
    "connects": [],
    "node_paths": [],
    "groups_joined": [],
    "groups_queried": [],
-   "lines": 61
+   "lines": 72
+  },
+  "res://tests/test_pads.gd": {
+   "path": "res://tests/test_pads.gd",
+   "lang": "gdscript",
+   "class_name": null,
+   "global": true,
+   "extends": "GutTest",
+   "tool": false,
+   "loads": [],
+   "refs": [],
+   "signals": [],
+   "funcs": [
+    "before_each",
+    "after_each",
+    "_push_right_stick",
+    "test_the_override_pushes_the_stick_without_a_controller",
+    "test_the_stick_reads_zero_while_a_rebind_waits_for_a_key",
+    "test_every_allowed_pad_adds_in_through_the_deadzone_curve",
+    "test_a_pad_the_gate_refuses_does_not_move_the_stick"
+   ],
+   "emits": [],
+   "connects": [],
+   "node_paths": [],
+   "groups_joined": [
+    "pad_gate"
+   ],
+   "groups_queried": [],
+   "lines": 81
   },
   "res://tests/test_save_manager.gd": {
    "path": "res://tests/test_save_manager.gd",
@@ -1893,7 +1926,9 @@
  "groups": {
   "pad_gate": {
    "scenes": {},
-   "joined_in": [],
+   "joined_in": [
+    "res://tests/test_pads.gd"
+   ],
    "queried_in": [
     "res://scripts/autoloads/pads.gd"
    ]
@@ -2012,11 +2047,15 @@
    "res://scripts/dev/screenshot_harness.gd",
    "res://tests/test_debug_console.gd",
    "res://tests/test_keybinds.gd",
-   "res://tests/test_localization.gd"
+   "res://tests/test_localization.gd",
+   "res://tests/test_pads.gd"
   ],
   "res://scripts/autoloads/pads.gd": [
    "autoload:Pads",
-   "res://tests/test_localization.gd"
+   "res://scripts/dev/dev_hooks.gd",
+   "res://scripts/main.gd",
+   "res://tests/test_localization.gd",
+   "res://tests/test_pads.gd"
   ],
   "res://scripts/autoloads/save_manager.gd": [
    "autoload:SaveManager",

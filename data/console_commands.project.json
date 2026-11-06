@@ -50,6 +50,24 @@
 		]
 	},
 	{
+		"id": "stick",
+		"handler": "stick",
+		"usage": "stick <x> <y>   (pushes the right stick without a controller)",
+		"description": "Push the right stick. -1 to 1 on each axis. 0 0 lets go.",
+		"args": [
+			{
+				"name": "x",
+				"kind": "float",
+				"required": true
+			},
+			{
+				"name": "y",
+				"kind": "float",
+				"required": true
+			}
+		]
+	},
+	{
 		"id": "goto",
 		"handler": "goto",
 		"usage": "goto <scene_path>   (leaves the boot scene, and the harness must return to it)",

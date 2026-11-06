@@ -88,6 +88,7 @@ cat > "$EXCLUDES" <<'EOF'
 /scenarios/onscreen.txt
 /scenarios/pseudo_locale.txt
 /scenarios/scroll.txt
+/scenarios/right_stick.txt
 /scenarios/settle.txt
 /scenarios/state.txt
 /scenarios/tooltip.txt

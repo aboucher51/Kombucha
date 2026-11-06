@@ -99,9 +99,9 @@ func is_busy() -> bool:
 
 
 func state_text() -> String:
-	return "title=%s paused=%s busy=%s last_click=%s last_row=%s quality=%s master_volume=%s lever=%d focus=%s" % [
+	return "title=%s paused=%s busy=%s last_click=%s last_row=%s quality=%s master_volume=%s lever=%d focus=%s right_stick=%s" % [
 		%TitleLabel.text, _yes_no(get_tree().paused), _yes_no(is_busy()),
-		_point(last_click), last_row, quality, _master_volume(), $PauseMenu.lever, _focus()]
+		_point(last_click), last_row, quality, _master_volume(), $PauseMenu.lever, _focus(), _stick()]
 
 
 func assert_key(key: String, value: String) -> String:
@@ -116,6 +116,7 @@ func assert_key(key: String, value: String) -> String:
 		"master_volume": actual = _master_volume()
 		"lever": actual = str($PauseMenu.lever)
 		"focus": actual = _focus()
+		"right_stick": actual = _stick()
 		"built_save_root": actual = built_save_root
 		_: return "ERROR: unknown key '%s'" % key
 	if actual != value:
@@ -133,6 +134,13 @@ static func _master_volume() -> String:
 func _focus() -> String:
 	var owner := get_viewport().gui_get_focus_owner()
 	return str(owner.name) if owner != null else "none"
+
+
+## The right stick, as a view that pans would read it (Pads.right_stick),
+## to two places: "0.50,0.00".
+static func _stick() -> String:
+	var at := Pads.right_stick()
+	return "%.2f,%.2f" % [at.x, at.y]
 
 
 static func _yes_no(flag: bool) -> String:

@@ -253,6 +253,11 @@ What follows from this:
 - Keyboard Escape is BOTH `ui_cancel` and `pause`. So a cancel path must
   skip events that also match pause.
 - Gating which pad may act is opt-in, through the `pad_gate` group.
+- For a view that pans with the right stick, read `Pads.right_stick()`.
+  Never read the stick's axes with `Input.get_joy_axis()` yourself. If you do, a
+  refused pad pans the view, and so does a stick pushed to rebind it.
+  `Pads.right_stick()` skips refused pads and reads zero while
+  `Keybinds.capturing` is true. `tests/test_pads.gd` checks both.
 
 ### UI kit rules
 

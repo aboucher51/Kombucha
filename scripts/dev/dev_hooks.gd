@@ -19,6 +19,8 @@ static var last_finished := ""
 
 func sandbox() -> void:
 	notes.clear()
+	# A pushed stick is autoload state, so it outlives the scenario.
+	Pads.stick_override = Vector2.ZERO
 
 
 ## Notes the scenario's stem: sandbox() has already run, so the note
@@ -61,6 +63,11 @@ func console_dispatch(handler: String, args: Dictionary) -> Variant:
 			return "Noted."
 		"notes":
 			return "No notes." if notes.is_empty() else "\n".join(notes)
+		"stick":
+			# The right stick without a controller: main.gd's `right_stick`
+			# state key reads it back through Pads.right_stick().
+			Pads.stick_override = Vector2(float(args["x"]), float(args["y"]))
+			return "Right stick at %s." % Pads.stick_override
 		"goto":
 			# Leaves the boot scene, the way a game's Play button does; the
 			# harness must bring the NEXT scenario back to it (see

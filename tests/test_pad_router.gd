@@ -58,3 +58,14 @@ func test_device_gating_falls_open_unless_another_seat_owns_the_pad() -> void:
 	assert_false(PadRouter.device_allowed([3, 4], 0, 4), "the other seat's pad is refused")
 	assert_true(PadRouter.device_allowed([3, 4], 0, 5), "a pad nobody claimed still acts")
 	assert_true(PadRouter.device_allowed([3, 4], -1, 4), "no active seat: no gating")
+
+
+## The right stick pans a view smoothly (from Dwarf Mountain): nothing inside
+## the deadzone, then a share that grows to 1 at the rim, pointing the stick's way.
+func test_a_stick_read_is_zero_in_the_deadzone_and_grows_to_one_at_the_rim() -> void:
+	_router.deadzone = 0.25
+	assert_eq(_router.stick(Vector2(0.2, 0.0)), Vector2.ZERO)
+	assert_almost_eq(_router.stick(Vector2(0.0, 1.0)), Vector2(0.0, 1.0), Vector2(0.001, 0.001))
+	var half := _router.stick(Vector2(-0.625, 0.0))
+	assert_almost_eq(half.x, -0.5, 0.001, "halfway between the deadzone and the rim")
+	assert_eq(half.y, 0.0)

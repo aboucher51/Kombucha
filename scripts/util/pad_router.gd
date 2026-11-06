@@ -61,6 +61,17 @@ func reset() -> void:
 	_held.clear()
 
 
+## A stick read for smooth movement (a view that pans), not for steps:
+## zero inside the deadzone, then 0..1 from its edge to the rim, so the
+## pan starts gently instead of jumping to the deadzone's speed.
+func stick(raw: Vector2) -> Vector2:
+	var length := raw.length()
+	if length <= deadzone:
+		return Vector2.ZERO
+	var share := clampf((length - deadzone) / maxf(1.0 - deadzone, 0.001), 0.0, 1.0)
+	return raw / length * share
+
+
 ## May this device act right now? seat_devices is per-seat (-1 = any pad);
 ## active_seat < 0 means no seat is gating (menus, AI turns, replays).
 ## The empty/any cases fall open on purpose: gating is an OPT-IN per seat,

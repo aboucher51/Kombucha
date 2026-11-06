@@ -1,0 +1,12 @@
+# The right stick, read smoothly for a view that pans (Pads.right_stick).
+# `stick` pushes it without a controller. A rebind that waits for a key
+# stops the read, so pushing the stick to rebind it cannot pan the view.
+wait 5
+assert right_stick 0.00,0.00
+stick 0.5 -0.25
+assert right_stick 0.50,-0.25
+# Past the rim, the read stays at length 1.
+stick 3 4
+assert right_stick 0.60,0.80
+stick 0 0
+assert right_stick 0.00,0.00

@@ -16,6 +16,9 @@ extends Node
 ## `pad_allowed(device) -> bool` decides; with none present every pad acts.
 ## Reached by group, because an autoload must not name a scene class.
 ##
+## One read stays smooth instead: right_stick() polls the right stick for a
+## view that pans, through the same gate.
+##
 ## The pure half (deadzone, dominant-axis quantise, repeat clocks) is
 ## PadRouter, testable without a controller.
 
@@ -28,6 +31,9 @@ var router := PadRouter.new()
 ## True once the last input came from a controller — hint strips and focus
 ## fallbacks read it; any mouse or key press flips it back.
 var using_pad := false
+## Added to the real right stick. A test or a scenario sets it to push the
+## stick without a controller, and must put it back to zero.
+var stick_override := Vector2.ZERO
 
 
 func _ready() -> void:
@@ -102,6 +108,28 @@ func _allowed(device: int) -> bool:
 		if gate.has_method("pad_allowed") and not bool(gate.pad_allowed(device)):
 			return false
 	return true
+
+
+## The right stick, for a view that pans with it (from Dwarf Mountain).
+## The left stick and the d-pad stay ui_* steps; the right stick is smooth.
+## Zero while a rebind listens. Every allowed pad adds in, length at most 1.
+func right_stick() -> Vector2:
+	return right_stick_of(Input.get_connected_joypads())
+
+
+## The same read over the given pads. A test names pads that no machine
+## has connected, because Godot lists only real ones as connected.
+func right_stick_of(devices: Array) -> Vector2:
+	if Keybinds.capturing:
+		return Vector2.ZERO
+	var out := stick_override
+	for device: int in devices:
+		if not _allowed(device):
+			continue
+		out += router.stick(Vector2(
+			Input.get_joy_axis(device, JOY_AXIS_RIGHT_X),
+			Input.get_joy_axis(device, JOY_AXIS_RIGHT_Y)))
+	return out.limit_length(1.0)
 
 
 ## A press+release of a ui_* action, the same events the harness's `press`
