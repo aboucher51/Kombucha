@@ -74,10 +74,13 @@ func test_a_pad_the_gate_refuses_does_not_move_the_stick() -> void:
 	_push_right_stick(PAD_B, Vector2(0.0, 1.0))
 	var gate := OnlyPad.new()
 	gate.device = PAD_A
-	add_child_autofree(gate)
+	add_child(gate)
 	gate.add_to_group("pad_gate")
 	assert_almost_eq(Pads.right_stick_of([PAD_A, PAD_B]), Vector2(0.5, 0.0),
 		Vector2(0.001, 0.001), "only the gate's own pad counts")
+	# Freed now, not queued: a queued gate is still a child when the
+	# script ends, and GUT warns about unfreed children.
+	gate.free()
 
 
 ## A freed node stays in its group until the frame ends. A gate on its way
@@ -93,3 +96,6 @@ func test_a_gate_on_its_way_out_no_longer_refuses_pads() -> void:
 	gate.queue_free()
 	assert_true(Pads._allowed(PAD_B), "a freed gate lets pad B act in the same frame")
 	assert_almost_eq(Pads.right_stick_of([PAD_B]), Vector2(0.0, 1.0), Vector2(0.001, 0.001))
+	# Let the queued free finish, or the gate is still a child when the
+	# script ends, and GUT warns about unfreed children.
+	await get_tree().process_frame

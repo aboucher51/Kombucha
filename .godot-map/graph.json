@@ -1626,7 +1626,7 @@
     "pad_gate"
    ],
    "groups_queried": [],
-   "lines": 96
+   "lines": 102
   },
   "res://tests/test_save_manager.gd": {
    "path": "res://tests/test_save_manager.gd",
