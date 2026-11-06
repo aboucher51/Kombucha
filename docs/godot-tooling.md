@@ -497,8 +497,10 @@ only OPENS an OptionButton, so this is how a scenario picks; the harness
 refuses a disabled item and names its tooltip), `menu <Menu> <item text
 or id>` (menu items are not nodes, so `click` cannot reach them; the
 harness opens a `MenuButton`'s menu, or uses an open `PopupMenu`, and
-fires the item the way a click does; it refuses a disabled item, and
-lists the menu's items when the text matches none or two of them),
+fires the item the way a click does; an item's text matches whole, or
+up to a tab, so `menu FileMenu Save` picks a row written
+`Save\tCtrl+S`; it refuses a disabled item, and lists the menu's items
+when the text matches none or two of them),
 `window` (prints the size the window
 manager actually granted, for a check at a named size),
 `assert_tooltip <NodeName> <text>`, `frame_budget <ms> [frames]`,
@@ -575,6 +577,14 @@ Rules that keep the harness useful:
   `SettingsButton` beside a closed pause menu's is the visible one, which
   is what the line means. (Three of one project's scenarios went red on
   the strict rule, for nodes a player could not have confused.)
+- **The harness lookup reaches a node's internal children too.** A
+  dialog's own buttons are internal (an `AcceptDialog`'s OK, a
+  `ConfirmationDialog`'s Cancel). Give the button a name
+  (`dialog.get_ok_button().name = "SavedOkButton"`), and `click`,
+  `hover` and the asserts reach it. A control inside a dialog sits at
+  coordinates relative to the dialog. The harness adds the dialog's
+  position, so the click lands on the button
+  (`scenarios/dialog.txt` checks this).
 - **The harness sends synthetic clicks through `push_input` in canvas
   coordinates**, never through `Input.parse_input_event`. That function
   treats the position as window pixels. So under any stretch other than the

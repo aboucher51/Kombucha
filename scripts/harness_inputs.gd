@@ -12,15 +12,21 @@ const EDIT_ITEMS := [
 	{"text": "Delete", "id": 12, "disabled": true, "tip": "Nothing is selected"},
 	{"text": "Copy", "id": 13},
 	{"text": "Copy", "id": 14},
+	# A shortcut after a tab, as IceEngine writes its rows (KOMBU-44).
+	{"text": "Save\tCtrl+S", "id": 15},
 ]
 const CONTEXT_ITEMS := [{"text": "Open", "id": 1}, {"text": "Close", "id": 2}]
 ## Items a player can drag, and whether the slot takes each one.
 const DRAG_ITEMS := {"ItemApple": true, "ItemPear": true, "ItemRock": false}
 
-## The last menu item picked, as "<menu>:<text>" (state key `menu_pick`).
+## The last menu item picked, as "<menu>:<text before any tab>" (state key
+## `menu_pick`).
 var menu_pick := ""
 ## The last item dropped on the slot (state key `dropped`).
 var dropped := ""
+## "confirmed" once the dialog's own OK button is pressed (state key `dialog`).
+var dialog := ""
+var _dialog: AcceptDialog
 var _context_menu: PopupMenu
 var _context_button: Button
 
@@ -49,6 +55,19 @@ func _ready() -> void:
 	_fill(_context_menu, CONTEXT_ITEMS)
 	_context_menu.id_pressed.connect(_on_menu_id.bind("ContextMenu", _context_menu))
 	add_child(_context_menu)
+	# A dialog's OK button is an INTERNAL child of the dialog, which a plain
+	# get_children() walk skips (KOMBU-44). Named so a scenario can click it.
+	_dialog = AcceptDialog.new()
+	_dialog.name = "SavedDialog"
+	_dialog.dialog_text = "Saved."
+	_dialog.get_ok_button().name = "SavedOkButton"
+	_dialog.confirmed.connect(_on_dialog_confirmed)
+	add_child(_dialog)
+	var show_dialog := Button.new()
+	show_dialog.name = "ShowDialogButton"
+	show_dialog.text = "Show dialog"
+	show_dialog.pressed.connect(_dialog.popup_centered)
+	row.add_child(show_dialog)
 	_build_drag_area()
 
 
@@ -69,7 +88,12 @@ func _open_context_menu() -> void:
 
 
 func _on_menu_id(id: int, menu_name: String, popup: PopupMenu) -> void:
-	menu_pick = "%s:%s" % [menu_name, popup.get_item_text(popup.get_item_index(id))]
+	# The text before a tab, so a scenario can assert on it without a tab.
+	menu_pick = "%s:%s" % [menu_name, popup.get_item_text(popup.get_item_index(id)).get_slice("\t", 0)]
+
+
+func _on_dialog_confirmed() -> void:
+	dialog = "confirmed"
 
 
 func _build_drag_area() -> void:
@@ -114,7 +138,7 @@ func _drop(_at: Vector2, data: Variant) -> void:
 
 
 func state_text() -> String:
-	return "menu_pick=%s dropped=%s" % [menu_pick, dropped]
+	return "menu_pick=%s dropped=%s dialog=%s" % [menu_pick, dropped, dialog]
 
 
 func assert_key(key: String, value: String) -> String:
@@ -122,6 +146,7 @@ func assert_key(key: String, value: String) -> String:
 	match key:
 		"menu_pick": actual = menu_pick
 		"dropped": actual = dropped
+		"dialog": actual = dialog
 		_: return "ERROR: unknown key '%s'" % key
 	if actual != value:
 		return "ERROR: %s is '%s', expected '%s'" % [key, actual, value]

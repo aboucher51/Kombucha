@@ -23,3 +23,6 @@ menu ContextMenu Close
 assert menu_pick ContextMenu:Close
 expect_fail menu ContextButton Open
 expect_fail menu NoSuchMenu Open
+# A row with a shortcut after a tab is picked by the text before the tab.
+menu EditMenu Save
+assert menu_pick EditMenu:Save

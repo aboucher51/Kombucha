@@ -233,6 +233,26 @@ func test_menu_refuses_two_items_with_one_text_or_none() -> void:
 	popup.free()
 
 
+func test_menu_matches_the_text_before_a_tab() -> void:
+	var popup := PopupMenu.new()
+	popup.add_item("Save\tCtrl+S", 1)
+	popup.add_item("Save As\tCtrl+Shift+S", 2)
+	popup.add_item("Open\tCtrl+O", 3)
+	popup.add_item("Open\tCtrl+Alt+O", 4)
+	popup.add_item("Close", 5)
+	popup.add_item("Close\tCtrl+W", 6)
+	assert_eq(Harness.menu_index(popup, "Save"), {"index": 0})
+	assert_eq(Harness.menu_index(popup, "Save As"), {"index": 1})
+	# The whole text still works.
+	assert_eq(Harness.menu_index(popup, "Save\tCtrl+S"), {"index": 0})
+	# An exact match wins over a match before a tab.
+	assert_eq(Harness.menu_index(popup, "Close"), {"index": 4})
+	assert_string_contains(str(Harness.menu_index(popup, "Open").get("error", "")), "2 items")
+	# The error shows a tab as a space, so it reads on one line.
+	assert_eq(Harness.menu_items(popup)[0], "'Save Ctrl+S' (id 1)")
+	popup.free()
+
+
 # ── scenario_started / scenario_finished reach the project's hooks ──
 
 func _scenario_file(stem: String, lines: String) -> String:

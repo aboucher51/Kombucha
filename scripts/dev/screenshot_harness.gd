@@ -58,7 +58,9 @@ extends Node
 ##     menu <Menu> <item text or id>  pick a menu item as a click would
 ##                             (id_pressed and index_pressed fire). <Menu> is
 ##                             a MenuButton, whose popup opens first, or an
-##                             open PopupMenu. Exact text first, then the id.
+##                             open PopupMenu. Exact text first, then the
+##                             text before a tab ("Save" for a row written
+##                             "Save\tCtrl+S"), then the id.
 ##                             A disabled item is refused, naming its
 ##                             tooltip; no match or two matches is an ERROR
 ##                             that lists the items. Menu items are not
@@ -819,7 +821,40 @@ func _settled_centre(node_name: String) -> Variant:
 			break
 		last_rect = rect
 	await _scroll_into_view(target)
-	return target.get_global_transform_with_canvas() * (target.size / 2.0)
+	return root_point(target, target.size / 2.0)
+
+
+## A point in a Control's own coordinates, in the root viewport's canvas
+## coordinates, where the harness pushes its input. A Control inside an
+## embedded Window (a dialog, a popup) has coordinates relative to that
+## Window, so each embedded Window's position is added on the way up.
+## Without it, a click on a dialog's OK button landed where the button
+## would be if the dialog sat at the top-left corner (KOMBU-44).
+static func root_point(control: Control, local: Vector2) -> Vector2:
+	var point := control.get_global_transform_with_canvas() * local
+	var window := control.get_viewport() as Window
+	while window != null and window.is_embedded():
+		point += Vector2(window.position)
+		window = _embedder(window) as Window
+	return point
+
+
+## The viewport that draws an embedded Window: the nearest one above it
+## that embeds subwindows. Godot keeps `Window.get_embedder()` out of
+## GDScript, so this walks up the same way the engine does.
+static func _embedder(window: Window) -> Viewport:
+	var parent := window.get_parent()
+	var viewport: Viewport = parent.get_viewport() if parent != null else null
+	while viewport != null and not viewport.is_embedding_subwindows():
+		parent = viewport.get_parent()
+		viewport = parent.get_viewport() if parent != null else null
+	return viewport
+
+
+## The Control's rect in root canvas coordinates, as `root_point` places it.
+static func root_rect(control: Control) -> Rect2:
+	var rect := control.get_global_rect()
+	return Rect2(root_point(control, Vector2.ZERO), rect.size)
 
 
 const DRAG_USAGE := "ERROR: usage: drag <NodeName | x y> <NodeName | x y> [steps]"
@@ -1099,7 +1134,7 @@ func _hover(parts: PackedStringArray) -> String:
 	if not target.is_visible_in_tree():
 		return "ERROR: '%s' is not visible" % parts[1]
 	await _scroll_into_view(target)
-	var at := target.get_global_transform_with_canvas() * (target.size / 2.0)
+	var at := root_point(target, target.size / 2.0)
 	# Retried: the shards share the ONE real cursor, and another process
 	# warping it across this window lands a real motion event AFTER the
 	# synthetic one, so the hovered control reads wrong for a frame or
@@ -1114,7 +1149,8 @@ func _hover(parts: PackedStringArray) -> String:
 		get_viewport().push_input(motion, true)
 		await get_tree().process_frame
 		await get_tree().process_frame
-		hovered = get_viewport().gui_get_hovered_control()
+		# A control inside a dialog is hovered in the dialog's own viewport.
+		hovered = target.get_viewport().gui_get_hovered_control()
 		if hovered != null and (hovered == target or target.is_ancestor_of(hovered)):
 			return ""
 	if hovered == null:
@@ -1135,7 +1171,7 @@ func _assert_zone(parts: PackedStringArray) -> String:
 		return _lookup_error
 	if not target.is_visible_in_tree():
 		return "ERROR: '%s' is not visible" % parts[1]
-	var rect := target.get_global_rect()
+	var rect := root_rect(target)
 	var view := get_viewport().get_visible_rect().size
 	var inside := false
 	match parts[2]:
@@ -1264,18 +1300,28 @@ func _menu(parts: PackedStringArray) -> String:
 
 
 ## The item a `menu` line names, as {index} or {error, fix}. Exact text wins,
-## then a whole number as the item's id. Two items with the text are an
-## error, never a guess. Separators never match. Static for the tests.
+## then the text before a tab ("Save" for "Save\tCtrl+S", a row with its
+## shortcut written in; KOMBU-44), then a whole number as the item's id.
+## Two items that match the same way are an error, never a guess.
+## Separators never match. Static for the tests.
 static func menu_index(popup: PopupMenu, wanted: String) -> Dictionary:
-	var by_text: Array[int] = []
-	for i in popup.item_count:
-		if not popup.is_item_separator(i) and popup.get_item_text(i) == wanted:
-			by_text.append(i)
-	if by_text.size() == 1:
-		return {"index": by_text[0]}
-	if by_text.size() > 1:
-		return {"error": "%d items are named '%s'" % [by_text.size(), wanted],
-			"fix": "Pick one by its id."}
+	for before_tab in [false, true]:
+		var by_text: Array[int] = []
+		for i in popup.item_count:
+			if popup.is_item_separator(i):
+				continue
+			var text := popup.get_item_text(i)
+			if before_tab:
+				if not text.contains("\t"):
+					continue
+				text = text.get_slice("\t", 0)
+			if text == wanted:
+				by_text.append(i)
+		if by_text.size() == 1:
+			return {"index": by_text[0]}
+		if by_text.size() > 1:
+			return {"error": "%d items are named '%s'" % [by_text.size(), wanted],
+				"fix": "Pick one by its id."}
 	if wanted.is_valid_int():
 		for i in popup.item_count:
 			if not popup.is_item_separator(i) and popup.get_item_id(i) == int(wanted):
@@ -1288,7 +1334,9 @@ static func menu_items(popup: PopupMenu) -> PackedStringArray:
 	var items := PackedStringArray()
 	for i in popup.item_count:
 		if not popup.is_item_separator(i):
-			items.append("'%s' (id %d)" % [popup.get_item_text(i), popup.get_item_id(i)])
+			# A tab shows as a space, so the error reads on one line.
+			items.append("'%s' (id %d)" % [popup.get_item_text(i).replace("\t", " "),
+				popup.get_item_id(i)])
 	return items
 
 
@@ -1417,7 +1465,7 @@ func _assert_onscreen(parts: PackedStringArray) -> String:
 	var view := Rect2(Vector2.ZERO, get_viewport().get_visible_rect().size)
 	var control := found as Control
 	if control != null:
-		var rect := control.get_global_rect()
+		var rect := root_rect(control)
 		if not view.encloses(rect):
 			return "ERROR: '%s' at %s is outside the view %s" % [parts[1], rect, view]
 		return ""
@@ -1448,7 +1496,10 @@ func _find_all(from: Node, node_name: String) -> Array[Node]:
 	var found: Array[Node] = []
 	if str(from.name) == node_name:
 		found.append(from)
-	for child in from.get_children():
+	# Internal children too: a dialog's own OK and Cancel buttons are
+	# internal, and a plain get_children() walk never reached them, so no
+	# scenario could press them by name (IceEngine, KOMBU-44).
+	for child in from.get_children(true):
 		found.append_array(_find_all(child, node_name))
 	return found
 

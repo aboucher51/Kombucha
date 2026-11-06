@@ -86,6 +86,7 @@ cat > "$EXCLUDES" <<'EOF'
 /scenarios/click_nested_scroll.txt
 /scenarios/menu.txt
 /scenarios/drag_drop.txt
+/scenarios/dialog.txt
 /scenarios/frame_budget.txt
 /scenarios/console_ui.txt
 /scenarios/hooks.txt

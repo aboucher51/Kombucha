@@ -1,0 +1,14 @@
+# A dialog's own buttons are internal children of the dialog. The harness
+# lookup must reach them, so `click` presses OK by name (IceEngine, KOMBU-44).
+wait 5
+goto res://scenes/harness_inputs.tscn
+wait 5
+# A closed dialog's button is not visible, so it cannot be clicked.
+expect_fail click SavedOkButton
+assert dialog ""
+click ShowDialogButton
+assert_visible SavedOkButton
+shot dialog-open
+click SavedOkButton
+assert dialog confirmed
+expect_fail assert_visible SavedOkButton

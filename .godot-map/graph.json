@@ -681,6 +681,9 @@
     "compare",
     "_click",
     "_settled_centre",
+    "root_point",
+    "_embedder",
+    "root_rect",
     "parse_drag",
     "_drag",
     "_warp_and_await",
@@ -727,7 +730,7 @@
    "node_paths": [],
    "groups_joined": [],
    "groups_queried": [],
-   "lines": 1520
+   "lines": 1571
   },
   "res://scripts/dev/selftest_driver.gd": {
    "path": "res://scripts/dev/selftest_driver.gd",
@@ -765,6 +768,7 @@
     "_fill",
     "_open_context_menu",
     "_on_menu_id",
+    "_on_dialog_confirmed",
     "_build_drag_area",
     "_drag_data",
     "_can_drop",
@@ -776,7 +780,9 @@
    "connects": [
     "?.id_pressed",
     "_context_button.pressed",
-    "_context_menu.id_pressed"
+    "_context_menu.id_pressed",
+    "_dialog.confirmed",
+    "show_dialog.pressed"
    ],
    "node_paths": [
     "DropSlot/DropSlotLabel"
@@ -785,7 +791,7 @@
     "state"
    ],
    "groups_queried": [],
-   "lines": 129
+   "lines": 154
   },
   "res://scripts/main.gd": {
    "path": "res://scripts/main.gd",
@@ -1795,6 +1801,7 @@
     "_menu_popup",
     "test_menu_picks_by_text_then_by_id",
     "test_menu_refuses_two_items_with_one_text_or_none",
+    "test_menu_matches_the_text_before_a_tab",
     "_scenario_file",
     "test_the_hooks_hear_a_scenario_start_before_its_first_line_and_finish_with_its_verdict",
     "test_serve_idle_fps_takes_a_whole_number_above_zero",
@@ -1805,7 +1812,7 @@
    "node_paths": [],
    "groups_joined": [],
    "groups_queried": [],
-   "lines": 276
+   "lines": 296
   },
   "res://tests/test_smoke.gd": {
    "path": "res://tests/test_smoke.gd",
