@@ -1,7 +1,7 @@
 ---
 id: KOMBU-B4
 title: Harness: menu items and named drag targets
-status: open
+status: done
 created: 2026-11-06
 updated: 2026-11-06
 ---
